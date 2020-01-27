@@ -7,7 +7,7 @@ const mutate = async (_, res) => {
   let { data, error } = res
 
   if (res && typeof res.then === 'function') {
-    // `_data` is a promise
+    // `res` is a promise
     try {
       data = await res
     } catch (err) {
