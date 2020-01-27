@@ -9,11 +9,11 @@ Features:
 - [x] Revalidation on focus
 - [x] Interval polling
 - [x] Request deduplication
-- [] Local mutation
-- [] Pagination
+- [ ] Local mutation
+- [ ] Pagination
 - [x] TypeScript ready
-- [] SSR support
-- [] Minimal API
+- [ ] SSR support
+- [ ] Minimal API
 
 ## Installation
 
