@@ -6,8 +6,6 @@
 $ yarn add swrv
 ```
 
----
-
 ## Getting Started
 
 ```vue
