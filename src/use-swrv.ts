@@ -1,9 +1,13 @@
 import { Ref, reactive, toRefs, onMounted, onUnmounted } from '@vue/composition-api'
 import isDocumentVisible from './lib/is-document-visible'
 import isOnline from './lib/is-online'
-import { IConfig, fetcherFn } from './types'
+import SWRCache from './lib/cache'
+import { IConfig, IKey, fetcherFn } from './types'
 
-const mutate = async (_, res) => {
+const DATA_CACHE = new SWRCache()
+const PROMISES_CACHE = new SWRCache()
+
+const mutate = async (key, res, cache) => {
   let { data, error } = res
 
   if (res && typeof res.then === 'function') {
@@ -17,19 +21,30 @@ const mutate = async (_, res) => {
     data = res
   }
 
-  return { data, error }
+  const newData = { data, error }
+  cache.set(key, newData)
+
+  return newData
 }
 
 /**
  * Stale-While-Revalidate hook to handle fetching, caching, validation, and more...
  */
-export default function useSWRV<Data = any, Error = any> (key: string, fn: fetcherFn<any>, config:IConfig = {
-  refreshInterval: 0
-}): {
+export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcherFn<any>, {
+  refreshInterval = 0,
+  cache = DATA_CACHE,
+  ttl = 0,
+  dedupingInterval = 2000
+}: IConfig = {
+  refreshInterval: 0,
+  cache: DATA_CACHE,
+  ttl: 0,
+  dedupingInterval: 2000 }): {
   data: Ref<any>
   error: Ref<any>
 } {
-  let stateRef = reactive({
+  const theKey = typeof key === 'function' ? key() : key
+  const stateRef = reactive({
     data: undefined,
     error: null
   }) as { data: Data, error: Error }
@@ -37,9 +52,27 @@ export default function useSWRV<Data = any, Error = any> (key: string, fn: fetch
   const revalidate = async () => {
     if (!isDocumentVisible()) { return }
 
-    const newData = await mutate(key, fn(key))
-    stateRef.data = newData.data
-    stateRef.error = newData.error
+    let newData = cache.get(theKey, ttl)
+    if (newData) {
+      stateRef.data = newData.data
+      stateRef.error = newData.error
+    }
+
+    const promiseFromCache = PROMISES_CACHE.get(theKey, dedupingInterval)
+    if (!promiseFromCache) {
+      const newPromise = fn(theKey)
+      PROMISES_CACHE.set(theKey, newPromise)
+      newData = await mutate(key, newPromise, cache)
+      stateRef.data = newData.data
+      stateRef.error = newData.error
+    } else {
+      console.log('promise already exists yo:', theKey)
+      newData = await mutate(key, promiseFromCache, cache)
+      stateRef.data = newData.data
+      stateRef.error = newData.error
+    }
+
+    PROMISES_CACHE.delete(theKey)
   }
 
   // set up polling
@@ -54,13 +87,13 @@ export default function useSWRV<Data = any, Error = any> (key: string, fn: fetch
       } else {
         if (timer) { clearTimeout(timer) }
       }
-      if (config.refreshInterval) {
-        timer = setTimeout(tick, config.refreshInterval)
+      if (refreshInterval) {
+        timer = setTimeout(tick, refreshInterval)
       }
     }
 
-    if (config.refreshInterval) {
-      timer = setTimeout(tick, config.refreshInterval)
+    if (refreshInterval) {
+      timer = setTimeout(tick, refreshInterval)
     }
 
     document.addEventListener('visibilitychange', revalidate, false)

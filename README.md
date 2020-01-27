@@ -2,6 +2,21 @@
 
 [@vue/composition-api](https://github.com/vuejs/composition-api) hooks for remote data fetching.
 
+Features:
+  
+- [x] Transport and protocol agnostic data fetching
+- [x] Fast page navigation
+- [x] Revalidation on focus
+- [x] Interval polling
+- [x] Request deduplication
+- [] Local mutation
+- [] Pagination
+- [x] TypeScript ready
+- [] SSR support
+- [] Minimal API
+
+## Installation
+
 ```sh
 $ yarn add swrv
 ```

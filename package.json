@@ -1,9 +1,8 @@
 {
   "name": "swrv",
-  "version": "0.1.0",
+  "version": "0.1.0-1",
   "main": "./dist/index.js",
   "module": "./esm/index.js",
-  "private": true,
   "scripts": {
     "build": "yarn build:esm && yarn build:cjs",
     "build:cjs": "tsc",
@@ -32,7 +31,7 @@
     "@vue/test-utils": "1.0.0-beta.29",
     "eslint": "^5.16.0",
     "eslint-plugin-vue": "^5.0.0",
-    "typescript": "~3.5.3",
+    "typescript": "~3.7.5",
     "vue": "^2.6.11",
     "vue-template-compiler": "^2.6.10"
   }

@@ -9,7 +9,7 @@ describe('useSWR', () => {
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
-        return useSWR('cache-key', () => 'SWR')
+        return useSWR('cache-key-1', () => 'SWR')
       }
     }).$mount()
 
@@ -21,7 +21,7 @@ describe('useSWR', () => {
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
-        return useSWR('cache-key', () => 'SWR')
+        return useSWR('cache-key-2', () => 'SWR')
       }
     }).$mount()
 
@@ -36,12 +36,26 @@ describe('useSWR', () => {
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
-        return useSWR('cache-key', () => new Promise(resolve => resolve('SWR')))
+        return useSWR('cache-key-promise', () => new Promise(resolve => resolve('SWR')))
       }
     }).$mount()
 
+    expect(vm.$el.textContent).toBe('hello, ')
+
     await vm.$nextTick()
     await vm.$nextTick()
+
+    expect(vm.$el.textContent).toBe('hello, SWR')
+    done()
+  })
+
+  it('should allow functions as key and reuse the cache', async done => {
+    const vm = new Vue({
+      template: `<div>hello, {{ data }}</div>`,
+      setup  () {
+        return useSWR(() => 'cache-key-2', () => 'SWR')
+      }
+    }).$mount()
 
     expect(vm.$el.textContent).toBe('hello, SWR')
     done()
