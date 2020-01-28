@@ -66,7 +66,6 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
       stateRef.data = newData.data
       stateRef.error = newData.error
     } else {
-      console.log('promise already exists yo:', theKey)
       newData = await mutate(key, promiseFromCache, cache)
       stateRef.data = newData.data
       stateRef.error = newData.error
@@ -107,10 +106,10 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     window.removeEventListener('focus', revalidate, false)
   })
 
-  const stateRefs = toRefs(stateRef)
   revalidate()
 
-  return stateRefs
+  // Turn reactive props into refs
+  return toRefs(stateRef)
 }
 
 export { mutate }
