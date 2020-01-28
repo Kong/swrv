@@ -57,7 +57,29 @@ describe('useSWR', () => {
       }
     }).$mount()
 
+    // immediately available via cache without waiting for $nextTick
     expect(vm.$el.textContent).toBe('hello, SWR')
+    done()
+  })
+
+  it('should return error when thrown', async done => {
+    const vm = new Vue({
+      template: `<div>
+        <div v-if="data">hello, {{ data }}</div>
+        <div v-if="error">{{error}}</div>
+      </div>`,
+      setup  () {
+        return useSWR(() => 'cache-key-3', () => new Promise((_, reject) => {
+          reject(new Error('unauthorized'))
+        }))
+      }
+    }).$mount()
+
+    await vm.$nextTick()
+    await vm.$nextTick()
+
+    // immediately available via cache without waiting for $nextTick
+    expect(vm.$el.textContent.trim()).toBe('Error: unauthorized')
     done()
   })
 })
