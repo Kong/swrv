@@ -3,7 +3,6 @@
 ![build](https://github.com/Kong/swrv/workflows/build/badge.svg)
 [![](https://img.shields.io/npm/v/swrv.svg?style=flat-square)](https://www.npmjs.com/package/swrv)
 
-
 `swrv` (pronounced "swerve") is a library using
 [@vue/composition-api](https://github.com/vuejs/composition-api) hooks for
 remote data fetching. It is largely a port of
@@ -91,5 +90,32 @@ const { data, error } = useSWRV(key, fetcher, options)
 
 ### Return Values
 
-- `data`: data for the given key resolved by fetcher (or undefined if not loaded)
+- `data`: data for the given key resolved by fetcher (or undefined if not
+  loaded)
 - `error`: error thrown by fetcher (or undefined)
+
+### Config options
+
+- `refreshInterval = 0` - polling interval in milliseconds
+- `dedupingInterval = 2000` - dedupe requests with the same key in this time
+  span
+- `ttl = 0` - time to live of response data in cache
+
+## Prefetching
+
+Prefetching can be useful for when you anticipate user actions, like hovering
+over a link. SWRV exposes the `mutate` function so that results can be stored in
+the SWRV cache at a predetermined time.
+
+```ts
+import { mutate } from 'swrv'
+
+function prefetch() {
+  mutate(
+    '/api/data',
+    fetch('/api/data').then(res => res.json())
+  )
+  // the second parameter is a Promise
+  // SWRV will use the result when it resolves
+}
+```
