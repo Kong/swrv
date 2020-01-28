@@ -1,19 +1,27 @@
 # swrv
 
-[@vue/composition-api](https://github.com/vuejs/composition-api) hooks for remote data fetching.
+`swrv` (pronounced "swerve") is a library using
+[@vue/composition-api](https://github.com/vuejs/composition-api) hooks for
+remote data fetching. It is largely a port of
+[swr](https://github.com/zeit/swr).
+
+The name “SWR” is derived from stale-while-revalidate, a cache invalidation
+strategy popularized by HTTP [RFC 5861](https://tools.ietf.org/html/rfc5861).
+SWR first returns the data from cache (stale), then sends the fetch request
+(revalidate), and finally comes with the up-to-date data again.
 
 Features:
-  
+
 - [x] Transport and protocol agnostic data fetching
 - [x] Fast page navigation
 - [x] Revalidation on focus
 - [x] Interval polling
 - [x] Request deduplication
-- [ ] Local mutation
-- [ ] Pagination
 - [x] TypeScript ready
-- [ ] SSR support
-- [ ] Minimal API
+- [x] Minimal API
+
+With `swrv`, components will get a stream of data updates constantly and
+automatically. Thus, the UI will be always fast and reactive.
 
 ## Installation
 
@@ -27,18 +35,57 @@ $ yarn add swrv
 <template>
   <div v-if="error">failed to load</div>
   <div v-if="!data">loading...</div>
-  <div v-else>hello {{data.name}}</div>
+  <div v-else>hello {{ data.name }}</div>
 </template>
 
 <script>
-import useSWR from 'swrv'
+import useSWRV from 'swrv'
 
 export default {
   name: 'Profile',
 
   setup() {
-    return useSWR('/api/user', fetcher)
+    const { data, error } = useSWRV('/api/user', fetcher)
+
+    return {
+      data,
+      error
+    }
   }
 }
 </script>
 ```
+
+In this example, the Vue Hook `useSWRV` accepts a `key` and a `fetcher`
+function. `key` is a unique identifier of the request, normally the URL of the
+API. And the fetcher accepts key as its parameter and returns the data
+asynchronously.
+
+`useSWR` also returns 2 values: `data` and `error`. When the request (fetcher)
+is not yet finished, data will be `undefined`. And when we get a response, it
+sets `data` and `error` based on the result of fetcher and rerenders the
+component. This is because `data` and `error` are Vue
+[Refs](https://vue-composition-api-rfc.netlify.com/#detailed-design), and have
+dependencies on the fetcher response.
+
+Note that fetcher can be any asynchronous function, so you can use your favorite
+data-fetching library to handle that part.
+
+## Api
+
+```ts
+const { data, error } = useSWRV(key, fetcher, options)
+```
+
+### Parameters
+
+| Param     | Required | Description                                                                         |
+| --------- | -------- | ----------------------------------------------------------------------------------- |
+| `key`     | yes      | a unique key string for the request (or a function / array / null) (advanced usage) |
+| `fetcher` | yes      | a Promise returning function to fetch your data (details)                           |
+| `options` |          | an object of configuration options                                                  |
+
+### Return Values
+
+- `data`: data for the given key resolved by fetcher (or undefined if not loaded)
+- `error`: error thrown by fetcher (or undefined)
