@@ -1,0 +1,32 @@
+name: Build & Run Tests
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [10.x, 12.x]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }} 
+    - name: install, lint
+      run: |
+        yarn install
+        yarn lint
+    - name: tsc
+      run: |
+        yarn types:check
+    - name: test
+      run: |
+        yarn test
