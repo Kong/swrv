@@ -8,6 +8,7 @@
     "build:cjs": "tsc",
     "build:esm": "tsc --target ESNext --module ES6 --outDir esm",
     "test:unit": "vue-cli-service test:unit",
+    "types:check": "tsc --noEmit",
     "lint": "vue-cli-service lint"
   },
   "types": "./dist/index.d.ts",
