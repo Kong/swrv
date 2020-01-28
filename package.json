@@ -11,6 +11,7 @@
     "types:check": "tsc --noEmit",
     "lint": "vue-cli-service lint"
   },
+  "license": "Apache-2.0",
   "types": "./dist/index.d.ts",
   "files": [
     "dist/**",
