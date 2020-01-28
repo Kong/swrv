@@ -1,8 +1,5 @@
 {
   "scripts": {
     "serve": "npx vue serve"
-  },
-  "dependencies": {
-    "isomorphic-fetch": "2.2.1"
   }
 }

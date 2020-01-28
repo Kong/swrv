@@ -1,24 +1,27 @@
 <template>
   <div>
-    <h1>{{ data }}</h1>
+    <button @click="org = 'kong'">kong</button>
+    <button @click="org = 'zeit'">zeit</button>
+    <button @click="org = 'vuejs'">vuejs</button>
+    <Repos :key="`${org}-${idx}`" v-for="idx in 5" :org="org" />
   </div>
 </template>
 
 <script>
-import useSWR from '../../esm'
+import Repos from './Repos'
 
 export default {
-  setup () {
-    const { data, error } = useSWR('example', () => {
-      return 'Data here.'
-    })
-
+  components: { Repos },
+  data () {
     return {
-      data
+      org: 'vuejs'
     }
   }
 }
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
+body {
+  font-size: 1rem;
+}
 </style>
