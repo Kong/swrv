@@ -1,6 +1,6 @@
 # swrv
 
-![build](https://github.com/Kong/swrv/workflows/build/badge.svg?branch=master)
+![build](https://github.com/Kong/swrv/workflows/build/badge.svg)
 [![](https://img.shields.io/npm/v/swrv.svg?style=flat-square)](https://www.npmjs.com/package/swrv)
 
 
