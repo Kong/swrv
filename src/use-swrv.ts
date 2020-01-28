@@ -7,7 +7,7 @@ import { IConfig, IKey, fetcherFn } from './types'
 const DATA_CACHE = new SWRCache()
 const PROMISES_CACHE = new SWRCache()
 
-const mutate = async (key, res, cache) => {
+const mutate = async (key, res, cache = DATA_CACHE) => {
   let { data, error } = res
 
   if (res && typeof res.then === 'function') {
@@ -22,6 +22,7 @@ const mutate = async (key, res, cache) => {
   }
 
   const newData = { data, error }
+
   cache.set(key, newData)
 
   return newData

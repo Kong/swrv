@@ -93,3 +93,24 @@ const { data, error } = useSWRV(key, fetcher, options)
 
 - `data`: data for the given key resolved by fetcher (or undefined if not loaded)
 - `error`: error thrown by fetcher (or undefined)
+
+### Config options
+
+- `refreshInterval = 0` - polling interval in milliseconds
+
+
+## Prefetching
+
+Prefetching can be useful for when you anticipate user actions, like hovering 
+over a link. SWRV exposes the `mutate` function so that results can be stored in
+the SWRV cache at a predetermined time.
+
+```ts
+import { mutate } from 'swrv'
+
+function prefetch () {
+  mutate('/api/data', fetch('/api/data').then(res => res.json()))
+  // the second parameter is a Promise
+  // SWRV will use the result when it resolves
+}
+```
