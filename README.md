@@ -1,5 +1,8 @@
 # swrv
 
+[![](https://img.shields.io/npm/v/swrv.svg?style=flat-square)](https://www.npmjs.com/package/swrv)
+
+
 `swrv` (pronounced "swerve") is a library using
 [@vue/composition-api](https://github.com/vuejs/composition-api) hooks for
 remote data fetching. It is largely a port of
