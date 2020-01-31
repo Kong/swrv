@@ -123,7 +123,7 @@ describe('useSWR - loading', () => {
     let renderCount = 0
     const vm = new Vue({
       render: h => h(createComponent({
-        setup() {
+        setup () {
           const { data } = useSWR('is-validating-1', loadData)
           return () => {
             renderCount++
@@ -148,7 +148,7 @@ describe('useSWR - loading', () => {
     // Prime the cache
     const vm = new Vue({
       render: h => h(createComponent({
-        setup() {
+        setup () {
           const { data, isValidating } = useSWR('is-validating-2', loadData)
 
           return () => <div>hello, {data.value}, {isValidating.value ? 'loading' : 'ready'}</div>
@@ -172,10 +172,9 @@ describe('useSWR - mutate', () => {
   it('prefetches via mutate', done => {
     // Prime the cache
     mutate('is-prefetched-1', loadData()).then(() => {
-
       const vm = new Vue({
         render: h => h(createComponent({
-          setup() {
+          setup () {
             const { data: dataFromCache } = useSWR('is-prefetched-1', loadData)
             const { data: dataNotFromCache } = useSWR('is-prefetched-2', loadData)
 
@@ -309,7 +308,7 @@ describe('useSWR - refresh', () => {
     let count = 0
     const loadData = () => new Promise((resolve, reject) => setTimeout(() => {
       count++
-      count > 2 ? reject('error!') : resolve(count)
+      count > 2 ? reject(new Error('uh oh!')) : resolve(count)
     }, 100))
 
     const vm = new Vue({
@@ -332,20 +331,20 @@ describe('useSWR - refresh', () => {
     timeout(300)
     await tick(vm, 2)
     // stale data sticks around even when error exists
-    expect(vm.$el.textContent).toBe('count: 2 error!')
+    expect(vm.$el.textContent).toBe('count: 2 Error: uh oh!')
     done()
   })
 })
 
 describe('useSWR - window events', () => {
-  const toggleVisibility = state => Object.defineProperty(document, "visibilityState", {
+  const toggleVisibility = state => Object.defineProperty(document, 'visibilityState', {
     configurable: true,
-    get: function() { return state }
+    get: function () { return state }
   })
 
-  const toggleOnline = state => Object.defineProperty(navigator, "onLine", {
+  const toggleOnline = state => Object.defineProperty(navigator, 'onLine', {
     configurable: true,
-    get: function() { return state }
+    get: function () { return state }
   })
 
   it('should not rerender when document is not visible', async done => {
