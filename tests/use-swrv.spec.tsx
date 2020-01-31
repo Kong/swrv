@@ -1,8 +1,10 @@
 import Vue from 'vue/dist/vue.common.js'
-import VueCompositionApi from '@vue/composition-api'
-import useSWR from '@/use-swrv'
+import VueCompositionApi, { createComponent } from '@vue/composition-api'
+import useSWR, { mutate } from '@/use-swrv'
 
 Vue.use(VueCompositionApi)
+
+jest.useFakeTimers()
 
 describe('useSWR', () => {
   it('should return `undefined` on hydration', done => {
@@ -81,5 +83,66 @@ describe('useSWR', () => {
     // immediately available via cache without waiting for $nextTick
     expect(vm.$el.textContent.trim()).toBe('Error: unauthorized')
     done()
+  })
+})
+
+describe('useSWR - loading', () => {
+  const loadData = () => new Promise(res => setTimeout(() => res('data'), 100))
+
+  it('should return loading state', async done => {
+    let renderCount = 0
+    const vm = new Vue({
+      render: h => h(createComponent({
+        name: 'App',
+        setup() {
+          const { data } = useSWR('is-validating-1', loadData)
+          return () => {
+            renderCount++
+            return <div>hello, {!data.value ? 'loading' : data.value}</div>
+          }
+        }
+      }))
+    }).$mount()
+
+    expect(renderCount).toEqual(1)
+    expect(vm.$el.textContent).toBe('hello, loading')
+    jest.advanceTimersByTime(100)
+
+    await vm.$nextTick()
+    await vm.$nextTick()
+
+    expect(vm.$el.textContent).toBe('hello, data')
+    expect(renderCount).toEqual(2)
+    done()
+  })
+})
+
+describe('useSWR - mutate', () => {
+  const loadData = () => new Promise(res => setTimeout(() => res('data'), 100))
+
+  it('prefetches via mutate', done => {
+    // Prime the cache
+    mutate('is-prefetched-1', loadData()).then(() => {
+
+      const vm = new Vue({
+        render: h => h(createComponent({
+          name: 'App',
+          setup() {
+            const { data: dataFromCache } = useSWR('is-prefetched-1', loadData)
+            const { data: dataNotFromCache } = useSWR('is-prefetched-2', loadData)
+
+            const msg1 = !dataFromCache.value ? 'loading' : dataFromCache.value
+            const msg2 = !dataNotFromCache.value ? 'loading' : dataNotFromCache.value
+
+            return () => <div>hello, {msg1} and {msg2}</div>
+          }
+        }))
+      }).$mount()
+
+      expect(vm.$el.textContent).toBe('hello, data and loading')
+      done()
+    })
+
+    jest.advanceTimersByTime(100)
   })
 })

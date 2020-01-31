@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
+    "target": "esnext",
+    "module": "esnext",
     "declaration": true,
+    "jsx": "preserve",
     "importHelpers": true,
     "moduleResolution": "node",
     "noEmitOnError": true,
@@ -16,6 +17,7 @@
     "baseUrl": ".",
     "outDir": "./dist",
     "types": [
+      "webpack-env",
       "node", "jest"
     ],
     "paths": {
@@ -37,7 +39,9 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
-    "src/**/*.vue"
+    "src/**/*.vue",
+    "tests/**/*.ts",
+    "tests/**/*.tsx"
   ],
   "exclude": [
     "node_modules"
