@@ -37,7 +37,7 @@ const mutate = async (key: string, res: Promise<any>, cache = DATA_CACHE) => {
  * Stale-While-Revalidate hook to handle fetching, caching, validation, and more...
  */
 export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcherFn<any>, {
-  refreshInterval = 0,
+  refreshInterval,
   cache = DATA_CACHE,
   ttl = 0,
   dedupingInterval = 2000

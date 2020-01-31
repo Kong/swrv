@@ -43,7 +43,7 @@ export default class SWRCache {
     }
 
     this.items.forEach((v, k) => {
-      if (v.createdAt < Date.now() - timeToLive) {
+      if (v.createdAt < (Date.now() - timeToLive)) {
         this.items.delete(k)
       }
     })

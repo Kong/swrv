@@ -6,6 +6,11 @@ Vue.use(VueCompositionApi)
 
 jest.useFakeTimers()
 const timeout: Function = milliseconds => jest.advanceTimersByTime(milliseconds)
+const tick: Function = async (vm, times) => {
+  for (let _ in [...Array(times).keys()]) {
+    await vm.$nextTick()
+  }
+}
 
 describe('useSWR', () => {
   it('should return `undefined` on hydration', done => {
@@ -28,8 +33,7 @@ describe('useSWR', () => {
       }
     }).$mount()
 
-    await vm.$nextTick()
-    await vm.$nextTick()
+    await tick(vm, 1)
 
     expect(vm.$el.textContent).toBe('hello, SWR')
     done()
@@ -45,10 +49,9 @@ describe('useSWR', () => {
 
     expect(vm.$el.textContent).toBe('hello, ')
 
-    await vm.$nextTick()
-    await vm.$nextTick()
+    await tick(vm, 2)
 
-    expect(vm.$el.textContent).toBe('hello, SWR')
+    expect(vm.$el.textContent).toEqual('hello, SWR')
     done()
   })
 
@@ -78,8 +81,7 @@ describe('useSWR', () => {
       }
     }).$mount()
 
-    await vm.$nextTick()
-    await vm.$nextTick()
+    await tick(vm, 2)
 
     // immediately available via cache without waiting for $nextTick
     expect(vm.$el.textContent.trim()).toBe('Error: unauthorized')
@@ -105,8 +107,7 @@ describe('useSWR', () => {
     expect(vm.$el.textContent).toBe(', ')
 
     timeout(200)
-    await vm.$nextTick()
-    await vm.$nextTick()
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('SWR, SWR')
 
     // only fetches once
@@ -136,8 +137,7 @@ describe('useSWR - loading', () => {
     expect(vm.$el.textContent).toBe('hello, loading')
     timeout(100)
 
-    await vm.$nextTick()
-    await vm.$nextTick()
+    await tick(vm, 2)
 
     expect(vm.$el.textContent).toBe('hello, data')
     expect(renderCount).toEqual(2)
@@ -159,8 +159,7 @@ describe('useSWR - loading', () => {
     expect(vm.$el.textContent).toBe('hello, , loading')
 
     timeout(100)
-    await vm.$nextTick()
-    await vm.$nextTick()
+    await tick(vm, 2)
 
     expect(vm.$el.textContent).toBe('hello, data, ready')
     done()
@@ -245,18 +244,18 @@ describe('useSWR - refresh', () => {
       }
     }).$mount()
 
-    expect(vm.$el.textContent).toBe('count: ')
-    await vm.$nextTick()
-    expect(vm.$el.textContent).toBe('count: 0')
+    expect(vm.$el.textContent).toEqual('count: ')
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toEqual('count: 0')
     timeout(210)
-    await vm.$nextTick()
-    expect(vm.$el.textContent).toBe('count: 1')
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toEqual('count: 1')
     timeout(50)
-    await vm.$nextTick()
-    expect(vm.$el.textContent).toBe('count: 1')
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toEqual('count: 1')
     timeout(150)
-    await vm.$nextTick()
-    expect(vm.$el.textContent).toBe('count: 2')
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toEqual('count: 2')
     done()
   })
 
@@ -282,8 +281,7 @@ describe('useSWR - refresh', () => {
 
     expect(vm.$el.textContent).toBe('count: ')
     timeout(100)
-    await vm.$nextTick()
-    await vm.$nextTick()
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('count: 0')
     /**
      * check inside promises cache within deduping interval so even though
@@ -291,22 +289,18 @@ describe('useSWR - refresh', () => {
      * instead and not increment the count
      */
     timeout(100)
-    await vm.$nextTick()
-    await vm.$nextTick()
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('count: 0')
 
     timeout(100) // update
-    await vm.$nextTick()
-    await vm.$nextTick()
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('count: 1')
 
     timeout(200) // no update (deduped)
-    await vm.$nextTick()
-    await vm.$nextTick()
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('count: 1')
-    timeout(200) // update
-    await vm.$nextTick()
-    await vm.$nextTick()
+    timeout(150) // update
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('count: 2')
     done()
   })
@@ -336,22 +330,24 @@ describe('useSWR - window events', () => {
     }).$mount()
 
     expect(vm.$el.textContent).toBe('count: ')
-    await vm.$nextTick()
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('count: 0')
 
     toggleVisibility(undefined)
     timeout(200)
-    await vm.$nextTick()
+    await tick(vm, 2)
     // should still update even though visibilityState is undefined
     expect(vm.$el.textContent).toBe('count: 1')
 
     toggleVisibility('hidden')
 
     timeout(200)
-    await vm.$nextTick()
+    await tick(vm, 2)
 
     // should not rerender because document is hidden e.g. switched tabs
     expect(vm.$el.textContent).toBe('count: 1')
+
+    vm.$destroy()
 
     // put it back to visible for other tests
     toggleVisibility('visible')
@@ -366,19 +362,20 @@ describe('useSWR - window events', () => {
       template: `<div>count: {{ data }}</div>`,
       setup  () {
         return useSWR('dynamic-6', () => count++, {
-          refreshInterval: 200
+          refreshInterval: 200,
+          dedupingInterval: 10
         })
       }
     }).$mount()
 
     expect(vm.$el.textContent).toBe('count: ')
-    await vm.$nextTick()
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('count: 0')
 
     toggleOnline(undefined)
 
     timeout(200)
-    await vm.$nextTick()
+    await tick(vm, 2)
     // should rerender since we're AMERICA ONLINE
     expect(vm.$el.textContent).toBe('count: 1')
 
@@ -386,7 +383,7 @@ describe('useSWR - window events', () => {
     toggleOnline(false)
 
     timeout(200)
-    await vm.$nextTick()
+    await tick(vm, 2)
     // should not rerender cuz offline
     expect(vm.$el.textContent).toBe('count: 1')
 
