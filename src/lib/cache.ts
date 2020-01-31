@@ -12,9 +12,12 @@ export default class SWRCache {
     this.ttl = ttl
   }
 
-  get (k: string, ttl: number): any {
+  /**
+   * Get cache item while evicting
+   */
+  get (k: string, ttl: number): ICacheItem {
     this.shift(ttl)
-    return this.items.get(k) && this.items.get(k).data
+    return this.items.get(k)
   }
 
   set (k: string, v: any) {
@@ -26,6 +29,13 @@ export default class SWRCache {
     this.items.set(k, item)
   }
 
+  delete (k: string) {
+    this.items.delete(k)
+  }
+
+  /**
+   * Eviction of cache items based on some ttl of ICacheItem.createdAt
+   */
   private shift (ttl: number) {
     const timeToLive = ttl || this.ttl
     if (!timeToLive) {
@@ -33,13 +43,9 @@ export default class SWRCache {
     }
 
     this.items.forEach((v, k) => {
-      if (v.createdAt < Date.now() - timeToLive) {
+      if (v.createdAt < (Date.now() - timeToLive)) {
         this.items.delete(k)
       }
     })
-  }
-
-  delete (k: string) {
-    this.items.delete(k)
   }
 }
