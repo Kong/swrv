@@ -28,7 +28,9 @@ const mutate = async (key: string, res: Promise<any>, cache = DATA_CACHE) => {
   isValidating = false
 
   const newData = { data, error, isValidating }
-  cache.set(key, newData)
+  if (typeof data !== 'undefined') {
+    cache.set(key, newData)
+  }
 
   return newData
 }
@@ -75,12 +77,16 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
       const newPromise = fn(theKey)
       PROMISES_CACHE.set(theKey, newPromise)
       newData = await mutate(theKey, newPromise, cache)
-      stateRef.data = newData.data
+      if (typeof newData.data !== 'undefined') {
+        stateRef.data = newData.data
+      }
       stateRef.error = newData.error
       stateRef.isValidating = newData.isValidating
     } else {
       newData = await mutate(theKey, promiseFromCache.data, cache)
-      stateRef.data = newData.data
+      if (typeof newData.data !== 'undefined') {
+        stateRef.data = newData.data
+      }
       stateRef.error = newData.error
       stateRef.isValidating = newData.isValidating
     }

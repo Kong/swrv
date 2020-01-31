@@ -304,6 +304,37 @@ describe('useSWR - refresh', () => {
     expect(vm.$el.textContent).toBe('count: 2')
     done()
   })
+
+  it('should serve stale-if-error', async done => {
+    let count = 0
+    const loadData = () => new Promise((resolve, reject) => setTimeout(() => {
+      count++
+      count > 2 ? reject('error!') : resolve(count)
+    }, 100))
+
+    const vm = new Vue({
+      template: `<div>count: {{ data }} {{ error }}</div>`,
+      setup  () {
+        return useSWR('dynamic-3', loadData, {
+          refreshInterval: 200
+        })
+      }
+    }).$mount()
+
+    timeout(300) // 200 refresh + 100 timeout
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('count: 1 ')
+
+    timeout(300)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('count: 2 ')
+
+    timeout(300)
+    await tick(vm, 2)
+    // stale data sticks around even when error exists
+    expect(vm.$el.textContent).toBe('count: 2 error!')
+    done()
+  })
 })
 
 describe('useSWR - window events', () => {
