@@ -1,14 +1,18 @@
-import { Ref, reactive, toRefs, onMounted, onUnmounted } from '@vue/composition-api'
+import { reactive, toRefs, onMounted, onUnmounted } from '@vue/composition-api'
 import isDocumentVisible from './lib/is-document-visible'
 import isOnline from './lib/is-online'
 import SWRCache from './lib/cache'
-import { IConfig, IKey, fetcherFn } from './types'
+import { IConfig, IKey, IResponse, fetcherFn } from './types'
 
 const DATA_CACHE = new SWRCache()
 const PROMISES_CACHE = new SWRCache()
 
-const mutate = async (key, res, cache = DATA_CACHE) => {
-  let { data, error } = res
+/**
+ * Main mutation function for receiving data from promises to change state and
+ * set data cache
+ */
+const mutate = async (key: string, res: Promise<any>, cache = DATA_CACHE) => {
+  let data, error, isValidating
 
   if (res && typeof res.then === 'function') {
     // `res` is a promise
@@ -21,8 +25,9 @@ const mutate = async (key, res, cache = DATA_CACHE) => {
     data = res
   }
 
-  const newData = { data, error }
+  isValidating = false
 
+  const newData = { data, error, isValidating }
   cache.set(key, newData)
 
   return newData
@@ -40,42 +45,52 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   refreshInterval: 0,
   cache: DATA_CACHE,
   ttl: 0,
-  dedupingInterval: 2000 }): {
-  data: Ref<any>
-  error: Ref<any>
-} {
+  dedupingInterval: 2000 }): IResponse {
   const theKey = typeof key === 'function' ? key() : key
   const stateRef = reactive({
     data: undefined,
-    error: null
-  }) as { data: Data, error: Error }
+    error: null,
+    isValidating: true
+  }) as { data: Data, error: Error, isValidating: boolean, revalidate: Function }
 
+  /**
+   * Revalidate the cache, mutate data
+   */
   const revalidate = async () => {
     if (!isDocumentVisible()) { return }
 
-    let newData = cache.get(theKey, ttl)
+    const cacheItem = cache.get(theKey, ttl)
+    let newData = cacheItem && cacheItem.data
+
     if (newData) {
       stateRef.data = newData.data
       stateRef.error = newData.error
     }
 
+    /**
+     * Currently getter's of SWRCache will evict
+     */
     const promiseFromCache = PROMISES_CACHE.get(theKey, dedupingInterval)
     if (!promiseFromCache) {
       const newPromise = fn(theKey)
       PROMISES_CACHE.set(theKey, newPromise)
-      newData = await mutate(key, newPromise, cache)
+      newData = await mutate(theKey, newPromise, cache)
       stateRef.data = newData.data
       stateRef.error = newData.error
+      stateRef.isValidating = newData.isValidating
     } else {
-      newData = await mutate(key, promiseFromCache, cache)
+      newData = await mutate(theKey, promiseFromCache.data, cache)
       stateRef.data = newData.data
       stateRef.error = newData.error
+      stateRef.isValidating = newData.isValidating
     }
 
     PROMISES_CACHE.delete(theKey)
   }
 
-  // set up polling
+  /**
+   * Setup polling
+   */
   let timer = null
   onMounted(() => {
     const tick = async () => {
@@ -100,17 +115,23 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     window.addEventListener('focus', revalidate, false)
   })
 
+  /**
+   * Teardown
+   */
   onUnmounted(() => {
     if (timer) { clearTimeout(timer) }
-
     document.removeEventListener('visibilitychange', revalidate, false)
     window.removeEventListener('focus', revalidate, false)
   })
 
+  /**
+   * Initialize
+   */
   revalidate()
-
-  // Turn reactive props into refs
-  return toRefs(stateRef)
+  return {
+    ...toRefs(stateRef),
+    revalidate
+  }
 }
 
 export { mutate }
