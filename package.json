@@ -1,12 +1,12 @@
 {
   "name": "swrv",
-  "version": "0.1.0-5",
+  "version": "0.1.0-6",
   "main": "./dist/index.js",
   "module": "./esm/index.js",
   "scripts": {
     "build": "yarn build:esm && yarn build:cjs",
-    "build:cjs": "tsc --target es5 --module CommonJs --downlevelIteration",
-    "build:esm": "tsc --target ESNext --module ES6 --outDir esm",
+    "build:cjs": "tsc --target es5 --module CommonJs -p tsconfig.build.json",
+    "build:esm": "tsc --target ESNext --module ES6 --outDir esm -p tsconfig.build.json",
     "test": "vue-cli-service test:unit",
     "types:check": "tsc --noEmit",
     "lint": "vue-cli-service lint"
