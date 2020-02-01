@@ -22,6 +22,7 @@ Features:
 - [x] Request deduplication
 - [x] TypeScript ready
 - [x] Minimal API
+- [x] stale-if-error
 
 With `swrv`, components will get a stream of data updates constantly and
 automatically. Thus, the UI will be always fast and reactive.
@@ -118,4 +119,42 @@ function prefetch() {
   // the second parameter is a Promise
   // SWRV will use the result when it resolves
 }
+```
+
+## Stale-if-error
+
+One of the benefits of a stale content caching strategy is that the cache can be
+served when requests fail.`swrv` uses a
+[stale-if-error](https://tools.ietf.org/html/rfc5861#section-4) strategy and
+will maintain `data` in the cache even if a `useSWRV` fetch returns an `error`.
+
+```vue
+<template>
+  <div v-if="error">failed to load</div>
+  <div v-if="data === undefined && !error">loading...</div>
+  <p v-if="data">
+    hello {{ data.name }} of {{ data.birthplace }}. This content will continue
+    to appear even if future requests to {{ endpoint }} fail!
+  </p>
+</template>
+
+<script>
+import { ref } from '@vue/composition-api'
+import useSWRV from 'swrv'
+
+export default {
+  name: 'Profile',
+
+  setup() {
+    const endpoint = ref('/api/user/Geralt')
+    const { data, error } = useSWRV(endpoint.value, fetch)
+    
+    return {
+      endpoint,
+      data,
+      error
+    }
+  }
+}
+</script>
 ```
