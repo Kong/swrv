@@ -68,26 +68,6 @@ describe('useSWR', () => {
     done()
   })
 
-  it('should return error when thrown', async done => {
-    const vm = new Vue({
-      template: `<div>
-        <div v-if="data">hello, {{ data }}</div>
-        <div v-if="error">{{error}}</div>
-      </div>`,
-      setup  () {
-        return useSWR(() => 'cache-key-3', () => new Promise((_, reject) => {
-          reject(new Error('unauthorized'))
-        }))
-      }
-    }).$mount()
-
-    await tick(vm, 2)
-
-    // immediately available via cache without waiting for $nextTick
-    expect(vm.$el.textContent.trim()).toBe('Error: unauthorized')
-    done()
-  })
-
   it('should dedupe requests by default', async done => {
     let count = 0
     const fetch = () => {
@@ -332,6 +312,50 @@ describe('useSWR - refresh', () => {
     await tick(vm, 2)
     // stale data sticks around even when error exists
     expect(vm.$el.textContent).toBe('count: 2 Error: uh oh!')
+    done()
+  })
+})
+
+describe('useSWR - error', () => {
+  it('should handle errors', async done => {
+    const vm = new Vue({
+      template: `<div>
+        <div v-if="data">hello, {{ data }}</div>
+        <div v-if="error">{{error.message}}</div>
+      </div>`,
+      setup  () {
+        return useSWR(() => 'error-1', () => new Promise((_, reject) => {
+          reject(new Error('error!'))
+        }))
+      }
+    }).$mount()
+
+    await tick(vm, 2)
+
+    expect(vm.$el.textContent.trim()).toBe('error!')
+    done()
+  })
+
+  it('should trigger the onError event', async done => {
+    let erroredSWR = null
+
+    const vm = new Vue({
+      template: `<div>
+        <div>hello, {{ data }}</div>
+      </div>`,
+      setup  () {
+        return useSWR(() => 'error-2', () => new Promise((_, rej) =>
+          setTimeout(() => rej(new Error('error!')), 200)
+        ), {
+          onError: (_, key) => (erroredSWR = key)
+        })
+      }
+    }).$mount()
+
+    expect(vm.$el.textContent).toBe('hello, ')
+    timeout(200)
+    await tick(vm, 2)
+    expect(erroredSWR).toEqual('error-2')
     done()
   })
 })

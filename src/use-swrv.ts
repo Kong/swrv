@@ -7,6 +7,15 @@ import { IConfig, IKey, IResponse, fetcherFn } from './types'
 const DATA_CACHE = new SWRCache()
 const PROMISES_CACHE = new SWRCache()
 
+const defaultConfig : IConfig = {
+  cache: DATA_CACHE,
+  refreshInterval: 0,
+  ttl: 0,
+  dedupingInterval: 2000,
+  revalidateOnFocus: true,
+  onError: (_, __) => {}
+}
+
 /**
  * Main mutation function for receiving data from promises to change state and
  * set data cache
@@ -38,16 +47,12 @@ const mutate = async (key: string, res: Promise<any>, cache = DATA_CACHE) => {
 /**
  * Stale-While-Revalidate hook to handle fetching, caching, validation, and more...
  */
-export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcherFn<any>, {
-  refreshInterval,
-  cache = DATA_CACHE,
-  ttl = 0,
-  dedupingInterval = 2000
-}: IConfig = {
-  refreshInterval: 0,
-  cache: DATA_CACHE,
-  ttl: 0,
-  dedupingInterval: 2000 }): IResponse {
+export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcherFn<any>, config?: IConfig): IResponse {
+  config = {
+    ...defaultConfig,
+    ...config
+  }
+
   const theKey = typeof key === 'function' ? key() : key
   const stateRef = reactive({
     data: undefined,
@@ -61,7 +66,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   const revalidate = async () => {
     if (!isDocumentVisible()) { return }
 
-    const cacheItem = cache.get(theKey, ttl)
+    const cacheItem = config.cache.get(theKey, config.ttl)
     let newData = cacheItem && cacheItem.data
 
     if (newData) {
@@ -72,22 +77,28 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     /**
      * Currently getter's of SWRCache will evict
      */
-    const promiseFromCache = PROMISES_CACHE.get(theKey, dedupingInterval)
+    const promiseFromCache = PROMISES_CACHE.get(theKey, config.dedupingInterval)
     if (!promiseFromCache) {
       const newPromise = fn(theKey)
       PROMISES_CACHE.set(theKey, newPromise)
-      newData = await mutate(theKey, newPromise, cache)
+      newData = await mutate(theKey, newPromise, config.cache)
       if (typeof newData.data !== 'undefined') {
         stateRef.data = newData.data
       }
-      stateRef.error = newData.error
+      if (newData.error) {
+        stateRef.error = newData.error
+        config.onError(newData.error, theKey)
+      }
       stateRef.isValidating = newData.isValidating
     } else {
-      newData = await mutate(theKey, promiseFromCache.data, cache)
+      newData = await mutate(theKey, promiseFromCache.data, config.cache)
       if (typeof newData.data !== 'undefined') {
         stateRef.data = newData.data
       }
-      stateRef.error = newData.error
+      if (newData.error) {
+        stateRef.error = newData.error
+        config.onError(newData.error, theKey)
+      }
       stateRef.isValidating = newData.isValidating
     }
 
@@ -108,17 +119,18 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
       } else {
         if (timer) { clearTimeout(timer) }
       }
-      if (refreshInterval) {
-        timer = setTimeout(tick, refreshInterval)
+      if (config.refreshInterval) {
+        timer = setTimeout(tick, config.refreshInterval)
       }
     }
 
-    if (refreshInterval) {
-      timer = setTimeout(tick, refreshInterval)
+    if (config.refreshInterval) {
+      timer = setTimeout(tick, config.refreshInterval)
     }
-
-    document.addEventListener('visibilitychange', revalidate, false)
-    window.addEventListener('focus', revalidate, false)
+    if (config.revalidateOnFocus) {
+      document.addEventListener('visibilitychange', revalidate, false)
+      window.addEventListener('focus', revalidate, false)
+    }
   })
 
   /**
@@ -126,8 +138,10 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
    */
   onUnmounted(() => {
     if (timer) { clearTimeout(timer) }
-    document.removeEventListener('visibilitychange', revalidate, false)
-    window.removeEventListener('focus', revalidate, false)
+    if (config.revalidateOnFocus) {
+      document.removeEventListener('visibilitychange', revalidate, false)
+      window.removeEventListener('focus', revalidate, false)
+    }
   })
 
   /**

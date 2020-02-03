@@ -1,10 +1,10 @@
 <template>
   <div>
-    <div v-if="successState">
+    <div v-if="error">{{ error.message }}</div>
+    <div v-if="data">
       <pre>Number of repos in {{ org }}: {{ data.length }}</pre>
     </div>
-    <div v-else-if="errorState">{{ error }}</div>
-    <div v-else-if="loadingState">Loading...</div>
+    <div v-if="!data && !error">Loading...</div>
   </div>
 </template>
 
@@ -28,18 +28,14 @@ export default {
     }
   },
   setup ({ org }) {
-    const { data, error } = useSWR(`https://api.github.com/orgs/${org}/repos`, fetcher)
-
-    const loadingState = computed(() => !data.value && !error.value)
-    const errorState = computed(() => !data.value && error.value)
-    const successState = computed(() => data.value && !error.value)
+    const endpoint = `https://api.github.com/orgs/${org}/repos`
+    const { data, error } = useSWR(endpoint, fetcher, {
+      revalidateOnFocus: false
+    })
 
     return {
       data,
-      error,
-      loadingState,
-      errorState,
-      successState
+      error
     }
   }
 }
