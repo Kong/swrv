@@ -65,7 +65,7 @@ function. `key` is a unique identifier of the request, normally the URL of the
 API. And the fetcher accepts key as its parameter and returns the data
 asynchronously.
 
-`useSWR` also returns 2 values: `data` and `error`. When the request (fetcher)
+`useSWRV` also returns 2 values: `data` and `error`. When the request (fetcher)
 is not yet finished, data will be `undefined`. And when we get a response, it
 sets `data` and `error` based on the result of fetcher and rerenders the
 component. This is because `data` and `error` are Vue
@@ -103,6 +103,8 @@ const { data, error, isValidating, revalidate } = useSWRV(key, fetcher, options)
 - `dedupingInterval = 2000` - dedupe requests with the same key in this time
   span
 - `ttl = 0` - time to live of response data in cache
+- `revalidateOnFocus = true` - auto revalidate when window gets focused
+- `onError` - callback function when a request returns an error
 
 ## Prefetching
 

@@ -10,7 +10,8 @@
 
 <script>
 import { computed } from '@vue/composition-api'
-import useSWR from '../../esm'
+import useSWRV from '../../esm'
+
 const fetcher = key => fetch(key).then(resp => {
   return resp && resp.json()
 }).then((data, res) => {
@@ -29,7 +30,7 @@ export default {
   },
   setup ({ org }) {
     const endpoint = `https://api.github.com/orgs/${org}/repos`
-    const { data, error } = useSWR(endpoint, fetcher, {
+    const { data, error } = useSWRV(endpoint, fetcher, {
       revalidateOnFocus: false
     })
 

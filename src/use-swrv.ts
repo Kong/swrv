@@ -69,6 +69,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     const cacheItem = config.cache.get(theKey, config.ttl)
     let newData = cacheItem && cacheItem.data
 
+    stateRef.isValidating = true
     if (newData) {
       stateRef.data = newData.data
       stateRef.error = newData.error

@@ -10,12 +10,6 @@ export interface IConfig {
   onError?: (
     err: Error,
     key: string
-  ) => void,
-  onErrorRetry?: (
-    err: Error,
-    key: string,
-    revalidate: void,
-    revalidateOpts: any
   ) => void
 }
 
