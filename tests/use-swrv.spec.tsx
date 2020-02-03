@@ -1,6 +1,6 @@
 import Vue from 'vue/dist/vue.common.js'
 import VueCompositionApi, { createComponent } from '@vue/composition-api'
-import useSWR, { mutate } from '@/use-swrv'
+import useSWRV, { mutate } from '@/use-swrv'
 
 Vue.use(VueCompositionApi)
 
@@ -12,12 +12,12 @@ const tick: Function = async (vm, times) => {
   }
 }
 
-describe('useSWR', () => {
+describe('useSWRV', () => {
   it('should return `undefined` on hydration', done => {
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
-        return useSWR('cache-key-1', () => 'SWR')
+        return useSWRV('cache-key-1', () => 'SWR')
       }
     }).$mount()
 
@@ -29,7 +29,7 @@ describe('useSWR', () => {
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
-        return useSWR('cache-key-2', () => 'SWR')
+        return useSWRV('cache-key-2', () => 'SWR')
       }
     }).$mount()
 
@@ -43,7 +43,7 @@ describe('useSWR', () => {
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
-        return useSWR('cache-key-promise', () => new Promise(resolve => resolve('SWR')))
+        return useSWRV('cache-key-promise', () => new Promise(resolve => resolve('SWR')))
       }
     }).$mount()
 
@@ -59,7 +59,7 @@ describe('useSWR', () => {
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
-        return useSWR(() => 'cache-key-2', () => 'SWR')
+        return useSWRV(() => 'cache-key-2', () => 'SWR')
       }
     }).$mount()
 
@@ -78,8 +78,8 @@ describe('useSWR', () => {
     const vm = new Vue({
       template: `<div>{{v1}}, {{v2}}</div>`,
       setup  () {
-        const { data: v1 } = useSWR('cache-key-4', fetch)
-        const { data: v2 } = useSWR('cache-key-4', fetch)
+        const { data: v1 } = useSWRV('cache-key-4', fetch)
+        const { data: v2 } = useSWRV('cache-key-4', fetch)
         return { v1, v2 }
       }
     }).$mount()
@@ -96,7 +96,7 @@ describe('useSWR', () => {
   })
 })
 
-describe('useSWR - loading', () => {
+describe('useSWRV - loading', () => {
   const loadData = () => new Promise(res => setTimeout(() => res('data'), 100))
 
   it('should return loading state via undefined data', async done => {
@@ -104,7 +104,7 @@ describe('useSWR - loading', () => {
     const vm = new Vue({
       render: h => h(createComponent({
         setup () {
-          const { data } = useSWR('is-validating-1', loadData)
+          const { data } = useSWRV('is-validating-1', loadData)
           return () => {
             renderCount++
             return <div>hello, {!data.value ? 'loading' : data.value}</div>
@@ -129,7 +129,9 @@ describe('useSWR - loading', () => {
     const vm = new Vue({
       render: h => h(createComponent({
         setup () {
-          const { data, isValidating } = useSWR('is-validating-2', loadData)
+          const { data, isValidating } = useSWRV('is-validating-2', loadData, {
+            refreshInterval: 1000
+          })
 
           return () => <div>hello, {data.value}, {isValidating.value ? 'loading' : 'ready'}</div>
         }
@@ -140,13 +142,21 @@ describe('useSWR - loading', () => {
 
     timeout(100)
     await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('hello, data, ready')
 
+    // Reactive to future refreshes
+    timeout(900)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('hello, data, loading')
+
+    timeout(100)
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('hello, data, ready')
     done()
   })
 })
 
-describe('useSWR - mutate', () => {
+describe('useSWRV - mutate', () => {
   const loadData = () => new Promise(res => setTimeout(() => res('data'), 100))
 
   it('prefetches via mutate', done => {
@@ -155,8 +165,8 @@ describe('useSWR - mutate', () => {
       const vm = new Vue({
         render: h => h(createComponent({
           setup () {
-            const { data: dataFromCache } = useSWR('is-prefetched-1', loadData)
-            const { data: dataNotFromCache } = useSWR('is-prefetched-2', loadData)
+            const { data: dataFromCache } = useSWRV('is-prefetched-1', loadData)
+            const { data: dataNotFromCache } = useSWRV('is-prefetched-2', loadData)
 
             const msg1 = !dataFromCache.value ? 'loading' : dataFromCache.value
             const msg2 = !dataNotFromCache.value ? 'loading' : dataNotFromCache.value
@@ -174,7 +184,7 @@ describe('useSWR - mutate', () => {
   })
 })
 
-describe('useSWR - listeners', () => {
+describe('useSWRV - listeners', () => {
   it('tears down listeners', async done => {
     let revalidate
 
@@ -191,7 +201,7 @@ describe('useSWR - listeners', () => {
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
-        const refs = useSWR('cache-key-1', () => 'SWR')
+        const refs = useSWRV('cache-key-1', () => 'SWR')
         revalidate = refs.revalidate
         return refs
       }
@@ -209,14 +219,14 @@ describe('useSWR - listeners', () => {
   })
 })
 
-describe('useSWR - refresh', () => {
+describe('useSWRV - refresh', () => {
   it('should rerender automatically on interval', async done => {
     let count = 0
 
     const vm = new Vue({
       template: `<div>count: {{ data }}</div>`,
       setup  () {
-        return useSWR('dynamic-1', () => count++, {
+        return useSWRV('dynamic-1', () => count++, {
           refreshInterval: 200,
           dedupingInterval: 100
         })
@@ -251,7 +261,7 @@ describe('useSWR - refresh', () => {
     const vm = new Vue({
       template: `<div>count: {{ data }}</div>`,
       setup  () {
-        return useSWR('dynamic-2', loadData, {
+        return useSWRV('dynamic-2', loadData, {
           refreshInterval: 200,
           dedupingInterval: 300
         })
@@ -294,7 +304,7 @@ describe('useSWR - refresh', () => {
     const vm = new Vue({
       template: `<div>count: {{ data }} {{ error }}</div>`,
       setup  () {
-        return useSWR('dynamic-3', loadData, {
+        return useSWRV('dynamic-3', loadData, {
           refreshInterval: 200
         })
       }
@@ -316,7 +326,7 @@ describe('useSWR - refresh', () => {
   })
 })
 
-describe('useSWR - error', () => {
+describe('useSWRV - error', () => {
   it('should handle errors', async done => {
     const vm = new Vue({
       template: `<div>
@@ -324,7 +334,7 @@ describe('useSWR - error', () => {
         <div v-if="error">{{error.message}}</div>
       </div>`,
       setup  () {
-        return useSWR(() => 'error-1', () => new Promise((_, reject) => {
+        return useSWRV(() => 'error-1', () => new Promise((_, reject) => {
           reject(new Error('error!'))
         }))
       }
@@ -344,7 +354,7 @@ describe('useSWR - error', () => {
         <div>hello, {{ data }}</div>
       </div>`,
       setup  () {
-        return useSWR(() => 'error-2', () => new Promise((_, rej) =>
+        return useSWRV(() => 'error-2', () => new Promise((_, rej) =>
           setTimeout(() => rej(new Error('error!')), 200)
         ), {
           onError: (_, key) => (erroredSWR = key)
@@ -360,7 +370,7 @@ describe('useSWR - error', () => {
   })
 })
 
-describe('useSWR - window events', () => {
+describe('useSWRV - window events', () => {
   const toggleVisibility = state => Object.defineProperty(document, 'visibilityState', {
     configurable: true,
     get: function () { return state }
@@ -377,7 +387,7 @@ describe('useSWR - window events', () => {
     const vm = new Vue({
       template: `<div>count: {{ data }}</div>`,
       setup  () {
-        return useSWR('dynamic-5', () => count++, {
+        return useSWRV('dynamic-5', () => count++, {
           refreshInterval: 200
         })
       }
@@ -415,7 +425,7 @@ describe('useSWR - window events', () => {
     const vm = new Vue({
       template: `<div>count: {{ data }}</div>`,
       setup  () {
-        return useSWR('dynamic-6', () => count++, {
+        return useSWRV('dynamic-6', () => count++, {
           refreshInterval: 200,
           dedupingInterval: 10
         })
