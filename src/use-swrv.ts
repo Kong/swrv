@@ -1,4 +1,4 @@
-import { reactive, toRefs, onMounted, onUnmounted } from '@vue/composition-api'
+import { reactive, watch, ref, toRefs, onMounted, onUnmounted } from '@vue/composition-api'
 import isDocumentVisible from './lib/is-document-visible'
 import isOnline from './lib/is-online'
 import SWRCache from './lib/cache'
@@ -53,7 +53,8 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     ...config
   }
 
-  const theKey = typeof key === 'function' ? key() : key
+  let keyRef = typeof key === 'function' ? (key as any) : ref(key)
+
   const stateRef = reactive({
     data: undefined,
     error: null,
@@ -63,10 +64,9 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   /**
    * Revalidate the cache, mutate data
    */
-  const revalidate = async () => {
+  const revalidate = async (keyVal = keyRef.value) => {
     if (!isDocumentVisible()) { return }
-
-    const cacheItem = config.cache.get(theKey, config.ttl)
+    const cacheItem = config.cache.get(keyVal, config.ttl)
     let newData = cacheItem && cacheItem.data
 
     stateRef.isValidating = true
@@ -78,32 +78,40 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     /**
      * Currently getter's of SWRCache will evict
      */
-    const promiseFromCache = PROMISES_CACHE.get(theKey, config.dedupingInterval)
+    const promiseFromCache = PROMISES_CACHE.get(keyVal, config.dedupingInterval)
     if (!promiseFromCache) {
-      const newPromise = fn(theKey)
-      PROMISES_CACHE.set(theKey, newPromise)
-      newData = await mutate(theKey, newPromise, config.cache)
+      const newPromise = fn(keyVal)
+      PROMISES_CACHE.set(keyVal, newPromise)
+      newData = await mutate(keyVal, newPromise, config.cache)
       if (typeof newData.data !== 'undefined') {
         stateRef.data = newData.data
       }
       if (newData.error) {
         stateRef.error = newData.error
-        config.onError(newData.error, theKey)
+        config.onError(newData.error, keyVal)
       }
       stateRef.isValidating = newData.isValidating
     } else {
-      newData = await mutate(theKey, promiseFromCache.data, config.cache)
+      newData = await mutate(keyVal, promiseFromCache.data, config.cache)
       if (typeof newData.data !== 'undefined') {
         stateRef.data = newData.data
       }
       if (newData.error) {
         stateRef.error = newData.error
-        config.onError(newData.error, theKey)
+        config.onError(newData.error, keyVal)
       }
       stateRef.isValidating = newData.isValidating
     }
 
-    PROMISES_CACHE.delete(theKey)
+    PROMISES_CACHE.delete(keyVal)
+  }
+
+  try {
+    watch(keyRef, (val) => {
+      revalidate(val)
+    })
+  } catch {
+    // do nothing
   }
 
   /**
@@ -145,10 +153,6 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     }
   })
 
-  /**
-   * Initialize
-   */
-  revalidate()
   return {
     ...toRefs(stateRef),
     revalidate

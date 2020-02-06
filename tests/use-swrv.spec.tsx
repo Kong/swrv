@@ -135,7 +135,7 @@ describe('useSWRV - loading', () => {
     expect(vm.$el.textContent).toBe('hello, loading')
     timeout(100)
 
-    await tick(vm, 1)
+    await tick(vm, 2)
 
     expect(vm.$el.textContent).toBe('hello, data')
     expect(renderCount).toEqual(2)
@@ -159,16 +159,16 @@ describe('useSWRV - loading', () => {
     expect(vm.$el.textContent).toBe('hello, , loading')
 
     timeout(100)
-    await tick(vm, 1)
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('hello, data, ready')
 
     // Reactive to future refreshes
     timeout(900)
-    await tick(vm, 1)
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('hello, data, loading')
 
     timeout(100)
-    await tick(vm, 1)
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('hello, data, ready')
     done()
   })
@@ -300,14 +300,14 @@ describe('useSWRV - refresh', () => {
     expect(vm.$el.textContent).toBe('count: 0')
 
     timeout(100) // update
-    await tick(vm, 1)
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('count: 1')
 
     timeout(200) // no update (deduped)
-    await tick(vm, 1)
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('count: 1')
     timeout(150) // update
-    await tick(vm, 1)
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('count: 2')
     done()
   })
@@ -327,7 +327,7 @@ describe('useSWRV - error', () => {
       }
     }).$mount()
 
-    await tick(vm, 1)
+    await tick(vm, 2)
 
     expect(vm.$el.textContent.trim()).toBe('error!')
     done()
@@ -384,6 +384,54 @@ describe('useSWRV - error', () => {
     await tick(vm, 2)
     // stale data sticks around even when error exists
     expect(vm.$el.textContent).toBe('count: 2 Error: uh oh!')
+    done()
+  })
+
+  it('should fetch dependently', async done => {
+    let count = 0
+    const loadUser = () => {
+      count++
+      return new Promise(res => setTimeout(() => {
+        res({ id: 123 })
+      }, 1000))
+    }
+
+    const loadProfile = endpoint =>  {
+      return new Promise((res) => setTimeout(() => {
+        count++
+        endpoint && res({
+          userId: 123,
+          age: 20
+        })
+      }, 200))
+    }
+
+    const vm = new Vue({
+      template: `<div>d1:{{ data1 && data1.id }} e1:{{ error1 }} d2:{{ data2 && data2.userId }} e2:{{ error2 }}</div>`,
+      setup  () {
+        const { data: data1, error: error1 } = useSWRV('/api/user', loadUser)
+        // TODO: checking truthiness of data1.value to avoid watcher warning
+        // https://github.com/vuejs/composition-api/issues/242
+        const { data: data2, error: error2 } = useSWRV(() => data1.value && `/api/profile?id=` + data1.value.id, loadProfile)
+        return { data1, error1, data2, error2 }
+      }
+    }).$mount()
+
+    expect(vm.$el.textContent).toBe('d1: e1: d2: e2:')
+
+    timeout(100)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('d1: e1: d2: e2:')
+    expect(count).toEqual(1)
+
+    timeout(900)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('d1:123 e1: d2: e2:')
+
+    timeout(200)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('d1:123 e1: d2:123 e2:')
+    expect(count).toEqual(3)
     done()
   })
 })
