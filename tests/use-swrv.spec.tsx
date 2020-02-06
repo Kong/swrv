@@ -68,6 +68,24 @@ describe('useSWRV', () => {
     done()
   })
 
+  it('should allow async fetcher functions', async done => {
+    const vm = new Vue({
+      template: `<div>hello, {{ data }}</div>`,
+      setup  () {
+        return useSWRV('cache-key-3', () =>
+          new Promise(res => setTimeout(() => res('SWR'), 200))
+        )}
+    }).$mount()
+
+    expect(vm.$el.textContent).toBe('hello, ')
+
+    timeout(200)
+    await tick(vm, 2)
+
+    expect(vm.$el.textContent).toBe('hello, SWR')
+    done()
+  })
+
   it('should dedupe requests by default', async done => {
     let count = 0
     const fetch = () => {
@@ -234,16 +252,16 @@ describe('useSWRV - refresh', () => {
     }).$mount()
 
     expect(vm.$el.textContent).toEqual('count: ')
-    await tick(vm, 2)
+    await tick(vm, 1)
     expect(vm.$el.textContent).toEqual('count: 0')
     timeout(210)
-    await tick(vm, 2)
+    await tick(vm, 1)
     expect(vm.$el.textContent).toEqual('count: 1')
     timeout(50)
-    await tick(vm, 2)
+    await tick(vm, 1)
     expect(vm.$el.textContent).toEqual('count: 1')
     timeout(150)
-    await tick(vm, 2)
+    await tick(vm, 1)
     expect(vm.$el.textContent).toEqual('count: 2')
     done()
   })
@@ -278,7 +296,7 @@ describe('useSWRV - refresh', () => {
      * instead and not increment the count
      */
     timeout(100)
-    await tick(vm, 2)
+    await tick(vm, 1)
     expect(vm.$el.textContent).toBe('count: 0')
 
     timeout(100) // update
@@ -291,37 +309,6 @@ describe('useSWRV - refresh', () => {
     timeout(150) // update
     await tick(vm, 2)
     expect(vm.$el.textContent).toBe('count: 2')
-    done()
-  })
-
-  it('should serve stale-if-error', async done => {
-    let count = 0
-    const loadData = () => new Promise((resolve, reject) => setTimeout(() => {
-      count++
-      count > 2 ? reject(new Error('uh oh!')) : resolve(count)
-    }, 100))
-
-    const vm = new Vue({
-      template: `<div>count: {{ data }} {{ error }}</div>`,
-      setup  () {
-        return useSWRV('dynamic-3', loadData, {
-          refreshInterval: 200
-        })
-      }
-    }).$mount()
-
-    timeout(300) // 200 refresh + 100 timeout
-    await tick(vm, 2)
-    expect(vm.$el.textContent).toBe('count: 1 ')
-
-    timeout(300)
-    await tick(vm, 2)
-    expect(vm.$el.textContent).toBe('count: 2 ')
-
-    timeout(300)
-    await tick(vm, 2)
-    // stale data sticks around even when error exists
-    expect(vm.$el.textContent).toBe('count: 2 Error: uh oh!')
     done()
   })
 })
@@ -364,8 +351,87 @@ describe('useSWRV - error', () => {
 
     expect(vm.$el.textContent).toBe('hello, ')
     timeout(200)
-    await tick(vm, 2)
+    await tick(vm, 1)
     expect(erroredSWR).toEqual('error-2')
+    done()
+  })
+
+  it('should serve stale-if-error', async done => {
+    let count = 0
+    const loadData = () => new Promise((resolve, reject) => setTimeout(() => {
+      count++
+      count > 2 ? reject(new Error('uh oh!')) : resolve(count)
+    }, 100))
+
+    const vm = new Vue({
+      template: `<div>count: {{ data }} {{ error }}</div>`,
+      setup  () {
+        return useSWRV('error-3', loadData, {
+          refreshInterval: 200
+        })
+      }
+    }).$mount()
+
+    timeout(300) // 200 refresh + 100 timeout
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('count: 1 ')
+
+    timeout(300)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('count: 2 ')
+
+    timeout(300)
+    await tick(vm, 2)
+    // stale data sticks around even when error exists
+    expect(vm.$el.textContent).toBe('count: 2 Error: uh oh!')
+    done()
+  })
+
+  it('should fetch dependently', async done => {
+    let count = 0
+    const loadUser = () => {
+      count++
+      return new Promise(res => setTimeout(() => {
+        res({ id: 123 })
+      }, 1000))
+    }
+
+    const loadProfile = endpoint =>  {
+      return new Promise((res) => setTimeout(() => {
+        count++
+        endpoint && res({
+          userId: 123,
+          age: 20
+        })
+      }, 200))
+    }
+
+    const vm = new Vue({
+      template: `<div>d1:{{ data1 && data1.id }} e1:{{ error1 }} d2:{{ data2 && data2.userId }} e2:{{ error2 }}</div>`,
+      setup  () {
+        const { data: data1, error: error1 } = useSWRV('/api/user', loadUser)
+        // TODO: checking truthiness of data1.value to avoid watcher warning
+        // https://github.com/vuejs/composition-api/issues/242
+        const { data: data2, error: error2 } = useSWRV(() => data1.value && `/api/profile?id=` + data1.value.id, loadProfile)
+        return { data1, error1, data2, error2 }
+      }
+    }).$mount()
+
+    expect(vm.$el.textContent).toBe('d1: e1: d2: e2:')
+
+    timeout(100)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('d1: e1: d2: e2:')
+    expect(count).toEqual(1)
+
+    timeout(900)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('d1:123 e1: d2: e2:')
+
+    timeout(200)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('d1:123 e1: d2:123 e2:')
+    expect(count).toEqual(3)
     done()
   })
 })
@@ -394,19 +460,19 @@ describe('useSWRV - window events', () => {
     }).$mount()
 
     expect(vm.$el.textContent).toBe('count: ')
-    await tick(vm, 2)
+    await tick(vm, 1)
     expect(vm.$el.textContent).toBe('count: 0')
 
     toggleVisibility(undefined)
     timeout(200)
-    await tick(vm, 2)
+    await tick(vm, 1)
     // should still update even though visibilityState is undefined
     expect(vm.$el.textContent).toBe('count: 1')
 
     toggleVisibility('hidden')
 
     timeout(200)
-    await tick(vm, 2)
+    await tick(vm, 1)
 
     // should not rerender because document is hidden e.g. switched tabs
     expect(vm.$el.textContent).toBe('count: 1')
@@ -433,13 +499,13 @@ describe('useSWRV - window events', () => {
     }).$mount()
 
     expect(vm.$el.textContent).toBe('count: ')
-    await tick(vm, 2)
+    await tick(vm, 1)
     expect(vm.$el.textContent).toBe('count: 0')
 
     toggleOnline(undefined)
 
     timeout(200)
-    await tick(vm, 2)
+    await tick(vm, 1)
     // should rerender since we're AMERICA ONLINE
     expect(vm.$el.textContent).toBe('count: 1')
 
@@ -447,7 +513,7 @@ describe('useSWRV - window events', () => {
     toggleOnline(false)
 
     timeout(200)
-    await tick(vm, 2)
+    await tick(vm, 1)
     // should not rerender cuz offline
     expect(vm.$el.textContent).toBe('count: 1')
 
