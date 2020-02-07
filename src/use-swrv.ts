@@ -188,4 +188,4 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   }
 }
 
-export { mutate }
+export { mutate, SWRCache }
