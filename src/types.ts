@@ -5,8 +5,9 @@ export interface IConfig {
   refreshInterval?: number
   cache?: SWRCache
   dedupingInterval?: number
-  ttl?: number,
-  revalidateOnFocus?: boolean,
+  ttl?: number
+  revalidateOnFocus?: boolean
+  revalidateDebounce?: number
   onError?: (
     err: Error,
     key: string
