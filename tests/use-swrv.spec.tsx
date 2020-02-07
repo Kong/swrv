@@ -112,6 +112,54 @@ describe('useSWRV', () => {
     expect(count).toEqual(1)
     done()
   })
+
+  it('should fetch dependently', async done => {
+    let count = 0
+    const loadUser = () => {
+      return new Promise(res => setTimeout(() => {
+        count++
+        res({ id: 123 })
+      }, 1000))
+    }
+
+    const loadProfile = endpoint =>  {
+      return new Promise((res) => setTimeout(() => {
+        count++
+        endpoint && res({
+          userId: 123,
+          age: 20
+        })
+      }, 200))
+    }
+
+    const vm = new Vue({
+      template: `<div>d1:{{ data1 && data1.id }} e1:{{ error1 }} d2:{{ data2 && data2.userId }} e2:{{ error2 }}</div>`,
+      setup  () {
+        const { data: data1, error: error1 } = useSWRV('/api/user', loadUser)
+        // TODO: checking truthiness of data1.value to avoid watcher warning
+        // https://github.com/vuejs/composition-api/issues/242
+        const { data: data2, error: error2 } = useSWRV(() => data1.value && `/api/profile?id=` + data1.value.id, loadProfile)
+        return { data1, error1, data2, error2 }
+      }
+    }).$mount()
+
+    expect(vm.$el.textContent).toBe('d1: e1: d2: e2:')
+    timeout(100)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('d1: e1: d2: e2:')
+    expect(count).toEqual(0) // Promises still in flight
+
+    timeout(900)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('d1:123 e1: d2: e2:')
+    expect(count).toEqual(2)
+
+    timeout(200)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('d1:123 e1: d2:123 e2:')
+    expect(count).toEqual(3)
+    done()
+  })
 })
 
 describe('useSWRV - loading', () => {
@@ -252,16 +300,16 @@ describe('useSWRV - refresh', () => {
     }).$mount()
 
     expect(vm.$el.textContent).toEqual('count: ')
-    await tick(vm, 1)
+    await tick(vm, 2)
     expect(vm.$el.textContent).toEqual('count: 0')
     timeout(210)
-    await tick(vm, 1)
+    await tick(vm, 2)
     expect(vm.$el.textContent).toEqual('count: 1')
     timeout(50)
-    await tick(vm, 1)
+    await tick(vm, 2)
     expect(vm.$el.textContent).toEqual('count: 1')
     timeout(150)
-    await tick(vm, 1)
+    await tick(vm, 2)
     expect(vm.$el.textContent).toEqual('count: 2')
     done()
   })
@@ -373,65 +421,17 @@ describe('useSWRV - error', () => {
     }).$mount()
 
     timeout(300) // 200 refresh + 100 timeout
-    await tick(vm, 2)
+    await tick(vm, 3)
     expect(vm.$el.textContent).toBe('count: 1 ')
 
     timeout(300)
-    await tick(vm, 2)
+    await tick(vm, 3)
     expect(vm.$el.textContent).toBe('count: 2 ')
 
     timeout(300)
     await tick(vm, 2)
     // stale data sticks around even when error exists
     expect(vm.$el.textContent).toBe('count: 2 Error: uh oh!')
-    done()
-  })
-
-  it('should fetch dependently', async done => {
-    let count = 0
-    const loadUser = () => {
-      count++
-      return new Promise(res => setTimeout(() => {
-        res({ id: 123 })
-      }, 1000))
-    }
-
-    const loadProfile = endpoint =>  {
-      return new Promise((res) => setTimeout(() => {
-        count++
-        endpoint && res({
-          userId: 123,
-          age: 20
-        })
-      }, 200))
-    }
-
-    const vm = new Vue({
-      template: `<div>d1:{{ data1 && data1.id }} e1:{{ error1 }} d2:{{ data2 && data2.userId }} e2:{{ error2 }}</div>`,
-      setup  () {
-        const { data: data1, error: error1 } = useSWRV('/api/user', loadUser)
-        // TODO: checking truthiness of data1.value to avoid watcher warning
-        // https://github.com/vuejs/composition-api/issues/242
-        const { data: data2, error: error2 } = useSWRV(() => data1.value && `/api/profile?id=` + data1.value.id, loadProfile)
-        return { data1, error1, data2, error2 }
-      }
-    }).$mount()
-
-    expect(vm.$el.textContent).toBe('d1: e1: d2: e2:')
-
-    timeout(100)
-    await tick(vm, 2)
-    expect(vm.$el.textContent).toBe('d1: e1: d2: e2:')
-    expect(count).toEqual(1)
-
-    timeout(900)
-    await tick(vm, 2)
-    expect(vm.$el.textContent).toBe('d1:123 e1: d2: e2:')
-
-    timeout(200)
-    await tick(vm, 2)
-    expect(vm.$el.textContent).toBe('d1:123 e1: d2:123 e2:')
-    expect(count).toEqual(3)
     done()
   })
 })

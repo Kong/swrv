@@ -7,12 +7,13 @@ import { IConfig, IKey, IResponse, fetcherFn } from './types'
 const DATA_CACHE = new SWRCache()
 const PROMISES_CACHE = new SWRCache()
 
-const defaultConfig : IConfig = {
+const defaultConfig: IConfig = {
   cache: DATA_CACHE,
   refreshInterval: 0,
   ttl: 0,
   dedupingInterval: 2000,
   revalidateOnFocus: true,
+  revalidateDebounce: 0,
   onError: (_, __) => {}
 }
 
@@ -48,12 +49,13 @@ const mutate = async (key: string, res: Promise<any>, cache = DATA_CACHE) => {
  * Stale-While-Revalidate hook to handle fetching, caching, validation, and more...
  */
 export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcherFn<any>, config?: IConfig): IResponse {
+  let unmounted = false
   config = {
     ...defaultConfig,
     ...config
   }
 
-  let keyRef = typeof key === 'function' ? (key as any) : ref(key)
+  const keyRef = typeof key === 'function' ? (key as any) : ref(key)
 
   const stateRef = reactive({
     data: undefined,
@@ -64,7 +66,8 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   /**
    * Revalidate the cache, mutate data
    */
-  const revalidate = async (keyVal = keyRef.value) => {
+  const revalidate = async () => {
+    const keyVal = keyRef.value
     if (!isDocumentVisible()) { return }
     const cacheItem = config.cache.get(keyVal, config.ttl)
     let newData = cacheItem && cacheItem.data
@@ -78,57 +81,68 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     /**
      * Currently getter's of SWRCache will evict
      */
-    const promiseFromCache = PROMISES_CACHE.get(keyVal, config.dedupingInterval)
-    if (!promiseFromCache) {
-      const newPromise = fn(keyVal)
-      PROMISES_CACHE.set(keyVal, newPromise)
-      newData = await mutate(keyVal, newPromise, config.cache)
-      if (typeof newData.data !== 'undefined') {
-        stateRef.data = newData.data
+    const trigger = async () => {
+      const promiseFromCache = PROMISES_CACHE.get(keyVal, config.dedupingInterval)
+      if (!promiseFromCache) {
+        const newPromise = fn(keyVal)
+        PROMISES_CACHE.set(keyVal, newPromise)
+        newData = await mutate(keyVal, newPromise, config.cache)
+        if (typeof newData.data !== 'undefined') {
+          stateRef.data = newData.data
+        }
+        if (newData.error) {
+          stateRef.error = newData.error
+          config.onError(newData.error, keyVal)
+        }
+        stateRef.isValidating = newData.isValidating
+      } else {
+        newData = await mutate(keyVal, promiseFromCache.data, config.cache)
+        if (typeof newData.data !== 'undefined') {
+          stateRef.data = newData.data
+        }
+        if (newData.error) {
+          stateRef.error = newData.error
+          config.onError(newData.error, keyVal)
+        }
+        stateRef.isValidating = newData.isValidating
       }
-      if (newData.error) {
-        stateRef.error = newData.error
-        config.onError(newData.error, keyVal)
-      }
-      stateRef.isValidating = newData.isValidating
+    }
+
+    if (newData && config.revalidateDebounce) {
+      await setTimeout(async () => {
+        if (!unmounted) {
+          await trigger()
+        }
+      }, config.revalidateDebounce)
     } else {
-      newData = await mutate(keyVal, promiseFromCache.data, config.cache)
-      if (typeof newData.data !== 'undefined') {
-        stateRef.data = newData.data
-      }
-      if (newData.error) {
-        stateRef.error = newData.error
-        config.onError(newData.error, keyVal)
-      }
-      stateRef.isValidating = newData.isValidating
+      await trigger()
     }
 
     PROMISES_CACHE.delete(keyVal)
   }
 
-  try {
-    watch(keyRef, (val) => {
-      revalidate(val)
-    })
-  } catch {
-    // do nothing
-  }
-
+  let timer = null
   /**
    * Setup polling
    */
-  let timer = null
   onMounted(() => {
     const tick = async () => {
+      // component might un-mount during revalidate, so do not set a new timeout
+      // if this is the case, but continue to revalidate since promises can't
+      // be cancelled and new hook instances might rely on promise/data cache or
+      // from pre-fetch
       if (!stateRef.error && isDocumentVisible() && isOnline()) {
         // only revalidate when the page is visible
         // if API request errored, we stop polling in this round
         // and let the error retry function handle it
         await revalidate()
       } else {
-        if (timer) { clearTimeout(timer) }
+        if (timer) {
+          clearTimeout(timer)
+        }
       }
-      if (config.refreshInterval) {
+
+      if (config.refreshInterval && !unmounted) {
         timer = setTimeout(tick, config.refreshInterval)
       }
     }
@@ -142,11 +156,26 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     }
   })
 
+  try {
+    watch(keyRef, (val) => {
+      keyRef.value = val
+      revalidate()
+      if (timer) {
+        clearTimeout(timer)
+      }
+    })
+  } catch {
+    // do nothing
+  }
+
   /**
    * Teardown
    */
   onUnmounted(() => {
-    if (timer) { clearTimeout(timer) }
+    unmounted = true
+    if (timer) {
+      clearTimeout(timer)
+    }
     if (config.revalidateOnFocus) {
       document.removeEventListener('visibilitychange', revalidate, false)
       window.removeEventListener('focus', revalidate, false)
@@ -159,4 +188,4 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   }
 }
 
-export { mutate }
+export { mutate, SWRCache }
