@@ -23,6 +23,7 @@ Features:
 - [x] TypeScript ready
 - [x] Minimal API
 - [x] stale-if-error
+- [x] Customizable cache implementation
 
 With `swrv`, components will get a stream of data updates constantly and
 automatically. Thus, the UI will be always fast and reactive.
@@ -104,6 +105,12 @@ const { data, error, isValidating, revalidate } = useSWRV(key, fetcher, options)
   span
 - `ttl = 0` - time to live of response data in cache
 - `revalidateOnFocus = true` - auto revalidate when window gets focused
+- `revalidateDebounce = 0` - debounce in milliseconds for revalidation. Useful
+  for when a component is serving from the cache immediately, but then un-mounts
+  soon thereafter (e.g. a user clicking "next" in pagination quickly) to avoid
+  unnecessary fetches.
+- `cache` - caching instance to store response data in. See
+  [src/lib/cache](src/lib/cache.ts)
 - `onError` - callback function when a request returns an error
 
 ## Prefetching
@@ -116,10 +123,7 @@ the SWRV cache at a predetermined time.
 import { mutate } from 'swrv'
 
 function prefetch() {
-  mutate(
-    '/api/data',
-    fetch('/api/data').then(res => res.json())
-  )
+  mutate( '/api/data', fetch('/api/data').then(res => res.json()) )
   // the second parameter is a Promise
   // SWRV will use the result when it resolves
 }
@@ -152,7 +156,7 @@ export default {
   setup() {
     const endpoint = ref('/api/user/Geralt')
     const { data, error } = useSWRV(endpoint.value, fetch)
-    
+
     return {
       endpoint,
       data,
@@ -162,3 +166,52 @@ export default {
 }
 </script>
 ```
+
+## Cache
+
+By default, a custom cache implementation is used to store both fetcher response
+data cache, and in-flight promise cache. Response data cache can be customized
+via the `config.cache` property.
+
+```ts
+import { SWRCache } from 'swrv'
+
+class NoCache extends SWRCache {
+  get(k: string, ttl: number): any {}
+  set(k: string, v: any) {}
+  delete(k: string) {}
+}
+
+const { data, error } = useSWRV(key, fn, { cache: new NoCache() })
+```
+
+Leaving it up to the reader to implement their own cache if desired. For
+instance, a common usage case to have a better _offline_ experience is to read
+from `localStorage`.
+
+## FAQ
+
+### How is swrv different from the [swr](https://github.com/zeit/swr) react library?
+
+#### Vue and Reactivity
+
+The `swrv` library is meant to be used with the @vue/composition-api (and
+eventually Vue 3) library so it utilizes Vue's reactivity system to track
+dependencies and returns vue `Ref`'s as it's return values. This allows you to
+watch `data` or build your own computed props. For example, the key function is
+implemented as Vue `watch`er, so any changes to the dependencies in this
+function will trigger a revalidation in `swrv`.
+
+#### Features
+
+Features were built as needed for `swrv`, and while the initial development of
+`swrv` was mostly a port of swr, the feature sets are not 1-1, and are subject
+to diverge as they already have.
+
+## Authors
+
+- Darren Jennings [@darrenjennings](https://twitter.com/darrenjennings)
+
+Thanks to [Zeit](https://zeit.co/) for creating
+[swr](https://github.com/zeit/swr), which this library heavily borrows from, and
+would not exist without it as inspiration!
