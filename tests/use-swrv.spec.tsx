@@ -74,7 +74,8 @@ describe('useSWRV', () => {
       setup  () {
         return useSWRV('cache-key-3', () =>
           new Promise(res => setTimeout(() => res('SWR'), 200))
-        )}
+        )
+      }
     }).$mount()
 
     expect(vm.$el.textContent).toBe('hello, ')
@@ -122,7 +123,7 @@ describe('useSWRV', () => {
       }, 1000))
     }
 
-    const loadProfile = endpoint =>  {
+    const loadProfile = endpoint => {
       return new Promise((res) => setTimeout(() => {
         count++
         endpoint && res({
