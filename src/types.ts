@@ -1,9 +1,9 @@
 import { Ref } from '@vue/composition-api'
-import SWRCache from './lib/cache'
+import SWRVCache from './lib/cache'
 export type fetcherFn<Data> = (...args: any) => Data | Promise<Data>
 export interface IConfig {
   refreshInterval?: number
-  cache?: SWRCache
+  cache?: SWRVCache
   dedupingInterval?: number
   ttl?: number
   revalidateOnFocus?: boolean

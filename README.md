@@ -110,7 +110,7 @@ const { data, error, isValidating, revalidate } = useSWRV(key, fetcher, options)
   soon thereafter (e.g. a user clicking "next" in pagination quickly) to avoid
   unnecessary fetches.
 - `cache` - caching instance to store response data in. See
-  [src/lib/cache](src/lib/cache.ts)
+  [src/lib/cache](src/lib/cache.ts), and [Cache](#cache) below.
 - `onError` - callback function when a request returns an error
 
 ## Prefetching
@@ -174,9 +174,9 @@ data cache, and in-flight promise cache. Response data cache can be customized
 via the `config.cache` property.
 
 ```ts
-import { SWRCache } from 'swrv'
+import { SWRVCache } from 'swrv'
 
-class NoCache extends SWRCache {
+class NoCache extends SWRVCache {
   get(k: string, ttl: number): any {}
   set(k: string, v: any) {}
   delete(k: string) {}

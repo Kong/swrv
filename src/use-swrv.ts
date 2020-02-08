@@ -1,11 +1,11 @@
 import { reactive, watch, ref, toRefs, onMounted, onUnmounted } from '@vue/composition-api'
 import isDocumentVisible from './lib/is-document-visible'
 import isOnline from './lib/is-online'
-import SWRCache from './lib/cache'
+import SWRVCache from './lib/cache'
 import { IConfig, IKey, IResponse, fetcherFn } from './types'
 
-const DATA_CACHE = new SWRCache()
-const PROMISES_CACHE = new SWRCache()
+const DATA_CACHE = new SWRVCache()
+const PROMISES_CACHE = new SWRVCache()
 
 const defaultConfig: IConfig = {
   cache: DATA_CACHE,
@@ -79,7 +79,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     }
 
     /**
-     * Currently getter's of SWRCache will evict
+     * Currently getter's of SWRVCache will evict
      */
     const trigger = async () => {
       const promiseFromCache = PROMISES_CACHE.get(keyVal, config.dedupingInterval)
@@ -188,4 +188,4 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   }
 }
 
-export { mutate, SWRCache }
+export { mutate }

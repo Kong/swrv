@@ -3,7 +3,7 @@ interface ICacheItem {
   createdAt: number
 }
 
-export default class SWRCache {
+export default class SWRVCache {
   private ttl: number
   private items: Map<string, ICacheItem>
 
