@@ -182,12 +182,42 @@ class NoCache extends SWRVCache {
   delete(k: string) {}
 }
 
-const { data, error } = useSWRV(key, fn, { cache: new NoCache() })
+const { data, error } = useSWRV(key, fetch, { cache: new NoCache() })
 ```
 
-Leaving it up to the reader to implement their own cache if desired. For
-instance, a common usage case to have a better _offline_ experience is to read
-from `localStorage`.
+### localStorage
+
+A common usage case to have a better _offline_ experience is to read from
+`localStorage`.
+
+```js
+class LocalStorageCache extends SWRVCache {
+  get(k, ttl) {
+    const item = localStorage.getItem('swrv')
+    if (item) {
+      return JSON.parse(atob(item))[k]
+    }
+  }
+
+  set(k, v) {
+    let item = this.get(k)
+    if (item && item[k]) {
+      item[k].data = v
+    } else {
+      item = { [k]: { data: v, ttl: Date.now() } }
+    }
+    localStorage.setItem('swrv', btoa(JSON.stringify(item)))
+  }
+}
+
+const myCache = new LocalStorageCache()
+
+export default {
+  setup () {
+    return useSWRV(key, fetch, { cache: myCache })
+  }
+}
+```
 
 ## FAQ
 
