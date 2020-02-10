@@ -192,21 +192,29 @@ A common usage case to have a better _offline_ experience is to read from
 
 ```js
 class LocalStorageCache extends SWRVCache {
-  get(k, ttl) {
-    const item = localStorage.getItem('swrv')
+  STORAGE_KEY = 'swrv'
+
+  private encode (storage) { return btoa(JSON.stringify(storage)) }
+  private decode (storage) { return JSON.parse(atob(storage)) }
+
+  get (k, ttl) {
+    const item = localStorage.getItem(this.STORAGE_KEY)
     if (item) {
       return JSON.parse(atob(item))[k]
     }
   }
 
-  set(k, v) {
-    let item = this.get(k)
-    if (item && item[k]) {
-      item[k].data = v
+  set (k, v) {
+    let payload = {}
+    const storage = localStorage.getItem(this.STORAGE_KEY)
+    if (storage) {
+      payload = this.decode(storage)
+      payload[k] = { data: v, ttl: Date.now() }
     } else {
-      item = { [k]: { data: v, ttl: Date.now() } }
+      payload = { [k]: { data: v, ttl: Date.now() } }
     }
-    localStorage.setItem('swrv', btoa(JSON.stringify(item)))
+
+    localStorage.setItem(this.STORAGE_KEY, this.encode(payload))
   }
 }
 
