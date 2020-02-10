@@ -70,8 +70,8 @@ asynchronously.
 is not yet finished, data will be `undefined`. And when we get a response, it
 sets `data` and `error` based on the result of fetcher and rerenders the
 component. This is because `data` and `error` are Vue
-[Refs](https://vue-composition-api-rfc.netlify.com/#detailed-design), and have
-dependencies on the fetcher response.
+[Refs](https://vue-composition-api-rfc.netlify.com/#detailed-design), and their
+values will be set by the fetcher response.
 
 Note that fetcher can be any asynchronous function, so you can use your favorite
 data-fetching library to handle that part.
