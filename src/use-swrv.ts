@@ -61,7 +61,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   let isHydrated = false
 
   const vm = getCurrentInstance()
-  const IS_SERVER = typeof window === 'undefined'
+  const IS_SERVER = vm.$isServer
   const isSsrHydration = Boolean(!IS_SERVER && (vm as any).$vnode?.elm?.dataset?.swrvKey)
 
   config = {
