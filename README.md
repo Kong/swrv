@@ -1,4 +1,7 @@
-# swrv
+<p align="center">  
+  <img src="logo.png" width="100px" />
+</p>
+<h1 align="center">swrv</h1>
 
 ![build](https://github.com/Kong/swrv/workflows/build/badge.svg)
 [![](https://img.shields.io/npm/v/swrv.svg)](https://www.npmjs.com/package/swrv)
