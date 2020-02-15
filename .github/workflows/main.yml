@@ -27,6 +27,12 @@ jobs:
     - name: tsc
       run: |
         yarn types:check
+    
+    # build esm package for ssr tests
+    - name: build
+      run: |    
+        yarn build:esm
+    
     - name: test
       run: |
         yarn test
