@@ -60,9 +60,14 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   let unmounted = false
   let isHydrated = false
 
-  const vm = getCurrentInstance()
+  const vm = getCurrentInstance() as any
   const IS_SERVER = vm.$isServer
-  const isSsrHydration = Boolean(!IS_SERVER && (vm as any).$vnode?.elm?.dataset?.swrvKey)
+  const isSsrHydration = Boolean(
+    !IS_SERVER &&
+    vm.$vnode &&
+    vm.$vnode.elm &&
+    vm.$vnode.elm.dataset &&
+    vm.$vnode.elm.dataset.swrvKey)
 
   config = {
     ...defaultConfig,
@@ -215,9 +220,19 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   })
   if (IS_SERVER) {
     // make sure srwv exists in ssrContext
-    const swrvRes = (vm.$ssrContext && vm.$ssrContext.swrv) || []
+    let swrvRes = []
+    if (vm.$ssrContext) {
+      swrvRes = vm.$ssrContext.swrv = vm.$ssrContext.swrv || swrvRes
+    }
+
     const ssrKey = swrvRes.length
-    const attrs = (vm.$vnode && vm.$vnode.data && vm.$vnode.data.attrs) || {}
+    if (!vm.$vnode || (vm.$node && !vm.$node.data)) {
+      vm.$vnode = {
+        data: { attrs: { 'data-swrv-key': ssrKey } }
+      }
+    }
+
+    const attrs = (vm.$vnode.data.attrs = vm.$vnode.data.attrs || {})
     attrs['data-swrv-key'] = ssrKey
 
     // Nuxt compatibility
