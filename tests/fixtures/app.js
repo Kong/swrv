@@ -2,13 +2,14 @@ import Vue from 'vue/dist/vue.runtime.common.js'
 import VueCompositionApi from '@vue/composition-api'
 import useSWRV from '../../esm'
 
+Vue.config.devtools = false
 Vue.use(VueCompositionApi)
 
 function fetcher (result) {
   return new Promise(resolve => {
-    setTimeout(() => {
+    return setTimeout(() => {
       resolve(result)
-    }, 200)
+    }, 100)
   })
 }
 

@@ -1,10 +1,15 @@
-import Vue from 'vue/dist/vue.common.js'
+import Vue from 'vue/dist/vue.runtime.common.js'
 import path from 'path'
 import VueCompositionApi from '@vue/composition-api'
 import { createBundleRenderer } from 'vue-server-renderer'
 import { compileWithWebpack } from './compile-with-webpack'
 
 Vue.use(VueCompositionApi)
+Vue.config.devtools = false
+Vue.config.productionTip = false
+
+// increase default timeout to account for webpack builds
+jest.setTimeout(10000)
 
 export function createRenderer (file, options, cb) {
   compileWithWebpack(file, {
@@ -25,7 +30,7 @@ export function createRenderer (file, options, cb) {
 
 describe('SSR', () => {
   it('should fetch server-side', async done => {
-    createRenderer('app.js', { runInNewContext: false }, renderer => {
+    createRenderer('app.js', {}, renderer => {
       renderer.renderToString({}, (err, res) => {
         expect(err).toBeNull()
         expect(res).toBe('<div data-server-rendered="true">data:foo</div>')

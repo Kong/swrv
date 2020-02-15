@@ -215,13 +215,13 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   })
   if (IS_SERVER) {
     // make sure srwv exists in ssrContext
-    const swrvRes = (vm.$ssrContext.swrv = vm.$ssrContext.swrv || [])
-    const ssrKey = vm.$ssrContext.swrv.length
-    const attrs = (vm.$vnode.data.attrs = vm.$vnode.data.attrs || {})
+    const swrvRes = (vm.$ssrContext && vm.$ssrContext.swrv) || []
+    const ssrKey = swrvRes.length
+    const attrs = (vm.$vnode && vm.$vnode.data && vm.$vnode.data.attrs) || {}
     attrs['data-swrv-key'] = ssrKey
 
     // Nuxt compatibility
-    if (vm.$ssrContext.nuxt) {
+    if (vm.$ssrContext && vm.$ssrContext.nuxt) {
       vm.$ssrContext.nuxt.swrv = swrvRes
     }
 
