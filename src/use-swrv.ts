@@ -1,4 +1,12 @@
-import { reactive, watch, ref, toRefs, onMounted, onUnmounted } from '@vue/composition-api'
+import { reactive,
+  watch,
+  ref,
+  toRefs,
+  onMounted,
+  onUnmounted,
+  onServerPrefetch,
+  getCurrentInstance
+} from '@vue/composition-api'
 import isDocumentVisible from './lib/is-document-visible'
 import isOnline from './lib/is-online'
 import SWRVCache from './lib/cache'
@@ -50,6 +58,12 @@ const mutate = async (key: string, res: Promise<any>, cache = DATA_CACHE) => {
  */
 export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcherFn<any>, config?: IConfig): IResponse {
   let unmounted = false
+  let isHydrated = false
+
+  const vm = getCurrentInstance()
+  const IS_SERVER = vm.$isServer
+  const isSsrHydration = Boolean(!IS_SERVER && (vm as any).$vnode?.elm?.dataset?.swrvKey)
+
   config = {
     ...defaultConfig,
     ...config
@@ -57,11 +71,26 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
 
   const keyRef = typeof key === 'function' ? (key as any) : ref(key)
 
-  const stateRef = reactive({
-    data: undefined,
-    error: null,
-    isValidating: true
-  }) as { data: Data, error: Error, isValidating: boolean, revalidate: Function }
+  let stateRef = null as { data: Data, error: Error, isValidating: boolean, revalidate: Function }
+  if (isSsrHydration) {
+    // component was ssrHydrated, so make the ssr reactive as the initial data
+    const swrvState = (window as any).__SWRV_STATE__ ||
+      ((window as any).__NUXT__ && (window as any).__NUXT__.swrv) || []
+
+    const swrvKey = +(vm as any).$vnode.elm.dataset.swrvKey
+    if (swrvState[swrvKey]) {
+      stateRef = reactive(swrvState[swrvKey]) as { data: Data, error: Error, isValidating: boolean, revalidate: Function }
+      isHydrated = true
+    }
+  }
+
+  if (!stateRef) {
+    stateRef = reactive({
+      data: undefined,
+      error: null,
+      isValidating: true
+    }) as { data: Data, error: Error, isValidating: boolean, revalidate: Function }
+  }
 
   /**
    * Revalidate the cache, mutate data
@@ -159,7 +188,10 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   try {
     watch(keyRef, (val) => {
       keyRef.value = val
-      revalidate()
+      if (!IS_SERVER && !isHydrated) {
+        revalidate()
+      }
+      isHydrated = false
       if (timer) {
         clearTimeout(timer)
       }
@@ -181,6 +213,27 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
       window.removeEventListener('focus', revalidate, false)
     }
   })
+  if (IS_SERVER) {
+    // make sure srwv exists in ssrContext
+    const swrvRes = (vm.$ssrContext && vm.$ssrContext.swrv) || []
+    const ssrKey = swrvRes.length
+    const attrs = (vm.$vnode && vm.$vnode.data && vm.$vnode.data.attrs) || {}
+    attrs['data-swrv-key'] = ssrKey
+
+    // Nuxt compatibility
+    if (vm.$ssrContext && vm.$ssrContext.nuxt) {
+      vm.$ssrContext.nuxt.swrv = swrvRes
+    }
+
+    onServerPrefetch(async () => {
+      await revalidate()
+      swrvRes.push({
+        data: stateRef.data,
+        error: stateRef.error,
+        isValidating: stateRef.isValidating
+      })
+    })
+  }
 
   return {
     ...toRefs(stateRef),
