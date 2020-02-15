@@ -27,6 +27,7 @@ Features:
 - [x] Minimal API
 - [x] stale-if-error
 - [x] Customizable cache implementation
+- [x] SSR support
 
 With `swrv`, components will get a stream of data updates constantly and
 automatically. Thus, the UI will be always fast and reactive.
