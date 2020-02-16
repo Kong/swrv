@@ -127,7 +127,10 @@ the SWRV cache at a predetermined time.
 import { mutate } from 'swrv'
 
 function prefetch() {
-  mutate( '/api/data', fetch('/api/data').then(res => res.json()) )
+  mutate(
+    '/api/data',
+    fetch('/api/data').then(res => res.json())
+  )
   // the second parameter is a Promise
   // SWRV will use the result when it resolves
 }
@@ -250,10 +253,27 @@ Features were built as needed for `swrv`, and while the initial development of
 `swrv` was mostly a port of swr, the feature sets are not 1-1, and are subject
 to diverge as they already have.
 
-## Authors
+## Contributors ✨
 
-- Darren Jennings [@darrenjennings](https://twitter.com/darrenjennings)
+Thanks goes to these wonderful people
+([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 
-Thanks to [Zeit](https://zeit.co/) for creating
-[swr](https://github.com/zeit/swr), which this library heavily borrows from, and
-would not exist without it as inspiration!
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tr>
+    <td align="center"><a href="https://guuu.io/"><img src="https://avatars2.githubusercontent.com/u/5770711?v=4" width="100px;" alt=""/><br /><sub><b>Darren Jennings</b></sub></a><br /><a href="https://github.com/Kong/swrv/commits?author=darrenjennings" title="Code">💻</a> <a href="https://github.com/Kong/swrv/commits?author=darrenjennings" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://atinux.com"><img src="https://avatars2.githubusercontent.com/u/904724?v=4" width="100px;" alt=""/><br /><sub><b>Sébastien Chopin</b></sub></a><br /><a href="https://github.com/Kong/swrv/commits?author=Atinux" title="Code">💻</a> <a href="#ideas-Atinux" title="Ideas, Planning, & Feedback">🤔</a></td>
+    <td align="center"><a href="https://github.com/chuca"><img src="https://avatars0.githubusercontent.com/u/864496?v=4" width="100px;" alt=""/><br /><sub><b>Fernando Machuca</b></sub></a><br /><a href="#design-chuca" title="Design">🎨</a></td>
+    <td align="center"><a href="https://zeit.co"><img src="https://avatars0.githubusercontent.com/u/14985020?v=4" width="100px;" alt=""/><br /><sub><b>ZEIT</b></sub></a><br /><a href="#ideas-zeit" title="Ideas, Planning, & Feedback">🤔</a></td>
+  </tr>
+</table>
+
+<!-- markdownlint-enable -->
+<!-- prettier-ignore-end -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the
+[all-contributors](https://github.com/all-contributors/all-contributors)
+specification. Contributions of any kind welcome!
