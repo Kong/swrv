@@ -253,14 +253,6 @@ Features were built as needed for `swrv`, and while the initial development of
 `swrv` was mostly a port of swr, the feature sets are not 1-1, and are subject
 to diverge as they already have.
 
-## Authors
-
-- Darren Jennings [@darrenjennings](https://twitter.com/darrenjennings)
-
-Thanks to [Zeit](https://zeit.co/) for creating
-[swr](https://github.com/zeit/swr), which this library heavily borrows from, and
-would not exist without it as inspiration!
-
 ## Contributors ✨
 
 Thanks goes to these wonderful people
