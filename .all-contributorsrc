@@ -1,0 +1,53 @@
+{
+  "projectName": "swrv",
+  "projectOwner": "Kong",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "commitConvention": "none",
+  "contributors": [
+    {
+      "login": "darrenjennings",
+      "name": "Darren Jennings",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/5770711?v=4",
+      "profile": "https://guuu.io/",
+      "contributions": [
+        "code",
+        "doc"
+      ]
+    },
+    {
+      "login": "Atinux",
+      "name": "Sébastien Chopin",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/904724?v=4",
+      "profile": "https://atinux.com",
+      "contributions": [
+        "code",
+        "ideas"
+      ]
+    },
+    {
+      "login": "chuca",
+      "name": "Fernando Machuca",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/864496?v=4",
+      "profile": "https://github.com/chuca",
+      "contributions": [
+        "design"
+      ]
+    },
+    {
+      "login": "zeit",
+      "name": "ZEIT",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/14985020?v=4",
+      "profile": "https://zeit.co",
+      "contributions": [
+        "ideas"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7
+}
