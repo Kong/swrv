@@ -1,5 +1,9 @@
 {
   "scripts": {
     "serve": "npx vue serve"
+  },
+  "dependencies": {
+    "@vue/composition-api": "^0.3.4",
+    "swrv": "latest"
   }
 }

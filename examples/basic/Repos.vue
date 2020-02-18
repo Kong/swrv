@@ -9,12 +9,11 @@
 </template>
 
 <script>
-import { computed } from '@vue/composition-api'
-import useSWRV from '../../esm'
+import useSWRV from 'swrv'
 
 const fetcher = key => fetch(key).then(resp => {
   return resp && resp.json()
-}).then((data, res) => {
+}).then(data => {
   if (data.message) {
     throw new Error(data.message)
   }
@@ -41,7 +40,3 @@ export default {
   }
 }
 </script>
-
-<style lang="scss" scoped>
-
-</style>

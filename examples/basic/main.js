@@ -1,6 +1,6 @@
 /* eslint-disable */
-import Vue from '../../node_modules/vue/dist/vue.common'
-import VueCompositionApi from '../../node_modules/@vue/composition-api'
+import Vue from 'vue/dist/vue.common'
+import VueCompositionApi from '@vue/composition-api'
 import App from './App'
 
 Vue.use(VueCompositionApi)
