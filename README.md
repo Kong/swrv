@@ -42,9 +42,11 @@ $ yarn add swrv
 
 ```vue
 <template>
-  <div v-if="error">failed to load</div>
-  <div v-if="!data">loading...</div>
-  <div v-else>hello {{ data.name }}</div>
+  <div>
+    <div v-if="error">failed to load</div>
+    <div v-if="!data">loading...</div>
+    <div v-else>hello {{ data.name }}</div>
+  </div>
 </template>
 
 <script>
