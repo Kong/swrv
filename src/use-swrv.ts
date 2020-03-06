@@ -13,6 +13,7 @@ import SWRVCache from './lib/cache'
 import { IConfig, IKey, IResponse, fetcherFn } from './types'
 
 const DATA_CACHE = new SWRVCache()
+const REF_CACHE = new SWRVCache()
 const PROMISES_CACHE = new SWRVCache()
 
 const defaultConfig: IConfig = {
@@ -23,6 +24,18 @@ const defaultConfig: IConfig = {
   revalidateOnFocus: true,
   revalidateDebounce: 0,
   onError: (_, __) => {}
+}
+
+/**
+ * Cache the refs for later revalidation
+ */
+function setRefCache (key, theRef) {
+  const refCacheItem = REF_CACHE.get(key, 0)
+  if (refCacheItem) {
+    refCacheItem.data.push(theRef)
+  } else {
+    REF_CACHE.set(key, [theRef])
+  }
 }
 
 /**
@@ -48,6 +61,20 @@ const mutate = async (key: string, res: Promise<any>, cache = DATA_CACHE) => {
   const newData = { data, error, isValidating }
   if (typeof data !== 'undefined') {
     cache.set(key, newData)
+  }
+
+  // Revalidate all swrv instances with new data
+  const stateRef = REF_CACHE.get(key, 0)
+  if (stateRef && stateRef.data.length) {
+    stateRef.data.forEach(r => {
+      if (typeof newData.data !== 'undefined') {
+        r.data = newData.data
+      }
+      if (newData.error) {
+        r.error = newData.error
+      }
+      r.isValidating = newData.isValidating
+    })
   }
 
   return newData
@@ -120,25 +147,9 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
       if (!promiseFromCache) {
         const newPromise = fn(keyVal)
         PROMISES_CACHE.set(keyVal, newPromise)
-        newData = await mutate(keyVal, newPromise, config.cache)
-        if (typeof newData.data !== 'undefined') {
-          stateRef.data = newData.data
-        }
-        if (newData.error) {
-          stateRef.error = newData.error
-          config.onError(newData.error, keyVal)
-        }
-        stateRef.isValidating = newData.isValidating
+        await mutate(keyVal, newPromise, config.cache)
       } else {
-        newData = await mutate(keyVal, promiseFromCache.data, config.cache)
-        if (typeof newData.data !== 'undefined') {
-          stateRef.data = newData.data
-        }
-        if (newData.error) {
-          stateRef.error = newData.error
-          config.onError(newData.error, keyVal)
-        }
-        stateRef.isValidating = newData.isValidating
+        await mutate(keyVal, promiseFromCache.data, config.cache)
       }
     }
 
@@ -190,21 +201,6 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     }
   })
 
-  try {
-    watch(keyRef, (val) => {
-      keyRef.value = val
-      if (!IS_SERVER && !isHydrated) {
-        revalidate()
-      }
-      isHydrated = false
-      if (timer) {
-        clearTimeout(timer)
-      }
-    })
-  } catch {
-    // do nothing
-  }
-
   /**
    * Teardown
    */
@@ -248,6 +244,26 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
         isValidating: stateRef.isValidating
       })
     })
+  }
+
+  /**
+   * Revalidate when key dependencies change
+   */
+  try {
+    watch(keyRef, (val) => {
+      keyRef.value = val
+      setRefCache(keyRef.value, stateRef)
+
+      if (!IS_SERVER && !isHydrated) {
+        revalidate()
+      }
+      isHydrated = false
+      if (timer) {
+        clearTimeout(timer)
+      }
+    })
+  } catch {
+    // do nothing
   }
 
   return {
