@@ -1,5 +1,5 @@
 import Vue from 'vue/dist/vue.common.js'
-import VueCompositionApi, { createComponent } from '@vue/composition-api'
+import VueCompositionApi, { watch, createComponent } from '@vue/composition-api'
 import useSWRV, { mutate } from '@/use-swrv'
 
 Vue.use(VueCompositionApi)
@@ -13,11 +13,25 @@ const tick: Function = async (vm, times) => {
 }
 
 describe('useSWRV', () => {
-  it('should return `undefined` on hydration', done => {
+  it('should return data on hydration when fetch is not a promise', done => {
+    const fetch = () =>  'SWR'
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
-        return useSWRV('cache-key-1', () => 'SWR')
+        return useSWRV('cache-key-not-a-promise', fetch)
+      }
+    }).$mount()
+
+    expect(vm.data).toBe('SWR')
+    done()
+  })
+
+  it('should return `undefined` on hydration', done => {
+    const fetch = () =>  new Promise(res => setTimeout(() => res('SWR'), 1))
+    const vm = new Vue({
+      template: `<div>hello, {{ data }}</div>`,
+      setup  () {
+        return useSWRV('cache-key-1', fetch)
       }
     }).$mount()
 
@@ -33,7 +47,7 @@ describe('useSWRV', () => {
       }
     }).$mount()
 
-    await tick(vm, 1)
+    await tick(vm, 4)
 
     expect(vm.$el.textContent).toBe('hello, SWR')
     done()
@@ -224,11 +238,11 @@ describe('useSWRV - loading', () => {
 })
 
 describe('useSWRV - mutate', () => {
-  const loadData = () => new Promise(res => setTimeout(() => res('data'), 100))
 
   it('prefetches via mutate', done => {
     // Prime the cache
-    mutate('is-prefetched-1', loadData()).then(() => {
+    const loadData = key => new Promise(res => setTimeout(() => res(key), 100))
+    mutate('is-prefetched-1', loadData('is-prefetched-1')).then(() => {
       const vm = new Vue({
         render: h => h(createComponent({
           setup () {
@@ -243,12 +257,43 @@ describe('useSWRV - mutate', () => {
         }))
       }).$mount()
 
-      expect(vm.$el.textContent).toBe('hello, data and loading')
+      expect(vm.$el.textContent).toBe('hello, is-prefetched-1 and loading')
       done()
     })
 
     timeout(100)
   })
+
+  test.todo('mutate triggers revalidations')
+  // it('mutate triggers revalidations', done => {
+  //   const loadData = key => new Promise(res => setTimeout(() => res(key + Date.now()), 100))
+  //   mutate('mutate-is-revalidated-1', loadData('mutate-is-revalidated-1')).then(async () => {
+  //     const vm = new Vue({
+  //       template: `<div>hello, {{ data }}</div>`,
+  //       setup () {
+  //         setTimeout(() => {
+  //           mutate('mutate-is-revalidated-1', new Promise((resolve) => resolve('hey')))
+  //         }, 50)
+
+  //         return useSWRV('mutate-is-revalidated-1', loadData)
+  //       }
+  //     }).$mount()
+
+  //     tick(vm, 4)
+  //     expect(vm.$el.textContent).toContain('hello, mutate-is-revalidated-1')
+  //     timeout(100)
+  //     tick(vm, 4)
+  //     expect(vm.$el.textContent).toContain('hello, mutate-is-revalidated-1')
+  //     timeout(50)
+  //     tick(vm, 4)
+  //
+  //     // TODO: understand why revalidation isn't working here
+  //     expect(vm.$el.textContent).toBe('hello, hey')
+  //     done()
+  //   })
+
+  //   timeout(100)
+  // })
 })
 
 describe('useSWRV - listeners', () => {
@@ -300,7 +345,6 @@ describe('useSWRV - refresh', () => {
       }
     }).$mount()
 
-    expect(vm.$el.textContent).toEqual('count: ')
     await tick(vm, 2)
     expect(vm.$el.textContent).toEqual('count: 0')
     timeout(210)
@@ -382,7 +426,7 @@ describe('useSWRV - error', () => {
     done()
   })
 
-  it('should trigger the onError event', async done => {
+  it('should be able to watch errors - similar to onError callback', async done => {
     let erroredSWR = null
 
     const vm = new Vue({
@@ -390,18 +434,25 @@ describe('useSWRV - error', () => {
         <div>hello, {{ data }}</div>
       </div>`,
       setup  () {
-        return useSWRV(() => 'error-2', () => new Promise((_, rej) =>
+        const { data, error } = useSWRV(() => 'error-2', () => new Promise((_, rej) =>
           setTimeout(() => rej(new Error('error!')), 200)
-        ), {
-          onError: (_, key) => (erroredSWR = key)
+        ))
+
+        watch(error, error1 => {
+          erroredSWR = error1 && error1.message
         })
+
+        return {
+          data, error
+        }
+
       }
     }).$mount()
 
     expect(vm.$el.textContent).toBe('hello, ')
     timeout(200)
-    await tick(vm, 1)
-    expect(erroredSWR).toEqual('error-2')
+    await tick(vm, 2)
+    expect(erroredSWR).toEqual('error!')
     done()
   })
 
@@ -460,7 +511,6 @@ describe('useSWRV - window events', () => {
       }
     }).$mount()
 
-    expect(vm.$el.textContent).toBe('count: ')
     await tick(vm, 1)
     expect(vm.$el.textContent).toBe('count: 0')
 
@@ -499,7 +549,6 @@ describe('useSWRV - window events', () => {
       }
     }).$mount()
 
-    expect(vm.$el.textContent).toBe('count: ')
     await tick(vm, 1)
     expect(vm.$el.textContent).toBe('count: 0')
 
