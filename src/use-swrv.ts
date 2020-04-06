@@ -63,10 +63,17 @@ const mutate = async (key: string, res: Promise<any>, cache = DATA_CACHE) => {
     cache.set(key, newData)
   }
 
-  // Revalidate all swrv instances with new data
+  /**
+   * Revalidate all swrv instances with new data
+   */
   const stateRef = REF_CACHE.get(key, 0)
   if (stateRef && stateRef.data.length) {
-    stateRef.data.forEach(r => {
+    // This filter fixes #24 race conditions to only update ref data of current
+    // key, while data cache will continue to be updated if revalidation is
+    // fired
+    let refs = stateRef.data.filter(r => r.key === key)
+
+    refs.forEach((r, idx) => {
       if (typeof newData.data !== 'undefined') {
         r.data = newData.data
       }
@@ -74,7 +81,15 @@ const mutate = async (key: string, res: Promise<any>, cache = DATA_CACHE) => {
         r.error = newData.error
       }
       r.isValidating = newData.isValidating
+
+      const isLast = idx === refs.length - 1
+      if (!isLast) {
+        // Clean up refs that belonged to old keys
+        delete refs[idx]
+      }
     })
+
+    refs = refs.filter(Boolean)
   }
 
   return newData
@@ -103,7 +118,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
 
   const keyRef = typeof key === 'function' ? (key as any) : ref(key)
 
-  let stateRef = null as { data: Data, error: Error, isValidating: boolean, revalidate: Function }
+  let stateRef = null as { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any }
   if (isSsrHydration) {
     // component was ssrHydrated, so make the ssr reactive as the initial data
     const swrvState = (window as any).__SWRV_STATE__ ||
@@ -111,7 +126,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
 
     const swrvKey = +(vm as any).$vnode.elm.dataset.swrvKey
     if (swrvState[swrvKey]) {
-      stateRef = reactive(swrvState[swrvKey]) as { data: Data, error: Error, isValidating: boolean, revalidate: Function }
+      stateRef = reactive(swrvState[swrvKey]) as { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any }
       isHydrated = true
     }
   }
@@ -120,8 +135,9 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     stateRef = reactive({
       data: undefined,
       error: null,
-      isValidating: true
-    }) as { data: Data, error: Error, isValidating: boolean, revalidate: Function }
+      isValidating: true,
+      key: null
+    }) as { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any }
   }
 
   /**
@@ -252,6 +268,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   try {
     watch(keyRef, (val) => {
       keyRef.value = val
+      stateRef.key = val
       setRefCache(keyRef.value, stateRef)
 
       if (!IS_SERVER && !isHydrated) {
