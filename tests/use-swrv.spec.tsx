@@ -1,5 +1,5 @@
 import Vue from 'vue/dist/vue.common.js'
-import VueCompositionApi, { watch, createComponent } from '@vue/composition-api'
+import VueCompositionApi, { watch, createComponent, ref } from '@vue/composition-api'
 import useSWRV, { mutate } from '@/use-swrv'
 
 Vue.use(VueCompositionApi)
@@ -173,6 +173,60 @@ describe('useSWRV', () => {
     await tick(vm, 2)
     expect(vm.$el.textContent).toBe('d1:123 e1: d2:123 e2:')
     expect(count).toEqual(3)
+    done()
+  })
+
+  // From #24
+  it('should only update refs of current cache key', async done => {
+
+    const fetcher = (key) => new Promise(res => setTimeout(() => res(key), 1000))
+
+    const vm = new Vue({
+      template: `<div>Page: {{ data }}</div>`,
+      setup  () {
+        const page = ref('1')
+        const { data, error } = useSWRV(() => {
+          return page.value
+        }, fetcher)
+
+        let interval = setInterval(() => {
+          const nextPage: number = parseInt(page.value) + 1
+          page.value = String(nextPage)
+          nextPage > 2 && clearInterval(interval)
+        }, 500)
+
+        return { data, error, page }
+      }
+    }).$mount()
+
+    // initially page is empty, but fetcher has fired with page=1
+    expect(vm.$el.textContent).toBe('Page: ')
+    await tick(vm, 2)
+    expect(vm.$data.page).toBe('1')
+    expect(vm.$el.textContent).toBe('Page: ')
+
+    // page has now updated to page=2, fetcher1 has not yet resolved, fetcher
+    // for page=2 has now fired
+    timeout(500)
+    await tick(vm, 2)
+    expect(vm.$data.page).toBe('2')
+    expect(vm.$el.textContent).toBe('Page: ')
+
+    // fetcher for page=1 has resolved, but the cache key is not equal to the
+    // current page, so the data ref does not update. fetcher for page=3 has
+    // now fired
+    timeout(500)
+    await tick(vm, 2)
+    expect(vm.$data.page).toBe('3')
+    expect(vm.$el.textContent).toBe('Page: ')
+
+    // cache key is no longer updating and the fetcher for page=3 has resolved
+    // so the data ref now updates.
+    timeout(1000)
+    await tick(vm, 2)
+    expect(vm.$data.page).toBe('3')
+    expect(vm.$el.textContent).toBe('Page: 3')
+
     done()
   })
 })
