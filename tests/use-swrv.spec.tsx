@@ -1,5 +1,5 @@
 import Vue from 'vue/dist/vue.common.js'
-import VueCompositionApi, { watch, createComponent, ref } from '@vue/composition-api'
+import VueCompositionApi, { watch, defineComponent, ref } from '@vue/composition-api'
 import useSWRV, { mutate } from '@/use-swrv'
 
 Vue.use(VueCompositionApi)
@@ -237,7 +237,7 @@ describe('useSWRV - loading', () => {
   it('should return loading state via undefined data', async done => {
     let renderCount = 0
     const vm = new Vue({
-      render: h => h(createComponent({
+      render: h => h(defineComponent({
         setup () {
           const { data } = useSWRV('is-validating-1', loadData)
           return () => {
@@ -262,7 +262,7 @@ describe('useSWRV - loading', () => {
   it('should return loading state via isValidating', async done => {
     // Prime the cache
     const vm = new Vue({
-      render: h => h(createComponent({
+      render: h => h(defineComponent({
         setup () {
           const { data, isValidating } = useSWRV('is-validating-2', loadData, {
             refreshInterval: 1000
@@ -298,7 +298,7 @@ describe('useSWRV - mutate', () => {
     const loadData = key => new Promise(res => setTimeout(() => res(key), 100))
     mutate('is-prefetched-1', loadData('is-prefetched-1')).then(() => {
       const vm = new Vue({
-        render: h => h(createComponent({
+        render: h => h(defineComponent({
           setup () {
             const { data: dataFromCache } = useSWRV('is-prefetched-1', loadData)
             const { data: dataNotFromCache } = useSWRV('is-prefetched-2', loadData)
