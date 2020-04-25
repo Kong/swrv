@@ -1,6 +1,8 @@
 import { Ref } from '@vue/composition-api'
 import SWRVCache from './lib/cache'
+
 export type fetcherFn<Data> = (...args: any) => Data | Promise<Data>
+
 export interface IConfig {
   refreshInterval?: number
   cache?: SWRVCache
@@ -14,12 +16,13 @@ export interface IConfig {
   ) => void
 }
 
-export interface IResponse {
-  data?: Ref<any>
-  error?: Ref<any>
+export interface IResponse<Data = any, Error = any> {
+  data?: Ref<Data>
+  error?: Ref<Error>
   isValidating: Ref<boolean>
-  revalidate: Function
+  revalidate: () => Promise<void>
 }
 
 type keyFunction = () => string | null
+
 export type IKey = keyFunction | string | null
