@@ -38,4 +38,21 @@ describe('SSR', () => {
       })
     })
   })
+
+  it("should show loading if fetch was disabled on server", async done => {
+    createRenderer("disableFetchOnServer.js", {}, renderer => {
+      renderer.renderToString({}, (err, res) => {
+        expect(err).toBeNull();
+        expect(res).toMatchInlineSnapshot(`
+          <div>
+            <div>
+              loading data2
+            </div>
+            <!---->
+          </div>
+        `);
+        done()
+      })
+    })
+  })
 })
