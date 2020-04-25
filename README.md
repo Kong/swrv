@@ -118,6 +118,7 @@ const { data, error, isValidating, revalidate } = useSWRV(key, fetcher, options)
 - `cache` - caching instance to store response data in. See
   [src/lib/cache](src/lib/cache.ts), and [Cache](#cache) below.
 - `onError` - callback function when a request returns an error
+- `fetchOnServer = true` - enable fetch during server side rendering
 
 ## Prefetching
 
