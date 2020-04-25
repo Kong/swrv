@@ -23,6 +23,7 @@ const defaultConfig: IConfig = {
   dedupingInterval: 2000,
   revalidateOnFocus: true,
   revalidateDebounce: 0,
+  fetchOnServer: true,
   onError: (_, __) => {}
 }
 
@@ -119,7 +120,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   const keyRef = typeof key === 'function' ? (key as any) : ref(key)
 
   let stateRef = null as { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any }
-  if (isSsrHydration) {
+  if (isSsrHydration && config.fetchOnServer) {
     // component was ssrHydrated, so make the ssr reactive as the initial data
     const swrvState = (window as any).__SWRV_STATE__ ||
       ((window as any).__NUXT__ && (window as any).__NUXT__.swrv) || []
@@ -253,7 +254,10 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     }
 
     onServerPrefetch(async () => {
-      await revalidate()
+      if (config.fetchOnServer) {
+        await revalidate()
+      }
+
       swrvRes.push({
         data: stateRef.data,
         error: stateRef.error,

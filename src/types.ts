@@ -8,6 +8,7 @@ export interface IConfig {
   ttl?: number
   revalidateOnFocus?: boolean
   revalidateDebounce?: number
+  fetchOnServer?: boolean
   onError?: (
     err: Error,
     key: string
