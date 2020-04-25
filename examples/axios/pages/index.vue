@@ -10,17 +10,24 @@
       <div v-if="isValidating">
         loading...
       </div>
-      <nuxt-link :to="`/?page=${page - 1}`" v-if="page > 1">Previous page</nuxt-link>
+      <nuxt-link :to="`/?page=${page - 1}`" v-if="page > 1">
+        Previous page
+      </nuxt-link>
       <nuxt-link :to="`/?page=${page + 1}`">Next page</nuxt-link>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
 import useSWRV, { IConfig } from '../../../esm'
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios'
-import { ref, computed, Ref, watch } from '@vue/composition-api'
+import {
+  ref,
+  computed,
+  Ref,
+  watch,
+  defineComponent
+} from '@vue/composition-api'
 
 type RequestKey = (() => AxiosRequestConfig) | AxiosRequestConfig
 
@@ -35,13 +42,16 @@ function useRequest<Data = unknown, Error = unknown>(
   )
 }
 
-export default Vue.extend({
+export default defineComponent({
   name: 'App',
-  setup() {
+  setup(props, context) {
     const page = ref(1)
-    watch('$route.query.page', (queryPage: string) => {
-      if (queryPage) page.value = +queryPage;
-    })
+    watch(
+      () => context.root.$route.query.page,
+      queryPage => {
+        page.value = parseNumberQueryParam(queryPage, 1)
+      }
+    )
     const request = computed(() => {
       const requestConfig: AxiosRequestConfig = {
         method: 'get',
@@ -56,6 +66,21 @@ export default Vue.extend({
     return { data, nextPage, page, isValidating }
   }
 })
+
+type QueryParam = string | (string | null)[]
+
+function parseNumberQueryParam(
+  param: QueryParam | undefined,
+  defaultValue: number
+): number {
+  if (!param) return defaultValue
+  const p = Array.isArray(param) ? param[0] : param
+  if (p) {
+    const int = parseInt(p)
+    if (isFinite(int)) return int
+  }
+  return defaultValue
+}
 
 type Post = {
   type_of: string
