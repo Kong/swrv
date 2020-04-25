@@ -117,10 +117,14 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     ...config
   }
 
+  const fetchOnServer = isFunction(config.fetchOnServer)
+    ? config.fetchOnServer()
+    : config.fetchOnServer;
+
   const keyRef = typeof key === 'function' ? (key as any) : ref(key)
 
   let stateRef = null as { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any }
-  if (isSsrHydration && config.fetchOnServer) {
+  if (isSsrHydration && fetchOnServer) {
     // component was ssrHydrated, so make the ssr reactive as the initial data
     const swrvState = (window as any).__SWRV_STATE__ ||
       ((window as any).__NUXT__ && (window as any).__NUXT__.swrv) || []
@@ -254,7 +258,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     }
 
     onServerPrefetch(async () => {
-      if (config.fetchOnServer) {
+      if (fetchOnServer) {
         await revalidate()
       }
 
@@ -291,6 +295,10 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     ...toRefs(stateRef),
     revalidate
   }
+}
+
+function isFunction(value: any): value is Function {
+  return typeof value === 'function'
 }
 
 export { mutate }
