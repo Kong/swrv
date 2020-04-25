@@ -111,6 +111,13 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     vm.$vnode.elm.dataset &&
     vm.$vnode.elm.dataset.swrvKey)
 
+  let hookInstanceNumber = ref(0);
+  if (!vm.$vnode.useSwrInstance) {
+    vm.$vnode.useSwrInstance = 0;
+  }
+  hookInstanceNumber.value = vm.$vnode.useSwrInstance;
+  vm.$vnode.useSwrInstance += 1;
+
   config = {
     ...defaultConfig,
     ...config
@@ -124,10 +131,14 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     const swrvState = (window as any).__SWRV_STATE__ ||
       ((window as any).__NUXT__ && (window as any).__NUXT__.swrv) || []
 
-    const swrvKey = +(vm as any).$vnode.elm.dataset.swrvKey
-    if (swrvState[swrvKey]) {
-      stateRef = reactive(swrvState[swrvKey]) as { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any }
-      isHydrated = true
+    const swrvKey = (vm as any).$vnode.elm.dataset.swrvKey
+    if (swrvKey) {
+      const nodeState = swrvState[swrvKey] || [];
+      const instanceState = nodeState[hookInstanceNumber.value];
+      if (instanceState) {
+        stateRef = reactive(instanceState) as { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any }
+        isHydrated = true
+      }
     }
   }
 
@@ -254,11 +265,14 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
 
     onServerPrefetch(async () => {
       await revalidate()
-      swrvRes.push({
+
+      if (!swrvRes[ssrKey]) swrvRes[ssrKey] = [];
+
+      swrvRes[ssrKey][hookInstanceNumber.value] = {
         data: stateRef.data,
         error: stateRef.error,
         isValidating: stateRef.isValidating
-      })
+      }
     })
   }
 
