@@ -112,11 +112,13 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     vm.$vnode.elm.dataset.swrvKey)
 
   let hookInstanceNumber = ref(0);
-  if (!vm.$vnode.useSwrInstance) {
-    vm.$vnode.useSwrInstance = 0;
+  if (vm.$vnode) {
+    if (!vm.$vnode.useSwrInstance) {
+      vm.$vnode.useSwrInstance = 0;
+    }
+    hookInstanceNumber.value = vm.$vnode.useSwrInstance;
+    vm.$vnode.useSwrInstance += 1;
   }
-  hookInstanceNumber.value = vm.$vnode.useSwrInstance;
-  vm.$vnode.useSwrInstance += 1;
 
   config = {
     ...defaultConfig,
