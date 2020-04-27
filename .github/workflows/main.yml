@@ -23,7 +23,7 @@ jobs:
     - name: install, lint
       run: |
         yarn install
-        yarn lint
+        yarn lint --no-fix
     - name: tsc
       run: |
         yarn types:check
