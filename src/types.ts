@@ -17,8 +17,8 @@ export interface IConfig {
 }
 
 export interface IResponse<Data = any, Error = any> {
-  data?: Ref<Data>
-  error?: Ref<Error>
+  data?: Ref<Data | undefined>
+  error?: Ref<Error | undefined>
   isValidating: Ref<boolean>
   revalidate: () => Promise<void>
 }
