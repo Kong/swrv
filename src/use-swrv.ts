@@ -42,11 +42,10 @@ function setRefCache (key, theRef) {
  * Main mutation function for receiving data from promises to change state and
  * set data cache
  */
-const mutate = async (key: string, res: Promise<any>, cache = DATA_CACHE) => {
+const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA_CACHE) => {
   let data, error, isValidating
 
-  if (res && typeof res.then === 'function') {
-    // `res` is a promise
+  if (isPromise(res)) {
     try {
       data = await res
     } catch (err) {
@@ -95,10 +94,12 @@ const mutate = async (key: string, res: Promise<any>, cache = DATA_CACHE) => {
   return newData
 }
 
+type StateRef<Data, Error> = { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any };
+
 /**
  * Stale-While-Revalidate hook to handle fetching, caching, validation, and more...
  */
-export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcherFn<any>, config?: IConfig): IResponse {
+export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcherFn<Data>, config?: IConfig): IResponse<Data, Error> {
   let unmounted = false
   let isHydrated = false
 
@@ -118,7 +119,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
 
   const keyRef = typeof key === 'function' ? (key as any) : ref(key)
 
-  let stateRef = null as { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any }
+  let stateRef = null as StateRef<Data, Error>
   if (isSsrHydration) {
     // component was ssrHydrated, so make the ssr reactive as the initial data
     const swrvState = (window as any).__SWRV_STATE__ ||
@@ -126,7 +127,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
 
     const swrvKey = +(vm as any).$vnode.elm.dataset.swrvKey
     if (swrvState[swrvKey]) {
-      stateRef = reactive(swrvState[swrvKey]) as { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any }
+      stateRef = reactive(swrvState[swrvKey]) as StateRef<Data, Error>
       isHydrated = true
     }
   }
@@ -137,7 +138,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
       error: null,
       isValidating: true,
       key: null
-    }) as { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any }
+    }) as StateRef<Data, Error>
   }
 
   /**
@@ -286,7 +287,11 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   return {
     ...toRefs(stateRef),
     revalidate
-  }
+  } as IResponse<Data, Error>
+}
+
+function isPromise<T> (p: any): p is Promise<T> {
+  return p !== null && typeof p === 'object' && typeof p.then === 'function'
 }
 
 export { mutate }

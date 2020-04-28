@@ -130,7 +130,7 @@ describe('useSWRV', () => {
 
   it('should fetch dependently', async done => {
     let count = 0
-    const loadUser = () => {
+    const loadUser = (): Promise<{ id: number }> => {
       return new Promise(res => setTimeout(() => {
         count++
         res({ id: 123 })
