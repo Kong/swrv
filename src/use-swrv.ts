@@ -119,7 +119,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
 
   const keyRef = typeof key === 'function' ? (key as any) : ref(key)
 
-  let stateRef = null as StateRef<Data, Error>;
+  let stateRef = null as StateRef<Data, Error>
   if (isSsrHydration) {
     // component was ssrHydrated, so make the ssr reactive as the initial data
     const swrvState = (window as any).__SWRV_STATE__ ||
@@ -287,11 +287,11 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   return {
     ...toRefs(stateRef),
     revalidate
-  } as IResponse<Data, Error>;
+  } as IResponse<Data, Error>
 }
 
-function isPromise<T>(p: any): p is Promise<T> {
-  return p !== null && typeof p === 'object' && typeof p.then === 'function';
+function isPromise<T> (p: any): p is Promise<T> {
+  return p !== null && typeof p === 'object' && typeof p.then === 'function'
 }
 
 export { mutate }

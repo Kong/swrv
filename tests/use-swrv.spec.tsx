@@ -14,7 +14,7 @@ const tick: Function = async (vm, times) => {
 
 describe('useSWRV', () => {
   it('should return data on hydration when fetch is not a promise', done => {
-    const fetch = () =>  'SWR'
+    const fetch = () => 'SWR'
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
@@ -27,7 +27,7 @@ describe('useSWRV', () => {
   })
 
   it('should return `undefined` on hydration', done => {
-    const fetch = () =>  new Promise(res => setTimeout(() => res('SWR'), 1))
+    const fetch = () => new Promise(res => setTimeout(() => res('SWR'), 1))
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
@@ -178,7 +178,6 @@ describe('useSWRV', () => {
 
   // From #24
   it('should only update refs of current cache key', async done => {
-
     const fetcher = (key) => new Promise(res => setTimeout(() => res(key), 1000))
 
     const vm = new Vue({
@@ -292,7 +291,6 @@ describe('useSWRV - loading', () => {
 })
 
 describe('useSWRV - mutate', () => {
-
   it('prefetches via mutate', done => {
     // Prime the cache
     const loadData = key => new Promise(res => setTimeout(() => res(key), 100))
@@ -499,7 +497,6 @@ describe('useSWRV - error', () => {
         return {
           data, error
         }
-
       }
     }).$mount()
 
