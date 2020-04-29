@@ -19,7 +19,8 @@ const PROMISES_CACHE = new SWRVCache()
 const defaultConfig: IConfig = {
   cache: DATA_CACHE,
   refreshInterval: 0,
-  ttl: 0,
+  ttl: 1000 * 60 * 5,
+  serverTTL: 1000,
   dedupingInterval: 2000,
   revalidateOnFocus: true,
   revalidateDebounce: 0,
@@ -29,8 +30,8 @@ const defaultConfig: IConfig = {
 /**
  * Cache the refs for later revalidation
  */
-function setRefCache (key, theRef) {
-  const refCacheItem = REF_CACHE.get(key, 0)
+function setRefCache (key, theRef, ttl) {
+  const refCacheItem = REF_CACHE.get(key, ttl)
   if (refCacheItem) {
     refCacheItem.data.push(theRef)
   } else {
@@ -42,7 +43,8 @@ function setRefCache (key, theRef) {
  * Main mutation function for receiving data from promises to change state and
  * set data cache
  */
-const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA_CACHE) => {
+const mutate = async <Data>(key: string, res: Promise<Data> | Data,
+  cache = DATA_CACHE, ttl = defaultConfig.ttl) => {
   let data, error, isValidating
 
   if (isPromise(res)) {
@@ -65,7 +67,7 @@ const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA
   /**
    * Revalidate all swrv instances with new data
    */
-  const stateRef = REF_CACHE.get(key, 0)
+  const stateRef = REF_CACHE.get(key, ttl)
   if (stateRef && stateRef.data.length) {
     // This filter fixes #24 race conditions to only update ref data of current
     // key, while data cache will continue to be updated if revalidation is
@@ -117,6 +119,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     ...config
   }
 
+  const ttl = IS_SERVER ? config.serverTTL : config.ttl
   const keyRef = typeof key === 'function' ? (key as any) : ref(key)
 
   let stateRef = null as StateRef<Data, Error>
@@ -126,9 +129,13 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
       ((window as any).__NUXT__ && (window as any).__NUXT__.swrv) || []
 
     const swrvKey = +(vm as any).$vnode.elm.dataset.swrvKey
-    if (swrvState[swrvKey]) {
-      stateRef = reactive(swrvState[swrvKey]) as StateRef<Data, Error>
-      isHydrated = true
+    if (swrvKey) {
+      const nodeState = swrvState[swrvKey] || []
+      const instanceState = nodeState[keyRef.value]
+      if (instanceState) {
+        stateRef = reactive(instanceState)
+        isHydrated = true
+      }
     }
   }
 
@@ -147,7 +154,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   const revalidate = async () => {
     const keyVal = keyRef.value
     if (!isDocumentVisible()) { return }
-    const cacheItem = config.cache.get(keyVal, config.ttl)
+    const cacheItem = config.cache.get(keyVal, ttl)
     let newData = cacheItem && cacheItem.data
 
     stateRef.isValidating = true
@@ -164,9 +171,9 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
       if (!promiseFromCache) {
         const newPromise = fn(keyVal)
         PROMISES_CACHE.set(keyVal, newPromise)
-        await mutate(keyVal, newPromise, config.cache)
+        await mutate(keyVal, newPromise, config.cache, ttl)
       } else {
-        await mutate(keyVal, promiseFromCache.data, config.cache)
+        await mutate(keyVal, promiseFromCache.data, config.cache, ttl)
       }
     }
 
@@ -255,11 +262,14 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
 
     onServerPrefetch(async () => {
       await revalidate()
-      swrvRes.push({
+
+      if (!swrvRes[ssrKey]) swrvRes[ssrKey] = {}
+
+      swrvRes[ssrKey][keyRef.value] = {
         data: stateRef.data,
         error: stateRef.error,
         isValidating: stateRef.isValidating
-      })
+      }
     })
   }
 
@@ -270,7 +280,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     watch(keyRef, (val) => {
       keyRef.value = val
       stateRef.key = val
-      setRefCache(keyRef.value, stateRef)
+      setRefCache(keyRef.value, stateRef, ttl)
 
       if (!IS_SERVER && !isHydrated) {
         revalidate()
