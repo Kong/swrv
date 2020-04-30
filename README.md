@@ -6,10 +6,9 @@
 ![build](https://github.com/Kong/swrv/workflows/build/badge.svg)
 [![](https://img.shields.io/npm/v/swrv.svg)](https://www.npmjs.com/package/swrv)
 
-`swrv` (pronounced "swerve") is a library using
-[@vue/composition-api](https://github.com/vuejs/composition-api) hooks for
-remote data fetching. It is largely a port of
-[swr](https://github.com/zeit/swr).
+`swrv` (pronounced "swerve") is a library using the
+[@vue/composition-api](https://github.com/vuejs/composition-api) for remote data
+fetching. It is largely a port of [swr](https://github.com/zeit/swr).
 
 The name “SWR” is derived from stale-while-revalidate, a cache invalidation
 strategy popularized by HTTP [RFC 5861](https://tools.ietf.org/html/rfc5861).
@@ -67,10 +66,9 @@ export default {
 </script>
 ```
 
-In this example, the Vue Hook `useSWRV` accepts a `key` and a `fetcher`
-function. `key` is a unique identifier of the request, normally the URL of the
-API. And the fetcher accepts key as its parameter and returns the data
-asynchronously.
+In this example, `useSWRV` accepts a `key` and a `fetcher` function. `key` is
+a unique identifier of the request, normally the URL of the API. And the 
+fetcher accepts key as its parameter and returns the data asynchronously.
 
 `useSWRV` also returns 2 values: `data` and `error`. When the request (fetcher)
 is not yet finished, data will be `undefined`. And when we get a response, it
