@@ -8,6 +8,7 @@ export interface IConfig {
   cache?: SWRVCache
   dedupingInterval?: number
   ttl?: number
+  serverTTL?: number
   revalidateOnFocus?: boolean
   revalidateDebounce?: number
   onError?: (
