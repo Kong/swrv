@@ -128,9 +128,9 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     // component was ssrHydrated, so make the ssr reactive as the initial data
     const swrvState = (window as any).__SWRV_STATE__ ||
       ((window as any).__NUXT__ && (window as any).__NUXT__.swrv) || []
-
     const swrvKey = +(vm as any).$vnode.elm.dataset.swrvKey
-    if (swrvKey) {
+
+    if (swrvKey !== undefined && swrvKey !== null) {
       const nodeState = swrvState[swrvKey] || []
       const instanceState = nodeState[isRef(keyRef) ? keyRef.value : keyRef()]
 
