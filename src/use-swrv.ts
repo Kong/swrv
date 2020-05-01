@@ -2,6 +2,7 @@ import { reactive,
   watch,
   ref,
   toRefs,
+  isRef,
   onMounted,
   onUnmounted,
   onServerPrefetch,
@@ -131,7 +132,8 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     const swrvKey = +(vm as any).$vnode.elm.dataset.swrvKey
     if (swrvKey) {
       const nodeState = swrvState[swrvKey] || []
-      const instanceState = nodeState[keyRef.value]
+      const instanceState = nodeState[isRef(keyRef) ? keyRef.value : keyRef()]
+
       if (instanceState) {
         stateRef = reactive(instanceState)
         isHydrated = true
