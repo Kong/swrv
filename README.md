@@ -174,6 +174,92 @@ export default {
 </script>
 ```
 
+## State Management
+
+Sometimes you might want to know the exact state where swrv is during stale-while-revalidate lifecyle. This is helpful when representing the UI as a function of state. Here is one way to detect state using a user-land composable `useSwrvState` function:
+
+```js
+import { ref, watchEffect } from "@vue/composition-api";
+
+const STATES = {
+  VALIDATING: "VALIDATING",
+  PENDING: "PENDING",
+  SUCCESS: "SUCCESS",
+  ERROR: "ERROR",
+  STALE_IF_ERROR: "STALE_IF_ERROR"
+};
+
+export default function(data, error, isValidating) {
+  const state = ref("idle");
+  watchEffect(() => {
+    if (data.value && isValidating.value) {
+      state.value = STATES.VALIDATING;
+      return;
+    }
+    if (data.value && error.value) {
+      state.value = STATES.STALE_IF_ERROR;
+      return;
+    }
+    if (data.value === undefined && !error.value) {
+      state.value = STATES.PENDING;
+      return;
+    }
+    if (data.value && !error.value) {
+      state.value = STATES.SUCCESS;
+      return;
+    }
+    if (data.value === undefined && error) {
+      state.value = STATES.ERROR;
+      return;
+    }
+  });
+
+  return {
+    state,
+    STATES
+  };
+}
+```
+
+And then in your template you can use it like so:
+
+```vue
+<template>
+  <div>
+    <div v-if="[STATES.ERROR, STATES.STALE_IF_ERROR].includes(state)">{{ error }}</div>
+    <div v-if="[STATES.PENDING].includes(state)">Loading...</div>
+    <div v-if="[STATES.VALIDATING].includes(state)"><!-- serve stale content without "loading" --></div>
+    <div v-if="[STATES.SUCCESS, STATES.VALIDATING, STATES.STALE_IF_ERROR].includes(state)" >
+      {{ data }}
+    </div>
+  </div>
+</template>
+
+<script>
+import { computed } from "@vue/composition-api"
+import useSwrvState from "@/composables/useSwrvState"
+import useSWRV from "swrv"
+
+export default {
+  name: "Repo",
+  setup(props, { root }) {
+    const page = computed(() => root.$route.params.id)
+    const { data, error, isValidating } = useSWRV(() => `/api/${root.$route.params.id}`, fetcher)
+    const { state, STATES } = useSwrvState(data, error, isValidating)
+
+    return {
+      state,
+      STATES,
+      data,
+      error,
+      page,
+      isValidating
+    }
+  }
+}
+</script>
+```
+
 ## Cache
 
 By default, a custom cache implementation is used to store both fetcher response
