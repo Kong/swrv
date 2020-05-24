@@ -11,10 +11,6 @@ export interface IConfig {
   serverTTL?: number
   revalidateOnFocus?: boolean
   revalidateDebounce?: number
-  onError?: (
-    err: Error,
-    key: string
-  ) => void
 }
 
 export interface IResponse<Data = any, Error = any> {

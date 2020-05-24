@@ -59,16 +59,16 @@ export default {
 
     return {
       data,
-      error
+      error,
     }
-  }
+  },
 }
 </script>
 ```
 
-In this example, `useSWRV` accepts a `key` and a `fetcher` function. `key` is
-a unique identifier of the request, normally the URL of the API. And the 
-fetcher accepts key as its parameter and returns the data asynchronously.
+In this example, `useSWRV` accepts a `key` and a `fetcher` function. `key` is a
+unique identifier of the request, normally the URL of the API. And the fetcher
+accepts key as its parameter and returns the data asynchronously.
 
 `useSWRV` also returns 2 values: `data` and `error`. When the request (fetcher)
 is not yet finished, data will be `undefined`. And when we get a response, it
@@ -129,7 +129,7 @@ import { mutate } from 'swrv'
 function prefetch() {
   mutate(
     '/api/data',
-    fetch('/api/data').then(res => res.json())
+    fetch('/api/data').then((res) => res.json())
   )
   // the second parameter is a Promise
   // SWRV will use the result when it resolves
@@ -167,9 +167,9 @@ export default {
     return {
       endpoint,
       data,
-      error
+      error,
     }
-  }
+  },
 }
 </script>
 ```
@@ -320,6 +320,31 @@ export default {
 }
 ```
 
+## Error Handling
+
+Since `error` is returned as a Vue Ref, you can use watchers to handle any
+onError callback functionality. Check out
+[the test](https://github.com/Kong/swrv/blob/a063c4aa142a5a13dbd39496cefab7aef54e610c/tests/use-swrv.spec.tsx#L481).
+
+```ts
+export default {
+  setup() {
+    const { data, error } = useSWRV(key, fetch)
+
+    function handleError(error) {
+      console.error(error && error.message)
+    }
+
+    watch(error, handleError)
+
+    return {
+      data,
+      error,
+    }
+  },
+}
+```
+
 ## FAQ
 
 ### How is swrv different from the [swr](https://github.com/zeit/swr) react library?
@@ -358,6 +383,7 @@ Thanks goes to these wonderful people
 
 <!-- markdownlint-enable -->
 <!-- prettier-ignore-end -->
+
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the
