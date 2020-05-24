@@ -31,6 +31,23 @@ Features:
 With `swrv`, components will get a stream of data updates constantly and
 automatically. Thus, the UI will be always fast and reactive.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Api](#api)
+  - [Parameters](#parameters)
+  - [Return Values](#return-values)
+  - [Config Options](#config-options)
+- [Prefetching](#prefetching)
+- [Stale-if-error](#stale-if-error)
+- [State Management](#state-management)
+- [Cache](#cache)
+  - [localStorage](#localstorage)
+- [Error Handling](#error-handling)
+- [FAQ](#faq)
+- [Contributors](#contributors)
+
 ## Installation
 
 ```sh
@@ -115,7 +132,6 @@ const { data, error, isValidating, revalidate } = useSWRV(key, fetcher, options)
   unnecessary fetches.
 - `cache` - caching instance to store response data in. See
   [src/lib/cache](src/lib/cache.ts), and [Cache](#cache) below.
-- `onError` - callback function when a request returns an error
 
 ## Prefetching
 
@@ -176,48 +192,51 @@ export default {
 
 ## State Management
 
-Sometimes you might want to know the exact state where swrv is during stale-while-revalidate lifecyle. This is helpful when representing the UI as a function of state. Here is one way to detect state using a user-land composable `useSwrvState` function:
+Sometimes you might want to know the exact state where swrv is during
+stale-while-revalidate lifecyle. This is helpful when representing the UI as a
+function of state. Here is one way to detect state using a user-land composable
+`useSwrvState` function:
 
 ```js
-import { ref, watchEffect } from "@vue/composition-api";
+import { ref, watchEffect } from '@vue/composition-api'
 
 const STATES = {
-  VALIDATING: "VALIDATING",
-  PENDING: "PENDING",
-  SUCCESS: "SUCCESS",
-  ERROR: "ERROR",
-  STALE_IF_ERROR: "STALE_IF_ERROR"
-};
+  VALIDATING: 'VALIDATING',
+  PENDING: 'PENDING',
+  SUCCESS: 'SUCCESS',
+  ERROR: 'ERROR',
+  STALE_IF_ERROR: 'STALE_IF_ERROR',
+}
 
 export default function(data, error, isValidating) {
-  const state = ref("idle");
+  const state = ref('idle')
   watchEffect(() => {
     if (data.value && isValidating.value) {
-      state.value = STATES.VALIDATING;
-      return;
+      state.value = STATES.VALIDATING
+      return
     }
     if (data.value && error.value) {
-      state.value = STATES.STALE_IF_ERROR;
-      return;
+      state.value = STATES.STALE_IF_ERROR
+      return
     }
     if (data.value === undefined && !error.value) {
-      state.value = STATES.PENDING;
-      return;
+      state.value = STATES.PENDING
+      return
     }
     if (data.value && !error.value) {
-      state.value = STATES.SUCCESS;
-      return;
+      state.value = STATES.SUCCESS
+      return
     }
     if (data.value === undefined && error) {
-      state.value = STATES.ERROR;
-      return;
+      state.value = STATES.ERROR
+      return
     }
-  });
+  })
 
   return {
     state,
-    STATES
-  };
+    STATES,
+  }
 }
 ```
 
@@ -226,25 +245,38 @@ And then in your template you can use it like so:
 ```vue
 <template>
   <div>
-    <div v-if="[STATES.ERROR, STATES.STALE_IF_ERROR].includes(state)">{{ error }}</div>
+    <div v-if="[STATES.ERROR, STATES.STALE_IF_ERROR].includes(state)">
+      {{ error }}
+    </div>
     <div v-if="[STATES.PENDING].includes(state)">Loading...</div>
-    <div v-if="[STATES.VALIDATING].includes(state)"><!-- serve stale content without "loading" --></div>
-    <div v-if="[STATES.SUCCESS, STATES.VALIDATING, STATES.STALE_IF_ERROR].includes(state)" >
+    <div v-if="[STATES.VALIDATING].includes(state)">
+      <!-- serve stale content without "loading" -->
+    </div>
+    <div
+      v-if="
+        [STATES.SUCCESS, STATES.VALIDATING, STATES.STALE_IF_ERROR].includes(
+          state
+        )
+      "
+    >
       {{ data }}
     </div>
   </div>
 </template>
 
 <script>
-import { computed } from "@vue/composition-api"
-import useSwrvState from "@/composables/useSwrvState"
-import useSWRV from "swrv"
+import { computed } from '@vue/composition-api'
+import useSwrvState from '@/composables/useSwrvState'
+import useSWRV from 'swrv'
 
 export default {
-  name: "Repo",
+  name: 'Repo',
   setup(props, { root }) {
     const page = computed(() => root.$route.params.id)
-    const { data, error, isValidating } = useSWRV(() => `/api/${root.$route.params.id}`, fetcher)
+    const { data, error, isValidating } = useSWRV(
+      () => `/api/${root.$route.params.id}`,
+      fetcher
+    )
     const { state, STATES } = useSwrvState(data, error, isValidating)
 
     return {
@@ -253,9 +285,9 @@ export default {
       data,
       error,
       page,
-      isValidating
+      isValidating,
     }
-  }
+  },
 }
 </script>
 ```
@@ -281,7 +313,7 @@ const { data, error } = useSWRV(key, fetch, { cache: new NoCache() })
 ### localStorage
 
 A common usage case to have a better _offline_ experience is to read from
-`localStorage`.
+`localStorage`. Checkout the [PWA example](/examples/pwa/) for more inspiration.
 
 ```js
 class LocalStorageCache extends SWRVCache {
@@ -363,6 +395,19 @@ function will trigger a revalidation in `swrv`.
 Features were built as needed for `swrv`, and while the initial development of
 `swrv` was mostly a port of swr, the feature sets are not 1-1, and are subject
 to diverge as they already have.
+
+### How do I integrate with vuex?
+
+Most of the features of swrv handle the complex logic / ceremony that you'd have
+to implement yourself inside a vuex store. All swrv instances use the same
+global cache, so if you are using swrv alongside vuex, it is preferred to use
+global watchers if you want to do any global vuex-like functionality on resolved
+data from the fetchers. It is also encouraged to wrap useSWRV in a custom
+composable function so that you can do application level side effects if desired
+(e.g. dispatch a vuex action when data changes or even customize the types to
+match your fetching libraries responses). See the
+[axios-typescript](/examples/axios-typescript-nuxt/pages/index.vue) (e.g.
+`useRequest` function) example for inspiration.
 
 ## Contributors ✨
 
