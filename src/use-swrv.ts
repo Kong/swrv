@@ -24,8 +24,7 @@ const defaultConfig: IConfig = {
   serverTTL: 1000,
   dedupingInterval: 2000,
   revalidateOnFocus: true,
-  revalidateDebounce: 0,
-  onError: (_, __) => {}
+  revalidateDebounce: 0
 }
 
 /**
