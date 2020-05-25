@@ -42,6 +42,8 @@ automatically. Thus, the UI will be always fast and reactive.
 - [Prefetching](#prefetching)
 - [Stale-if-error](#stale-if-error)
 - [State Management](#state-management)
+  - [useSwrvState](#useSwrvState)
+  - [Vuex](#vuex)
 - [Cache](#cache)
   - [localStorage](#localstorage)
 - [Error Handling](#error-handling)
@@ -121,10 +123,12 @@ const { data, error, isValidating, revalidate } = useSWRV(key, fetcher, options)
 
 ### Config options
 
-- `refreshInterval = 0` - polling interval in milliseconds
+- `refreshInterval = 0` - polling interval in milliseconds. 0 means this is
+  disabled.
 - `dedupingInterval = 2000` - dedupe requests with the same key in this time
   span
-- `ttl = 0` - time to live of response data in cache
+- `ttl = 0` - time to live of response data in cache. 0 mean it stays around
+  forever.
 - `revalidateOnFocus = true` - auto revalidate when window gets focused
 - `revalidateDebounce = 0` - debounce in milliseconds for revalidation. Useful
   for when a component is serving from the cache immediately, but then un-mounts
@@ -191,6 +195,8 @@ export default {
 ```
 
 ## State Management
+
+### useSwrvState
 
 Sometimes you might want to know the exact state where swrv is during
 stale-while-revalidate lifecyle. This is helpful when representing the UI as a
@@ -291,6 +297,16 @@ export default {
 }
 </script>
 ```
+
+### Vuex
+
+Most of the features of swrv handle the complex logic / ceremony that you'd have
+to implement yourself inside a vuex store. All swrv instances use the same
+global cache, so if you are using swrv alongside vuex, you can use global
+watchers on resolved swrv returned refs. It is encouraged to wrap useSWRV in a
+custom composable function so that you can do application level side effects if
+desired (e.g. dispatch a vuex action when data changes to log events or perform
+some logic).
 
 ## Cache
 
@@ -396,18 +412,13 @@ Features were built as needed for `swrv`, and while the initial development of
 `swrv` was mostly a port of swr, the feature sets are not 1-1, and are subject
 to diverge as they already have.
 
-### How do I integrate with vuex?
+### Why does swrv make so many requests?
 
-Most of the features of swrv handle the complex logic / ceremony that you'd have
-to implement yourself inside a vuex store. All swrv instances use the same
-global cache, so if you are using swrv alongside vuex, it is preferred to use
-global watchers if you want to do any global vuex-like functionality on resolved
-data from the fetchers. It is also encouraged to wrap useSWRV in a custom
-composable function so that you can do application level side effects if desired
-(e.g. dispatch a vuex action when data changes or even customize the types to
-match your fetching libraries responses). See the
-[axios-typescript](/examples/axios-typescript-nuxt/pages/index.vue) (e.g.
-`useRequest` function) example for inspiration.
+The idea behind stale-while-revalidate is that you always get fresh data
+eventually. You can disable some of the eager fetching such as
+`config.revalidateOnFocus`, but it is preferred to serve a fast response from
+cache while also revalidating so users are always getting the most up to date
+data.
 
 ## Contributors ✨
 
