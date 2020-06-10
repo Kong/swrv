@@ -1,6 +1,5 @@
-import { Ref, WatchSource } from '@vue/composition-api'
-import SWRVCache from './cache'
-import LocalStorageCache from './cache/adapters/localStorage'
+import { Ref } from 'vue'
+import SWRVCache from './lib/cache'
 
 export type fetcherFn<Data> = (...args: any) => Data | Promise<Data>
 

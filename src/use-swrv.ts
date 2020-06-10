@@ -24,17 +24,15 @@ import {
   watch,
   ref,
   toRefs,
-  isRef,
+  // isRef,
   onMounted,
   onUnmounted,
-  onServerPrefetch,
   getCurrentInstance
-} from '@vue/composition-api'
-import webPreset from './lib/web-preset'
-import SWRVCache from './cache'
-import { IConfig, IKey, IResponse, fetcherFn, revalidateOptions } from './types'
-
-type StateRef<Data, Error> = { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any };
+} from 'vue'
+import isDocumentVisible from './lib/is-document-visible'
+import isOnline from './lib/is-online'
+import SWRVCache from './lib/cache'
+import { IConfig, IKey, IResponse, fetcherFn } from './types'
 
 const DATA_CACHE = new SWRVCache<Omit<IResponse, 'mutate'>>()
 const REF_CACHE = new SWRVCache<StateRef<any, any>[]>()
@@ -163,12 +161,17 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
   }
 
   const IS_SERVER = vm.$isServer
+
+  // #region ssr
+  /**
   const isSsrHydration = Boolean(
-    !IS_SERVER &&
+    \!IS_SERVER &&
     vm.$vnode &&
     vm.$vnode.elm &&
     vm.$vnode.elm.dataset &&
     vm.$vnode.elm.dataset.swrvKey)
+  */
+  // #endregion
 
   if (args.length >= 1) {
     key = args[0]
@@ -192,22 +195,25 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
   }
 
   let stateRef = null as StateRef<Data, Error>
-  if (isSsrHydration) {
-    // component was ssrHydrated, so make the ssr reactive as the initial data
-    const swrvState = (window as any).__SWRV_STATE__ ||
-      ((window as any).__NUXT__ && (window as any).__NUXT__.swrv) || []
-    const swrvKey = +(vm as any).$vnode.elm.dataset.swrvKey
 
-    if (swrvKey !== undefined && swrvKey !== null) {
-      const nodeState = swrvState[swrvKey] || []
-      const instanceState = nodeState[isRef(keyRef) ? keyRef.value : keyRef()]
+  // #region ssr
+  // if (isSsrHydration) {
+  //   // component was ssrHydrated, so make the ssr reactive as the initial data
+  //   const swrvState = (window as any).__SWRV_STATE__ ||
+  //     ((window as any).__NUXT__ && (window as any).__NUXT__.swrv) || []
+  //   const swrvKey = +(vm as any).$vnode.elm.dataset.swrvKey
 
-      if (instanceState) {
-        stateRef = reactive(instanceState)
-        isHydrated = true
-      }
-    }
-  }
+  //   if (swrvKey !== undefined && swrvKey !== null) {
+  //     const nodeState = swrvState[swrvKey] || []
+  //     const instanceState = nodeState[isRef(keyRef) ? keyRef.value : keyRef()]
+
+  //     if (instanceState) {
+  //       stateRef = reactive(instanceState)
+  //       isHydrated = true
+  //     }
+  //   }
+  // }
+  // #endregion
 
   if (!stateRef) {
     stateRef = reactive({
@@ -340,40 +346,43 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       refCacheItem.data = refCacheItem.data.filter((ref) => ref !== stateRef)
     }
   })
-  if (IS_SERVER) {
-    // make sure srwv exists in ssrContext
-    let swrvRes = []
-    if (vm.$ssrContext) {
-      swrvRes = vm.$ssrContext.swrv = vm.$ssrContext.swrv || swrvRes
-    }
 
-    const ssrKey = swrvRes.length
-    if (!vm.$vnode || (vm.$node && !vm.$node.data)) {
-      vm.$vnode = {
-        data: { attrs: { 'data-swrv-key': ssrKey } }
-      }
-    }
+  // #region ssr
+  // if (IS_SERVER) {
+  //   // make sure srwv exists in ssrContext
+  //   let swrvRes = []
+  //   if (vm.$ssrContext) {
+  //     swrvRes = vm.$ssrContext.swrv = vm.$ssrContext.swrv || swrvRes
+  //   }
 
-    const attrs = (vm.$vnode.data.attrs = vm.$vnode.data.attrs || {})
-    attrs['data-swrv-key'] = ssrKey
+  //   const ssrKey = swrvRes.length
+  //   if (!vm.$vnode || (vm.$node && !vm.$node.data)) {
+  //     vm.$vnode = {
+  //       data: { attrs: { 'data-swrv-key': ssrKey } }
+  //     }
+  //   }
 
-    // Nuxt compatibility
-    if (vm.$ssrContext && vm.$ssrContext.nuxt) {
-      vm.$ssrContext.nuxt.swrv = swrvRes
-    }
+  //   const attrs = (vm.$vnode.data.attrs = vm.$vnode.data.attrs || {})
+  //   attrs['data-swrv-key'] = ssrKey
 
-    onServerPrefetch(async () => {
-      await revalidate()
+  //   // Nuxt compatibility
+  //   if (vm.$ssrContext && vm.$ssrContext.nuxt) {
+  //     vm.$ssrContext.nuxt.swrv = swrvRes
+  //   }
 
-      if (!swrvRes[ssrKey]) swrvRes[ssrKey] = {}
+  //   onServerPrefetch(async () => {
+  //     await revalidate()
 
-      swrvRes[ssrKey][keyRef.value] = {
-        data: stateRef.data,
-        error: stateRef.error,
-        isValidating: stateRef.isValidating
-      }
-    })
-  }
+  //     if (!swrvRes[ssrKey]) swrvRes[ssrKey] = {}
+
+  //     swrvRes[ssrKey][keyRef.value] = {
+  //       data: stateRef.data,
+  //       error: stateRef.error,
+  //       isValidating: stateRef.isValidating
+  //     }
+  //   })
+  // }
+  // #endregion
 
   type WatcherOptionCompat = {
     lazy?: boolean;
@@ -390,15 +399,15 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       stateRef.key = val
       stateRef.isValidating = Boolean(val)
       setRefCache(keyRef.value, stateRef, ttl)
-
-      if (!IS_SERVER && !isHydrated && keyRef.value) {
+      if (!IS_SERVER && !isHydrated) {
         revalidate()
       }
       isHydrated = false
-    }, {
-      immediate: true
-    } as Partial<WatcherOptionCompat>)
-  } catch {
+      if (timer) {
+        clearTimeout(timer)
+      }
+    }, { immediate: true })
+  } catch (e) {
     // do nothing
   }
 
