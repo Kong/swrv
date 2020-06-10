@@ -1,4 +1,4 @@
-import { Ref } from '@vue/composition-api'
+import { Ref } from 'vue'
 import SWRVCache from './lib/cache'
 
 export type fetcherFn<Data> = (...args: any) => Data | Promise<Data>
