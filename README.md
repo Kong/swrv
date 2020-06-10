@@ -27,6 +27,7 @@ Features:
 - [x] stale-if-error
 - [x] Customizable cache implementation
 - [x] SSR support
+- [x] Vue 3 Support
 
 With `swrv`, components will get a stream of data updates constantly and
 automatically. Thus, the UI will be always fast and reactive.
@@ -54,6 +55,13 @@ automatically. Thus, the UI will be always fast and reactive.
 
 ```sh
 $ yarn add swrv
+```
+
+If you want to try out Vue 3 support (beta), install the beta release and 
+check out the [Vite example](https://github.com/Kong/swrv/tree/next/examples/vite).
+
+```sh
+$ yarn add swrv@beta
 ```
 
 ## Getting Started
