@@ -321,7 +321,7 @@ describe('useSWRV', () => {
     // cache key is no longer updating and the fetcher for page=3 has resolved
     // so the data ref now updates.
     timeout(1000)
-    await vm.$nextTick()
+    await tick(vm, 2)
     expect(vm.page).toBe('3')
     expect(wrapper.text()).toBe('Page: 3')
 
@@ -576,7 +576,7 @@ describe('useSWRV - loading', () => {
     expect(wrapper.text()).toBe('hello, data, loading')
 
     timeout(100)
-    await vm.$nextTick()
+    await tick(vm, 2)
     expect(wrapper.text()).toBe('hello, data, ready')
     done()
   })
@@ -781,10 +781,9 @@ describe('useSWRV - refresh', () => {
      * promise resolves quickly, it will grab the promise out of the cache
      * instead and not increment the count
      */
-    advanceBy(100)
-    timeout(100) // first fetcher fire
-    await tick(1)
-    expect(vm.$el.textContent).toBe('count: 1')
+    timeout(100)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('count: 0')
 
     advanceBy(100)
     timeout(100) // deduped
@@ -796,9 +795,9 @@ describe('useSWRV - refresh', () => {
     await tick(2)
     expect(vm.$el.textContent).toBe('count: 1')
 
-    advanceBy(200)
-    timeout(200)
-    await tick(2)
+    // TODO: figure out why this needs to be 200 with @vue/composition-api but 400 with vue3
+    timeout(400) // update
+    await tick(vm, 2)
     expect(vm.$el.textContent).toBe('count: 2')
 
     clear()
