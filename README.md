@@ -428,6 +428,13 @@ eventually. You can disable some of the eager fetching such as
 cache while also revalidating so users are always getting the most up to date
 data.
 
+### How can I refetch swrv data to update it?
+
+Swrv fetcher functions can be triggered on-demand by using the `revalidate` 
+[return value](https://github.com/Kong/swrv/#return-values). This is useful when
+there is some event that needs to trigger a revalidation such a PATCH request that
+updates the initial GET request response data.
+
 ## Contributors ✨
 
 Thanks goes to these wonderful people
