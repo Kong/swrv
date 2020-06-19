@@ -274,6 +274,12 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     })
   }
 
+  type WatcherOptionCompat = {
+    lazy?: boolean;
+    deep: boolean;
+    immediate?: boolean
+  }
+
   /**
    * Revalidate when key dependencies change
    */
@@ -290,7 +296,9 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
       if (timer) {
         clearTimeout(timer)
       }
-    })
+    }, {
+      immediate: true
+    } as Partial<WatcherOptionCompat>)
   } catch {
     // do nothing
   }
