@@ -1,6 +1,6 @@
 {
   "name": "swrv",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "main": "./dist/index.js",
   "module": "./esm/index.js",
   "scripts": {
