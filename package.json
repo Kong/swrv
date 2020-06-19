@@ -8,6 +8,7 @@
     "build:cjs": "tsc --target es5 --module CommonJs -p tsconfig.build.json",
     "build:esm": "tsc --target ESNext --module ES6 --outDir esm -p tsconfig.build.json",
     "test": "vue-cli-service test:unit",
+    "test-compat": "./tests/test-compat-all.sh",
     "types:check": "tsc --noEmit",
     "lint": "vue-cli-service lint"
   },
@@ -27,7 +28,7 @@
     "@vue/cli-plugin-typescript": "^4.1.0",
     "@vue/cli-plugin-unit-jest": "^4.1.0",
     "@vue/cli-service": "^4.1.0",
-    "@vue/composition-api": "^0.5.0",
+    "@vue/composition-api": "~0.6.0",
     "@vue/eslint-config-standard": "^4.0.0",
     "@vue/eslint-config-typescript": "^4.0.0",
     "@vue/test-utils": "1.0.0-beta.29",
