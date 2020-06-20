@@ -118,7 +118,7 @@ const { data, error, isValidating, revalidate } = useSWRV(key, fetcher, options)
 | Param     | Required | Description                                                                         |
 | --------- | -------- | ----------------------------------------------------------------------------------- |
 | `key`     | yes      | a unique key string for the request (or a function / array / null) (advanced usage) |
-| `fetcher` | yes      | a Promise returning function to fetch your data (details)                           |
+| `fetcher` |          | a Promise returning function to fetch your data (details)                           |
 | `options` |          | an object of configuration options                                                  |
 
 ### Return Values
@@ -374,6 +374,20 @@ export default {
     return useSWRV(key, fetch, { cache: myCache })
   }
 }
+```
+
+### Serve from Cache only
+
+To only retrieve a swrv cache response without revalidating, you can omit the fetcher function from the useSWRV call.
+This can be useful when there is some higher level swrv composable that is always sending data to other instances, so
+you can assume that fetcher-less composables will have data available.
+
+```ts
+// Component A 
+const { data } = useSWRV('/api/config', fetcher)
+
+// Component B, only retrieve from cache
+const { data } = useSWRV('/api/config')
 ```
 
 ## Error Handling
