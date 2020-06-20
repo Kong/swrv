@@ -154,7 +154,6 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
    */
   const revalidate = async () => {
     const keyVal = keyRef.value
-    if (!fn) return
     if (!isDocumentVisible()) { return }
     const cacheItem = config.cache.get(keyVal, ttl)
     let newData = cacheItem && cacheItem.data
@@ -165,6 +164,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
       stateRef.error = newData.error
     }
 
+    if (!fn) return
     /**
      * Currently getter's of SWRVCache will evict
      */
