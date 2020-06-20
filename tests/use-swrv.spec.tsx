@@ -256,6 +256,46 @@ describe('useSWRV', () => {
     expect(invoked).toBe(1) // empty fetcher is OK
     done()
   })
+
+  it('should return cache when no fetcher provided, across components', async done => {
+    let invoked = 0
+
+    const Hello = (cacheKey: string) => {
+      return defineComponent({
+        template: '<div>hello {{fromCache}}</div>',
+        setup () {
+          const { data: fromCache } = useSWRV(cacheKey)
+          return { fromCache }
+        }
+      })
+    }
+
+    const vm = new Vue({
+      template: `<div>data:{{ data }} <Hello v-if="data" /></div>`,
+      components: { Hello: Hello('cache-key-6') },
+      setup  () {
+        const fetcher = () => {
+          invoked += 1
+          return new Promise(res => setTimeout(() => res('SWR'), 200))
+        }
+        const { data } = useSWRV('cache-key-6', fetcher)
+
+        return { data }
+      }
+    }).$mount()
+
+    expect(invoked).toBe(1)
+
+    expect(vm.$el.textContent).toBe('data: ')
+    expect(invoked).toBe(1)
+    timeout(200)
+    await tick(vm, 2)
+
+    timeout(200)
+    expect(vm.$el.textContent).toBe('data:SWR hello SWR')
+    expect(invoked).toBe(1) // empty fetcher is OK
+    done()
+  })
 })
 
 describe('useSWRV - loading', () => {
