@@ -101,7 +101,7 @@ type StateRef<Data, Error> = { data: Data, error: Error, isValidating: boolean, 
 /**
  * Stale-While-Revalidate hook to handle fetching, caching, validation, and more...
  */
-export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcherFn<Data>, config?: IConfig): IResponse<Data, Error> {
+export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetcherFn<Data>, config?: IConfig): IResponse<Data, Error> {
   let unmounted = false
   let isHydrated = false
 
@@ -154,6 +154,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
    */
   const revalidate = async () => {
     const keyVal = keyRef.value
+    if (!fn) return
     if (!isDocumentVisible()) { return }
     const cacheItem = config.cache.get(keyVal, ttl)
     let newData = cacheItem && cacheItem.data
