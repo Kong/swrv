@@ -47,6 +47,7 @@ automatically. Thus, the UI will be always fast and reactive.
   - [Vuex](#vuex)
 - [Cache](#cache)
   - [localStorage](#localstorage)
+  - [Serve from cache only](#serve-from-cache-only)
 - [Error Handling](#error-handling)
 - [FAQ](#faq)
 - [Contributors](#contributors)
@@ -376,7 +377,7 @@ export default {
 }
 ```
 
-### Serve from Cache only
+### Serve from cache only
 
 To only retrieve a swrv cache response without revalidating, you can omit the fetcher function from the useSWRV call.
 This can be useful when there is some higher level swrv composable that is always sending data to other instances, so
