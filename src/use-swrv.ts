@@ -290,7 +290,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
       stateRef.key = val
       setRefCache(keyRef.value, stateRef, ttl)
 
-      if (!IS_SERVER && !isHydrated) {
+      if (!IS_SERVER && !isHydrated && keyRef.value) {
         revalidate()
       }
       isHydrated = false

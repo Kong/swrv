@@ -137,10 +137,10 @@ describe('useSWRV', () => {
       }, 1000))
     }
 
-    const loadProfile = endpoint => {
+    const loadProfile = () => {
       return new Promise((res) => setTimeout(() => {
         count++
-        endpoint && res({
+        res({
           userId: 123,
           age: 20
         })
@@ -148,7 +148,7 @@ describe('useSWRV', () => {
     }
 
     const vm = new Vue({
-      template: `<div>d1:{{ data1 && data1.id }} e1:{{ error1 }} d2:{{ data2 && data2.userId }} e2:{{ error2 }}</div>`,
+      template: `<div>d1:{{ data1 && data1.id }} d2:{{ data2 && data2.userId }}</div>`,
       setup  () {
         const { data: data1, error: error1 } = useSWRV('/api/user', loadUser)
         // TODO: checking truthiness of data1.value to avoid watcher warning
@@ -158,21 +158,57 @@ describe('useSWRV', () => {
       }
     }).$mount()
 
-    expect(vm.$el.textContent).toBe('d1: e1: d2: e2:')
+    expect(vm.$el.textContent).toBe('d1: d2:')
     timeout(100)
     await tick(vm, 2)
-    expect(vm.$el.textContent).toBe('d1: e1: d2: e2:')
-    expect(count).toEqual(0) // Promises still in flight
+    expect(vm.$el.textContent).toBe('d1: d2:')
+    expect(count).toEqual(0) // Promise still in flight
 
     timeout(900)
     await tick(vm, 2)
-    expect(vm.$el.textContent).toBe('d1:123 e1: d2: e2:')
-    expect(count).toEqual(2)
+    expect(vm.$el.textContent).toBe('d1:123 d2:')
+    expect(count).toEqual(1) // now that the first promise resolved, second one will fire
 
     timeout(200)
     await tick(vm, 2)
-    expect(vm.$el.textContent).toBe('d1:123 e1: d2:123 e2:')
-    expect(count).toEqual(3)
+    expect(vm.$el.textContent).toBe('d1:123 d2:123')
+    expect(count).toEqual(2)
+    done()
+  })
+
+  it('should not fetch if key is falsy', async done => {
+    let count = 0
+    const fetch = key => {
+      count++
+      return new Promise(res => setTimeout(() => res(key), 100))
+    }
+    const vm = new Vue({
+      template: `<div>{{ d1 }},{{ d2 }},{{ d3 }}</div>`,
+      setup  () {
+        const { data: d1 } = useSWRV('d1', fetch)
+        const { data: d2 } = useSWRV(() => d1.value && 'd2', fetch)
+        const { data: d3 } = useSWRV(() => d2.value && 'd3', fetch)
+
+        return {d1, d2, d3}
+      }
+    }).$mount()
+
+    expect(count).toBe(1)
+    expect(vm.$el.textContent).toBe(',,')
+
+    timeout(100)
+    await tick(vm, 2)
+    expect(count).toBe(2)
+    expect(vm.$el.textContent).toBe('d1,,')
+
+    timeout(100)
+    await tick(vm, 2)
+    expect(count).toBe(3)
+    expect(vm.$el.textContent).toBe('d1,d2,')
+
+    timeout(100)
+    await tick(vm, 3)
+    expect(vm.$el.textContent).toBe('d1,d2,d3')
     done()
   })
 
