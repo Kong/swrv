@@ -189,7 +189,7 @@ describe('useSWRV', () => {
         const { data: d2 } = useSWRV(() => d1.value && 'd2', fetch)
         const { data: d3 } = useSWRV(() => d2.value && 'd3', fetch)
 
-        return {d1, d2, d3}
+        return { d1, d2, d3 }
       }
     }).$mount()
 
