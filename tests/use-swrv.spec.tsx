@@ -332,6 +332,50 @@ describe('useSWRV', () => {
     expect(invoked).toBe(1) // empty fetcher is OK
     done()
   })
+
+  it('should return data even when cache ttl expires during request', async done => {
+    const loadData = () => new Promise(res => setTimeout(() => res('data'), 100))
+    let mutate
+    const vm = new Vue({
+      render: h => h(defineComponent({
+        template: `<div>hello, {{data}}, {{isValidating ? 'loading' : 'ready'}}</div>`,
+        setup () {
+          const { data, isValidating, revalidate } = useSWRV('is-validating-3', loadData, {
+            ttl: 50
+          })
+
+          mutate = revalidate
+          console.log(mutate)
+          return {
+            data,
+            isValidating
+          }
+        }
+      }))
+    }).$mount()
+
+    timeout(75)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('hello, , loading')
+
+    timeout(25)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('hello, data, ready')
+
+    mutate()
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('hello, data, loading')
+    timeout(25)
+    mutate()
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('hello, data, loading')
+
+    mutate()
+    timeout(100)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('hello, data, ready')
+    done()
+  })
 })
 
 describe('useSWRV - loading', () => {
@@ -363,7 +407,6 @@ describe('useSWRV - loading', () => {
   })
 
   it('should return loading state via isValidating', async done => {
-    // Prime the cache
     const vm = new Vue({
       render: h => h(defineComponent({
         setup () {
@@ -387,9 +430,6 @@ describe('useSWRV - loading', () => {
     await tick(vm, 2)
     expect(vm.$el.textContent).toBe('hello, data, loading')
 
-    timeout(100)
-    await tick(vm, 2)
-    expect(vm.$el.textContent).toBe('hello, data, ready')
     done()
   })
 })
