@@ -1,4 +1,26 @@
-import { reactive,
+/**              ____
+ *--------------/    \.------------------/
+ *            /  swrv  \.               /    //
+ *          /         / /\.            /    //
+ *        /     _____/ /   \.         /
+ *      /      /  ____/   .  \.      /
+ *    /        \ \_____        \.   /
+ *  /     .     \_____ \         \ /    //
+ *  \          _____/ /        ./ /    //
+ *    \       / _____/       ./  /
+ *      \    / /      .    ./   /
+ *        \ / /          ./    /
+ *    .     \/         ./     /    //
+ *            \      ./      /    //
+ *              \.. /       /
+ *         .     |||       /
+ *               |||      /
+ *     .         |||     /    //
+ *               |||    /    //
+ *               |||   /
+ */
+import {
+  reactive,
   watch,
   ref,
   toRefs,
@@ -31,11 +53,13 @@ const defaultConfig: IConfig = {
  * Cache the refs for later revalidation
  */
 function setRefCache (key, theRef, ttl) {
-  const refCacheItem = REF_CACHE.get(key, ttl)
+  const refCacheItem = REF_CACHE.get(key)
   if (refCacheItem) {
     refCacheItem.data.push(theRef)
   } else {
-    REF_CACHE.set(key, [theRef])
+    // #51 ensures ref cache does not evict too soon
+    const gracePeriod = 5000
+    REF_CACHE.set(key, [theRef], ttl + gracePeriod)
   }
 }
 
@@ -43,8 +67,7 @@ function setRefCache (key, theRef, ttl) {
  * Main mutation function for receiving data from promises to change state and
  * set data cache
  */
-const mutate = async <Data>(key: string, res: Promise<Data> | Data,
-  cache = DATA_CACHE, ttl = defaultConfig.ttl) => {
+const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA_CACHE, ttl = defaultConfig.ttl) => {
   let data, error, isValidating
 
   if (isPromise(res)) {
@@ -61,13 +84,13 @@ const mutate = async <Data>(key: string, res: Promise<Data> | Data,
 
   const newData = { data, error, isValidating }
   if (typeof data !== 'undefined') {
-    cache.set(key, newData)
+    cache.set(key, newData, ttl)
   }
 
   /**
    * Revalidate all swrv instances with new data
    */
-  const stateRef = REF_CACHE.get(key, ttl)
+  const stateRef = REF_CACHE.get(key)
   if (stateRef && stateRef.data.length) {
     // This filter fixes #24 race conditions to only update ref data of current
     // key, while data cache will continue to be updated if revalidation is
@@ -155,7 +178,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
   const revalidate = async () => {
     const keyVal = keyRef.value
     if (!isDocumentVisible()) { return }
-    const cacheItem = config.cache.get(keyVal, ttl)
+    const cacheItem = config.cache.get(keyVal)
     let newData = cacheItem && cacheItem.data
 
     stateRef.isValidating = true
@@ -165,18 +188,17 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
     }
 
     if (!fn) return
-    /**
-     * Currently getter's of SWRVCache will evict
-     */
+
     const trigger = async () => {
-      const promiseFromCache = PROMISES_CACHE.get(keyVal, config.dedupingInterval)
+      const promiseFromCache = PROMISES_CACHE.get(keyVal)
       if (!promiseFromCache) {
         const newPromise = fn(keyVal)
-        PROMISES_CACHE.set(keyVal, newPromise)
+        PROMISES_CACHE.set(keyVal, newPromise, config.dedupingInterval)
         await mutate(keyVal, newPromise, config.cache, ttl)
       } else {
         await mutate(keyVal, promiseFromCache.data, config.cache, ttl)
       }
+      stateRef.isValidating = false
     }
 
     if (newData && config.revalidateDebounce) {
