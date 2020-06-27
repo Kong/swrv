@@ -2,17 +2,17 @@
 # yarn lockfile v1
 
 
-"@vue/composition-api@^0.3.4":
-  version "0.3.4"
-  resolved "https://registry.yarnpkg.com/@vue/composition-api/-/composition-api-0.3.4.tgz#43d2c3377173cfe1d02e51e3342bcf0fbde9c4b6"
-  integrity sha512-aMbg/pEk0PSQAIFyWWLqbAmaCCTx1kFq+49KZslIBJH9Wqos7eEPLtMv4gGxd/EcciBIgfbtUXaXGg/O3mheRA==
+"@vue/composition-api@^0.5.4":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@vue/composition-api/-/composition-api-0.5.0.tgz#2dbaa02a5d1f5d0d407d53d5529fe444aa8362f3"
+  integrity sha512-9QDFWq7q839G1CTTaxeruPOTrrVOPSaVipJ2TxxK9QAruePNTHOGbOOFRpc8WLl4YPsu1/c29yBhMVmrXz8BZw==
   dependencies:
     tslib "^1.9.3"
 
-swrv@latest:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/swrv/-/swrv-0.1.1.tgz#22433e12c916d302b4313a17be651777753fb54e"
-  integrity sha512-jWlisno+FkoT1jm8JiLPO+Ra2H4FutqJaPHUgxFROBhNSnS1A2yh8ixe9o5W3uIMiD8EP9wm4zxz60UKtvLDnw==
+swrv@~0.5.2:
+  version "0.5.2"
+  resolved "https://registry.yarnpkg.com/swrv/-/swrv-0.5.2.tgz#b58b7b0509ec25cfc37faee32a3f514ebfd73b98"
+  integrity sha512-vlnp2NZ2UE11jpzdfb7f/XmaOafQy2lOySgT44fsi2KnHM+XCl8oxTtKoYlMUivcqANbSedwj8jPNhYBOPx1Rw==
 
 tslib@^1.9.3:
   version "1.10.0"
