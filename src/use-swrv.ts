@@ -42,7 +42,7 @@ const PROMISES_CACHE = new SWRVCache()
 const defaultConfig: IConfig = {
   cache: DATA_CACHE,
   refreshInterval: 0,
-  ttl: 1000 * 60 * 5,
+  ttl: 0,
   serverTTL: 1000,
   dedupingInterval: 2000,
   revalidateOnFocus: true,
