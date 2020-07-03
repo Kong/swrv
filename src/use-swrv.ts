@@ -175,7 +175,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
   /**
    * Revalidate the cache, mutate data
    */
-  const revalidate = async () => {
+  const revalidate = async (data?: fetcherFn<Data>) => {
     const keyVal = keyRef.value
     if (!isDocumentVisible()) { return }
     const cacheItem = config.cache.get(keyVal)
@@ -187,12 +187,16 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
       stateRef.error = newData.error
     }
 
-    if (!fn) return
+    const fetcher = data || fn
+    if (!fetcher) {
+      stateRef.isValidating = false
+      return
+    }
 
     const trigger = async () => {
       const promiseFromCache = PROMISES_CACHE.get(keyVal)
       if (!promiseFromCache) {
-        const newPromise = fn(keyVal)
+        const newPromise = fetcher(keyVal)
         PROMISES_CACHE.set(keyVal, newPromise, config.dedupingInterval)
         await mutate(keyVal, newPromise, config.cache, ttl)
       } else {
@@ -244,8 +248,8 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
       timer = setTimeout(tick, config.refreshInterval)
     }
     if (config.revalidateOnFocus) {
-      document.addEventListener('visibilitychange', revalidate, false)
-      window.addEventListener('focus', revalidate, false)
+      document.addEventListener('visibilitychange', () => revalidate(), false)
+      window.addEventListener('focus', () => revalidate(), false)
     }
   })
 
@@ -258,8 +262,8 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
       clearTimeout(timer)
     }
     if (config.revalidateOnFocus) {
-      document.removeEventListener('visibilitychange', revalidate, false)
-      window.removeEventListener('focus', revalidate, false)
+      document.removeEventListener('visibilitychange', () => revalidate(), false)
+      window.removeEventListener('focus', () => revalidate(), false)
     }
   })
   if (IS_SERVER) {
@@ -328,7 +332,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
 
   return {
     ...toRefs(stateRef),
-    revalidate
+    mutate: revalidate
   } as IResponse<Data, Error>
 }
 

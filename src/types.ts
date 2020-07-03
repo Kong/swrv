@@ -17,7 +17,7 @@ export interface IResponse<Data = any, Error = any> {
   data?: Ref<Data | undefined>
   error?: Ref<Error | undefined>
   isValidating: Ref<boolean>
-  revalidate: () => Promise<void>
+  mutate: () => Promise<void>
 }
 
 type keyFunction = () => string | null
