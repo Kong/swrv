@@ -218,6 +218,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
     PROMISES_CACHE.delete(keyVal)
   }
 
+  const revalidateCall = async () => revalidateCall()
   let timer = null
   /**
    * Setup polling
@@ -248,8 +249,8 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
       timer = setTimeout(tick, config.refreshInterval)
     }
     if (config.revalidateOnFocus) {
-      document.addEventListener('visibilitychange', () => revalidate(), false)
-      window.addEventListener('focus', () => revalidate(), false)
+      document.addEventListener('visibilitychange', revalidateCall, false)
+      window.addEventListener('focus', revalidateCall, false)
     }
   })
 
@@ -262,8 +263,8 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
       clearTimeout(timer)
     }
     if (config.revalidateOnFocus) {
-      document.removeEventListener('visibilitychange', () => revalidate(), false)
-      window.removeEventListener('focus', () => revalidate(), false)
+      document.removeEventListener('visibilitychange', revalidateCall, false)
+      window.removeEventListener('focus', revalidateCall, false)
     }
   })
   if (IS_SERVER) {
