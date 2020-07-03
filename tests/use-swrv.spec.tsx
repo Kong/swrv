@@ -340,7 +340,7 @@ describe('useSWRV', () => {
       render: h => h(defineComponent({
         template: `<div>hello, {{data}}, {{isValidating ? 'loading' : 'ready'}}</div>`,
         setup () {
-          const { data, isValidating, revalidate } = useSWRV('is-validating-3', loadData, {
+          const { data, isValidating, mutate: revalidate } = useSWRV('is-validating-3', loadData, {
             ttl: 50
           })
 
@@ -494,7 +494,6 @@ describe('useSWRV - mutate', () => {
 
 describe('useSWRV - listeners', () => {
   it('tears down listeners', async done => {
-    let revalidate
 
     const f1 = jest.fn()
     const f2 = jest.fn()
@@ -510,7 +509,6 @@ describe('useSWRV - listeners', () => {
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
         const refs = useSWRV('cache-key-1', () => 'SWR')
-        revalidate = refs.revalidate
         return refs
       }
     }).$mount()
@@ -519,10 +517,10 @@ describe('useSWRV - listeners', () => {
 
     vm.$destroy()
 
-    expect(f1).toHaveBeenLastCalledWith('visibilitychange', revalidate, false)
-    expect(f2).toHaveBeenLastCalledWith('visibilitychange', revalidate, false)
-    expect(f3).toHaveBeenLastCalledWith('focus', revalidate, false)
-    expect(f4).toHaveBeenLastCalledWith('focus', revalidate, false)
+    expect(f1).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
+    expect(f2).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
+    expect(f3).toHaveBeenLastCalledWith('focus', expect.any(Function), false)
+    expect(f4).toHaveBeenLastCalledWith('focus', expect.any(Function), false)
     done()
   })
 })
