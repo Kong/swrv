@@ -118,7 +118,7 @@ const { data, error, isValidating, revalidate } = useSWRV(key, fetcher, options)
 
 | Param     | Required | Description                                                                         |
 | --------- | -------- | ----------------------------------------------------------------------------------- |
-| `key`     | yes      | a unique key string for the request (or a function / array / null) (advanced usage) |
+| `key`     | yes      | a unique key string for the request (or a watcher function / null) (advanced usage) |
 | `fetcher` |          | a Promise returning function to fetch your data (details)                           |
 | `options` |          | an object of configuration options                                                  |
 
