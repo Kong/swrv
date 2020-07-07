@@ -59,7 +59,7 @@ function setRefCache (key, theRef, ttl) {
   } else {
     // #51 ensures ref cache does not evict too soon
     const gracePeriod = 5000
-    REF_CACHE.set(key, [theRef], ttl + gracePeriod)
+    REF_CACHE.set(key, [theRef], ttl > 0 ? ttl + gracePeriod : ttl)
   }
 }
 
