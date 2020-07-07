@@ -494,7 +494,6 @@ describe('useSWRV - mutate', () => {
 
 describe('useSWRV - listeners', () => {
   it('tears down listeners', async done => {
-
     const f1 = jest.fn()
     const f2 = jest.fn()
     const f3 = jest.fn()
