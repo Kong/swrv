@@ -47,6 +47,16 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "NeoLSN",
+      "name": "Jason Yang/楊朝傑",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/5782106?v=4",
+      "profile": "https://github.com/NeoLSN",
+      "contributions": [
+        "bug",
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7
