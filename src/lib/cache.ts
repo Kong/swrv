@@ -17,11 +17,7 @@ export default class SWRVCache {
    * Get cache item while evicting
    */
   get (k: string): ICacheItem {
-    const now = Date.now()
-    const item = this.items.get(k)
-    const hasExpired = item && now >= item.expiresAt
-    if (hasExpired) this.delete(k)
-    return hasExpired ? undefined : item
+    return this.items.get(k)
   }
 
   set (k: string, v: any, ttl: number) {
@@ -32,6 +28,12 @@ export default class SWRVCache {
       createdAt: now,
       expiresAt: timeToLive ? now + timeToLive : Infinity
     }
+
+    timeToLive && setTimeout(() => {
+      const current = Date.now()
+      const hasExpired = current >= item.expiresAt
+      if (hasExpired) this.delete(k)
+    }, timeToLive)
 
     this.items.set(k, item)
   }

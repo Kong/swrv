@@ -418,6 +418,7 @@ describe('useSWRV', () => {
 
     // after #51 gracePeriod
     advanceBy(6000)
+    timeout(6000)
     mutate('ttlData1', fetch(), undefined, ttl)
     await tick(vm1, 2)
 
@@ -428,6 +429,7 @@ describe('useSWRV', () => {
 
     // after a long time
     advanceBy(100000)
+    timeout(100000)
     await tick(vm1, 2)
 
     expect(count).toBe(2)
@@ -480,6 +482,7 @@ describe('useSWRV', () => {
 
     // after #51 gracePeriod
     advanceBy(6000)
+    timeout(6000)
     mutate('ttlData2', fetch(), undefined, ttl)
     await tick(vm1, 2)
 
@@ -490,6 +493,7 @@ describe('useSWRV', () => {
 
     // after a long time
     advanceBy(100000)
+    timeout(100000)
     await tick(vm1, 2)
 
     expect(count).toBe(2)
