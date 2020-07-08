@@ -1,6 +1,7 @@
 import Vue from 'vue/dist/vue.common.js'
 import VueCompositionApi, { watch, defineComponent, ref } from '@vue/composition-api'
 import useSWRV, { mutate } from '@/use-swrv'
+import { advanceBy, advanceTo, clear } from 'jest-date-mock'
 
 Vue.use(VueCompositionApi)
 
@@ -340,7 +341,7 @@ describe('useSWRV', () => {
       render: h => h(defineComponent({
         template: `<div>hello, {{data}}, {{isValidating ? 'loading' : 'ready'}}</div>`,
         setup () {
-          const { data, isValidating, revalidate } = useSWRV('is-validating-3', loadData, {
+          const { data, isValidating, mutate: revalidate } = useSWRV('is-validating-3', loadData, {
             ttl: 50
           })
 
@@ -374,6 +375,134 @@ describe('useSWRV', () => {
     timeout(100)
     await tick(vm, 2)
     expect(vm.$el.textContent).toBe('hello, data, ready')
+    done()
+  })
+
+  // from #54
+  it('does not invalidate cache when ttl is 0', async done => {
+    advanceTo(new Date())
+    const ttl = 0
+    let count = 0
+    const fetch = () => {
+      count++
+      return Promise.resolve(count)
+    }
+
+    mutate('ttlData1', fetch(), undefined, ttl)
+
+    const vm1 = new Vue({
+      template: `<div>{{ data1 }}</div>`,
+      setup  () {
+        const { data: data1 } = useSWRV('ttlData1', undefined, { ttl })
+
+        return { data1 }
+      }
+    }).$mount()
+    const component = {
+      template: `<div>{{ data2 }}</div>`,
+      setup  () {
+        const { data: data2 } = useSWRV('ttlData1', undefined, { ttl })
+
+        return { data2 }
+      }
+    }
+
+    let vm2
+    await tick(vm1, 2)
+
+    // first time
+    expect(count).toBe(1)
+    expect(vm1.$el.textContent).toBe('1')
+    vm2 = new Vue(component).$mount()
+    expect(vm2.$el.textContent).toBe('1')
+
+    // after #51 gracePeriod
+    advanceBy(6000)
+    timeout(6000)
+    mutate('ttlData1', fetch(), undefined, ttl)
+    await tick(vm1, 2)
+
+    expect(count).toBe(2)
+    expect(vm1.$el.textContent).toBe('2')
+    vm2 = new Vue(component).$mount()
+    expect(vm2.$el.textContent).toBe('2')
+
+    // after a long time
+    advanceBy(100000)
+    timeout(100000)
+    await tick(vm1, 2)
+
+    expect(count).toBe(2)
+    expect(vm1.$el.textContent).toBe('2')
+    vm2 = new Vue(component).$mount()
+    expect(vm2.$el.textContent).toBe('2')
+
+    clear()
+
+    done()
+  })
+
+  // from #54
+  it('does invalidate cache when ttl is NOT 0', async done => {
+    advanceTo(new Date())
+    const ttl = 100
+    let count = 0
+    const fetch = () => {
+      count++
+      return Promise.resolve(count)
+    }
+
+    mutate('ttlData2', fetch(), undefined, ttl)
+
+    const vm1 = new Vue({
+      template: `<div>{{ data1 }}</div>`,
+      setup  () {
+        const { data: data1 } = useSWRV('ttlData2', undefined, { ttl })
+
+        return { data1 }
+      }
+    }).$mount()
+    const component = {
+      template: `<div>{{ data2 }}</div>`,
+      setup  () {
+        const { data: data2 } = useSWRV('ttlData2', undefined, { ttl })
+
+        return { data2 }
+      }
+    }
+
+    let vm2
+    await tick(vm1, 2)
+
+    // first time
+    expect(count).toBe(1)
+    expect(vm1.$el.textContent).toBe('1')
+    vm2 = new Vue(component).$mount()
+    expect(vm2.$el.textContent).toBe('1')
+
+    // after #51 gracePeriod
+    advanceBy(6000)
+    timeout(6000)
+    mutate('ttlData2', fetch(), undefined, ttl)
+    await tick(vm1, 2)
+
+    expect(count).toBe(2)
+    expect(vm1.$el.textContent).toBe('1')
+    vm2 = new Vue(component).$mount()
+    expect(vm2.$el.textContent).toBe('2')
+
+    // after a long time
+    advanceBy(100000)
+    timeout(100000)
+    await tick(vm1, 2)
+
+    expect(count).toBe(2)
+    expect(vm1.$el.textContent).toBe('1')
+    vm2 = new Vue(component).$mount()
+    expect(vm2.$el.textContent).toBe('')
+
+    clear()
+
     done()
   })
 })
@@ -494,8 +623,6 @@ describe('useSWRV - mutate', () => {
 
 describe('useSWRV - listeners', () => {
   it('tears down listeners', async done => {
-    let revalidate
-
     const f1 = jest.fn()
     const f2 = jest.fn()
     const f3 = jest.fn()
@@ -510,7 +637,6 @@ describe('useSWRV - listeners', () => {
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
         const refs = useSWRV('cache-key-1', () => 'SWR')
-        revalidate = refs.revalidate
         return refs
       }
     }).$mount()
@@ -519,10 +645,10 @@ describe('useSWRV - listeners', () => {
 
     vm.$destroy()
 
-    expect(f1).toHaveBeenLastCalledWith('visibilitychange', revalidate, false)
-    expect(f2).toHaveBeenLastCalledWith('visibilitychange', revalidate, false)
-    expect(f3).toHaveBeenLastCalledWith('focus', revalidate, false)
-    expect(f4).toHaveBeenLastCalledWith('focus', revalidate, false)
+    expect(f1).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
+    expect(f2).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
+    expect(f3).toHaveBeenLastCalledWith('focus', expect.any(Function), false)
+    expect(f4).toHaveBeenLastCalledWith('focus', expect.any(Function), false)
     done()
   })
 })

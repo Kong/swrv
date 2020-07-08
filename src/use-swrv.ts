@@ -42,7 +42,7 @@ const PROMISES_CACHE = new SWRVCache()
 const defaultConfig: IConfig = {
   cache: DATA_CACHE,
   refreshInterval: 0,
-  ttl: 1000 * 60 * 5,
+  ttl: 0,
   serverTTL: 1000,
   dedupingInterval: 2000,
   revalidateOnFocus: true,
@@ -59,7 +59,7 @@ function setRefCache (key, theRef, ttl) {
   } else {
     // #51 ensures ref cache does not evict too soon
     const gracePeriod = 5000
-    REF_CACHE.set(key, [theRef], ttl + gracePeriod)
+    REF_CACHE.set(key, [theRef], ttl > 0 ? ttl + gracePeriod : ttl)
   }
 }
 
@@ -175,7 +175,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
   /**
    * Revalidate the cache, mutate data
    */
-  const revalidate = async () => {
+  const revalidate = async (data?: fetcherFn<Data>) => {
     const keyVal = keyRef.value
     if (!isDocumentVisible()) { return }
     const cacheItem = config.cache.get(keyVal)
@@ -187,12 +187,16 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
       stateRef.error = newData.error
     }
 
-    if (!fn) return
+    const fetcher = data || fn
+    if (!fetcher) {
+      stateRef.isValidating = false
+      return
+    }
 
     const trigger = async () => {
       const promiseFromCache = PROMISES_CACHE.get(keyVal)
       if (!promiseFromCache) {
-        const newPromise = fn(keyVal)
+        const newPromise = fetcher(keyVal)
         PROMISES_CACHE.set(keyVal, newPromise, config.dedupingInterval)
         await mutate(keyVal, newPromise, config.cache, ttl)
       } else {
@@ -214,6 +218,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
     PROMISES_CACHE.delete(keyVal)
   }
 
+  const revalidateCall = async () => revalidateCall()
   let timer = null
   /**
    * Setup polling
@@ -244,8 +249,8 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
       timer = setTimeout(tick, config.refreshInterval)
     }
     if (config.revalidateOnFocus) {
-      document.addEventListener('visibilitychange', revalidate, false)
-      window.addEventListener('focus', revalidate, false)
+      document.addEventListener('visibilitychange', revalidateCall, false)
+      window.addEventListener('focus', revalidateCall, false)
     }
   })
 
@@ -258,8 +263,8 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
       clearTimeout(timer)
     }
     if (config.revalidateOnFocus) {
-      document.removeEventListener('visibilitychange', revalidate, false)
-      window.removeEventListener('focus', revalidate, false)
+      document.removeEventListener('visibilitychange', revalidateCall, false)
+      window.removeEventListener('focus', revalidateCall, false)
     }
   })
   if (IS_SERVER) {
@@ -328,7 +333,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
 
   return {
     ...toRefs(stateRef),
-    revalidate
+    mutate: revalidate
   } as IResponse<Data, Error>
 }
 

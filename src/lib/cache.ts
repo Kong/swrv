@@ -29,7 +29,11 @@ export default class SWRVCache {
       expiresAt: timeToLive ? now + timeToLive : Infinity
     }
 
-    timeToLive && setTimeout(() => this.delete(k), timeToLive)
+    timeToLive && setTimeout(() => {
+      const current = Date.now()
+      const hasExpired = current >= item.expiresAt
+      if (hasExpired) this.delete(k)
+    }, timeToLive)
 
     this.items.set(k, item)
   }
