@@ -111,7 +111,7 @@ data-fetching library to handle that part.
 ## Api
 
 ```ts
-const { data, error, isValidating, revalidate } = useSWRV(key, fetcher, options)
+const { data, error, isValidating, mutate } = useSWRV(key, fetcher, options)
 ```
 
 ### Parameters
@@ -128,7 +128,7 @@ const { data, error, isValidating, revalidate } = useSWRV(key, fetcher, options)
   loaded)
 - `error`: error thrown by fetcher (or undefined)
 - `isValidating`: if there's a request or revalidation loading
-- `revalidate`: function to trigger the validation manually
+- `mutate`: function to trigger the validation manually
 
 ### Config options
 
