@@ -465,6 +465,7 @@ Thanks goes to these wonderful people
     <td align="center"><a href="https://github.com/chuca"><img src="https://avatars0.githubusercontent.com/u/864496?v=4" width="100px;" alt=""/><br /><sub><b>Fernando Machuca</b></sub></a><br /><a href="#design-chuca" title="Design">🎨</a></td>
     <td align="center"><a href="https://zeit.co"><img src="https://avatars0.githubusercontent.com/u/14985020?v=4" width="100px;" alt=""/><br /><sub><b>ZEIT</b></sub></a><br /><a href="#ideas-zeit" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://github.com/NeoLSN"><img src="https://avatars1.githubusercontent.com/u/5782106?v=4" width="100px;" alt=""/><br /><sub><b>Jason Yang/楊朝傑</b></sub></a><br /><a href="https://github.com/Kong/swrv/issues?q=author%3ANeoLSN" title="Bug reports">🐛</a> <a href="https://github.com/Kong/swrv/commits?author=NeoLSN" title="Code">💻</a></td>
+    <td align="center"><a href="http://axelhzf.com"><img src="https://avatars1.githubusercontent.com/u/175627?v=4" width="100px;" alt=""/><br /><sub><b>Axel Hernández Ferrera</b></sub></a><br /><a href="https://github.com/Kong/swrv/issues?q=author%3Aaxelhzf" title="Bug reports">🐛</a> <a href="https://github.com/Kong/swrv/commits?author=axelhzf" title="Code">💻</a> <a href="#example-axelhzf" title="Examples">💡</a></td>
   </tr>
 </table>
 
