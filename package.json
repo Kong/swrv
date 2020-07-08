@@ -38,6 +38,7 @@
     "eslint": "^5.16.0",
     "eslint-plugin-vue": "^5.0.0",
     "file-loader": "^5.0.2",
+    "jest-date-mock": "^1.0.8",
     "typescript": "~3.9.5",
     "vue": "^2.6.11",
     "vue-server-renderer": "^2.6.11",

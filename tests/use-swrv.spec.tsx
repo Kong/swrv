@@ -1,6 +1,7 @@
 import Vue from 'vue/dist/vue.common.js'
 import VueCompositionApi, { watch, defineComponent, ref } from '@vue/composition-api'
 import useSWRV, { mutate } from '@/use-swrv'
+import { advanceBy, advanceTo, clear } from 'jest-date-mock'
 
 Vue.use(VueCompositionApi)
 
@@ -374,6 +375,130 @@ describe('useSWRV', () => {
     timeout(100)
     await tick(vm, 2)
     expect(vm.$el.textContent).toBe('hello, data, ready')
+    done()
+  })
+
+  // from #54
+  it('data & refs should not be removed from cache when ttl is set to 0', async done => {
+    advanceTo(new Date())
+    const ttl = 0
+    let count = 0
+    const fetch = () => {
+      count++
+      return Promise.resolve(count)
+    }
+
+    mutate('ttlData1', fetch(), undefined, ttl)
+
+    const vm1 = new Vue({
+      template: `<div>{{ data1 }}</div>`,
+      setup  () {
+        const { data: data1 } = useSWRV('ttlData1', undefined, { ttl })
+
+        return { data1 }
+      }
+    }).$mount()
+    const component = {
+      template: `<div>{{ data2 }}</div>`,
+      setup  () {
+        const { data: data2 } = useSWRV('ttlData1', undefined, { ttl })
+
+        return { data2 }
+      }
+    }
+
+    let vm2
+    await tick(vm1, 2)
+
+    // first time
+    expect(count).toBe(1)
+    expect(vm1.$el.textContent).toBe('1')
+    vm2 = new Vue(component).$mount()
+    expect(vm2.$el.textContent).toBe('1')
+
+    // after #51 gracePeriod
+    advanceBy(6000)
+    mutate('ttlData1', fetch(), undefined, ttl)
+    await tick(vm1, 2)
+
+    expect(count).toBe(2)
+    expect(vm1.$el.textContent).toBe('2')
+    vm2 = new Vue(component).$mount()
+    expect(vm2.$el.textContent).toBe('2')
+
+    // after a long time
+    advanceBy(100000)
+    await tick(vm1, 2)
+
+    expect(count).toBe(2)
+    expect(vm1.$el.textContent).toBe('2')
+    vm2 = new Vue(component).$mount()
+    expect(vm2.$el.textContent).toBe('2')
+
+    clear()
+
+    done()
+  })
+
+  // from #54
+  it('data & refs should be removed from cache when ttl is NOT set to 0', async done => {
+    advanceTo(new Date())
+    const ttl = 100
+    let count = 0
+    const fetch = () => {
+      count++
+      return Promise.resolve(count)
+    }
+
+    mutate('ttlData2', fetch(), undefined, ttl)
+
+    const vm1 = new Vue({
+      template: `<div>{{ data1 }}</div>`,
+      setup  () {
+        const { data: data1 } = useSWRV('ttlData2', undefined, { ttl })
+
+        return { data1 }
+      }
+    }).$mount()
+    const component = {
+      template: `<div>{{ data2 }}</div>`,
+      setup  () {
+        const { data: data2 } = useSWRV('ttlData2', undefined, { ttl })
+
+        return { data2 }
+      }
+    }
+
+    let vm2
+    await tick(vm1, 2)
+
+    // first time
+    expect(count).toBe(1)
+    expect(vm1.$el.textContent).toBe('1')
+    vm2 = new Vue(component).$mount()
+    expect(vm2.$el.textContent).toBe('1')
+
+    // after #51 gracePeriod
+    advanceBy(6000)
+    mutate('ttlData2', fetch(), undefined, ttl)
+    await tick(vm1, 2)
+
+    expect(count).toBe(2)
+    expect(vm1.$el.textContent).toBe('1')
+    vm2 = new Vue(component).$mount()
+    expect(vm2.$el.textContent).toBe('2')
+
+    // after a long time
+    advanceBy(100000)
+    await tick(vm1, 2)
+
+    expect(count).toBe(2)
+    expect(vm1.$el.textContent).toBe('1')
+    vm2 = new Vue(component).$mount()
+    expect(vm2.$el.textContent).toBe('')
+
+    clear()
+
     done()
   })
 })
