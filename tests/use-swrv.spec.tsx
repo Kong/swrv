@@ -379,7 +379,7 @@ describe('useSWRV', () => {
   })
 
   // from #54
-  it('data & refs should not be removed from cache when ttl is set to 0', async done => {
+  it('does not invalidate cache when ttl is 0', async done => {
     advanceTo(new Date())
     const ttl = 0
     let count = 0
@@ -443,7 +443,7 @@ describe('useSWRV', () => {
   })
 
   // from #54
-  it('data & refs should be removed from cache when ttl is NOT set to 0', async done => {
+  it('does invalidate cache when ttl is NOT 0', async done => {
     advanceTo(new Date())
     const ttl = 100
     let count = 0
