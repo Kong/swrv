@@ -1,6 +1,6 @@
 {
   "name": "swrv",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "main": "./dist/index.js",
   "module": "./esm/index.js",
   "scripts": {
@@ -10,7 +10,8 @@
     "test": "vue-cli-service test:unit",
     "test-compat": "./tests/test-compat-all.sh",
     "types:check": "tsc --noEmit",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "ac": "all-contributors"
   },
   "license": "Apache-2.0",
   "types": "./dist/index.d.ts",
