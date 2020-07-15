@@ -218,7 +218,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
     PROMISES_CACHE.delete(keyVal)
   }
 
-  const revalidateCall = async () => revalidateCall()
+  const revalidateCall = async () => revalidate()
   let timer = null
   /**
    * Setup polling
