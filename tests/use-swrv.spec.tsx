@@ -346,7 +346,6 @@ describe('useSWRV', () => {
           })
 
           mutate = revalidate
-          console.log(mutate)
           return {
             data,
             isValidating
@@ -628,15 +627,15 @@ describe('useSWRV - listeners', () => {
     const f3 = jest.fn()
     const f4 = jest.fn()
 
-    document.addEventListener = f1
-    document.removeEventListener = f2
-    window.addEventListener = f3
-    window.removeEventListener = f4
+    jest.spyOn(document, 'addEventListener').mockImplementationOnce(f1)
+    jest.spyOn(document, 'removeEventListener').mockImplementationOnce(f2)
+    jest.spyOn(window, 'addEventListener').mockImplementationOnce(f3)
+    jest.spyOn(window, 'removeEventListener').mockImplementationOnce(f4)
 
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
-        const refs = useSWRV('cache-key-1', () => 'SWR')
+        const refs = useSWRV('cache-key-listeners-1', () => 'SWR')
         return refs
       }
     }).$mount()
@@ -649,7 +648,58 @@ describe('useSWRV - listeners', () => {
     expect(f2).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
     expect(f3).toHaveBeenLastCalledWith('focus', expect.any(Function), false)
     expect(f4).toHaveBeenLastCalledWith('focus', expect.any(Function), false)
+
+    expect(f1).toHaveBeenCalledTimes(1)
+    expect(f2).toHaveBeenCalledTimes(1)
+    expect(f3).toHaveBeenCalledTimes(1)
+    expect(f4).toHaveBeenCalledTimes(1)
     done()
+  })
+
+  it('events trigger revalidate - switching windows/tabs', async () => {
+    let revalidations = 0
+    const vm = new Vue({
+      template: `<div>hello, {{ data }}</div>`,
+      setup  () {
+        const refs = useSWRV('cache-key-listeners-2', () => {
+          revalidations += 1
+          return 'SWR'
+        })
+        return refs
+      }
+    }).$mount()
+
+    await tick(vm, 2)
+    expect(revalidations).toBe(1)
+
+    let evt = new Event('visibilitychange')
+    document.dispatchEvent(evt)
+
+    await tick(vm, 2)
+    expect(revalidations).toBe(2)
+  })
+
+  it('events trigger revalidate - focusing back on a window/tab', async () => {
+    let revalidations = 0
+    const vm = new Vue({
+      template: `<div>hello, {{ data }}</div>`,
+      setup  () {
+        const refs = useSWRV('cache-key-listeners-3', () => {
+          revalidations += 1
+          return 'SWR'
+        })
+        return refs
+      }
+    }).$mount()
+
+    await tick(vm, 2)
+    expect(revalidations).toBe(1)
+
+    let evt = new Event('focus')
+    window.dispatchEvent(evt)
+
+    await tick(vm, 2)
+    expect(revalidations).toBe(2)
   })
 })
 
