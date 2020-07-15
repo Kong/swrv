@@ -1660,10 +1660,10 @@
   optionalDependencies:
     prettier "^1.18.2"
 
-"@vue/composition-api@~0.6.0":
-  version "0.6.5"
-  resolved "https://registry.yarnpkg.com/@vue/composition-api/-/composition-api-0.6.5.tgz#890b4ab3777ee95c6d633872db2bf53a45446d5b"
-  integrity sha512-IRdtn6/59yPNmvzlu5JTAR3SK0kK5T69wtz8oefSY8FFUPoOe7A2BlcVCypRX7jTmpBADhrHkAiklc8ffmPOuQ==
+"@vue/composition-api@~1.0.0-beta.1":
+  version "1.0.0-beta.3"
+  resolved "https://registry.yarnpkg.com/@vue/composition-api/-/composition-api-1.0.0-beta.3.tgz#d1edc1c56ed01b3e862e9e8f61efed4df5701991"
+  integrity sha512-er8gDgHTH/cAZCInR77xufPwnUwkonrzBhDdwxODEnnDffd7AC6Zn7I5+o83lGQbUe97UxJQMlAXGUSs81pzUg==
   dependencies:
     tslib "^2.0.0"
 
@@ -2339,10 +2339,10 @@ babel-preset-jest@^24.9.0:
     "@babel/plugin-syntax-object-rest-spread" "^7.0.0"
     babel-plugin-jest-hoist "^24.9.0"
 
-babel-preset-vca-jsx@^0.3.5:
-  version "0.3.5"
-  resolved "https://registry.yarnpkg.com/babel-preset-vca-jsx/-/babel-preset-vca-jsx-0.3.5.tgz#ff425b15247724c2f602f0b5017a00a32872765d"
-  integrity sha512-UUsTwaUDn2y/7x32dc2veBj4+mqjNOhcxMlHFA4EHZLLxlVWMEFhSYROStpBkmZBy38iw8qFN8+SB9RVlhQ68w==
+babel-preset-vca-jsx@^0.3.6:
+  version "0.3.6"
+  resolved "https://registry.yarnpkg.com/babel-preset-vca-jsx/-/babel-preset-vca-jsx-0.3.6.tgz#7bafc7e2c990496a742083c7fdd7bc110c6eb5f4"
+  integrity sha512-0MTDmrFX5GqMpF7JtDAcKGCJfSl8prfYwpDYyaFM7BGdnTde2TBXuV6P4ltM2joVUe93jBgJneUiTe0mKbwF/w==
   dependencies:
     "@babel/plugin-syntax-jsx" "^7.2.0"
 
