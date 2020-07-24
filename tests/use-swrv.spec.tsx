@@ -213,6 +213,55 @@ describe('useSWRV', () => {
     done()
   })
 
+  it('should not revalidate if key is falsy', async done => {
+    let count = 0
+    const fetch = key => {
+      count++
+      return new Promise(res => setTimeout(() => res(key), 100))
+    }
+    const vm = new Vue({
+      template: `<div>{{ e1 }}</div>`,
+      setup  () {
+        const someDep = ref(undefined)
+        const { data: e1 } = useSWRV(() => someDep.value, fetch, {
+          refreshInterval: 1000
+        })
+
+        return { e1 }
+      }
+    }).$mount()
+
+    // Does not fetch on mount
+    expect(count).toBe(0)
+    expect(vm.$el.textContent).toBe('')
+    timeout(100)
+    await tick(vm, 2)
+    expect(count).toBe(0)
+    expect(vm.$el.textContent).toBe('')
+
+    // Does not revalidate even after some time passes
+    timeout(100)
+    await tick(vm, 2)
+    expect(count).toBe(0)
+    expect(vm.$el.textContent).toBe('')
+
+    // does not revalidate on refresh interval
+    timeout(1000)
+    await tick(vm, 2)
+    expect(count).toBe(0)
+    expect(vm.$el.textContent).toBe('')
+
+    // does not revalidate on tab changes
+    let evt = new Event('visibilitychange')
+    document.dispatchEvent(evt)
+    timeout(100)
+    await tick(vm, 2)
+    expect(count).toBe(0)
+    expect(vm.$el.textContent).toBe('')
+
+    done()
+  })
+
   // From #24
   it('should only update refs of current cache key', async done => {
     const fetcher = (key) => new Promise(res => setTimeout(() => res(key), 1000))
