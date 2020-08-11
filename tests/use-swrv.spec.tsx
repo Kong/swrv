@@ -956,6 +956,77 @@ describe('useSWRV - window events', () => {
     done()
   })
 
+  it('should get last known state when document is not visible', async done => {
+    let count = 0
+    mutate('dynamic-5-1', count)
+    toggleVisibility('hidden')
+
+    const vm = new Vue({
+      template: `<div>count: {{ data }}</div>`,
+      setup () {
+        return useSWRV('dynamic-5-1', () => ++count, {
+          refreshInterval: 200
+        })
+      }
+    }).$mount()
+
+    timeout(200)
+    await tick(vm, 1)
+    expect(vm.$el.textContent).toBe('count: 0')
+    expect(count).toBe(0)
+
+    timeout(200)
+    await tick(vm, 1)
+    expect(vm.$el.textContent).toBe('count: 0')
+    expect(count).toBe(0)
+
+    timeout(200)
+    await tick(vm, 1)
+    expect(vm.$el.textContent).toBe('count: 0')
+    expect(count).toBe(0)
+
+    timeout(200)
+    await tick(vm, 1)
+    expect(vm.$el.textContent).toBe('count: 0')
+    expect(count).toBe(0)
+
+    timeout(200)
+    await tick(vm, 1)
+    expect(vm.$el.textContent).toBe('count: 0')
+    expect(count).toBe(0)
+
+    toggleVisibility('visible')
+
+    timeout(200)
+    await tick(vm, 1)
+    expect(vm.$el.textContent).toBe('count: 1')
+    expect(count).toBe(1)
+
+    timeout(200)
+    await tick(vm, 1)
+    expect(vm.$el.textContent).toBe('count: 1')
+    expect(count).toBe(1)
+
+    timeout(200)
+    await tick(vm, 1)
+    expect(vm.$el.textContent).toBe('count: 2')
+    expect(count).toBe(2)
+
+    timeout(200)
+    await tick(vm, 1)
+    expect(vm.$el.textContent).toBe('count: 2')
+    expect(count).toBe(2)
+
+    timeout(200)
+    await tick(vm, 1)
+    expect(vm.$el.textContent).toBe('count: 3')
+    expect(count).toBe(3)
+
+    vm.$destroy()
+
+    done()
+  })
+
   it('should not rerender when offline', async done => {
     let count = 0
 
