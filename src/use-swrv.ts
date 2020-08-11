@@ -177,7 +177,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
    */
   const revalidate = async (data?: fetcherFn<Data>) => {
     const keyVal = keyRef.value
-    if (!isDocumentVisible()) { return }
+    if (!isDocumentVisible() || !keyVal) { return }
     const cacheItem = config.cache.get(keyVal)
     let newData = cacheItem && cacheItem.data
 
@@ -218,7 +218,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
     PROMISES_CACHE.delete(keyVal)
   }
 
-  const revalidateCall = async () => revalidateCall()
+  const revalidateCall = async () => revalidate()
   let timer = null
   /**
    * Setup polling

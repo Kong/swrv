@@ -213,6 +213,55 @@ describe('useSWRV', () => {
     done()
   })
 
+  it('should not revalidate if key is falsy', async done => {
+    let count = 0
+    const fetch = key => {
+      count++
+      return new Promise(res => setTimeout(() => res(key), 100))
+    }
+    const vm = new Vue({
+      template: `<div>{{ e1 }}</div>`,
+      setup  () {
+        const someDep = ref(undefined)
+        const { data: e1 } = useSWRV(() => someDep.value, fetch, {
+          refreshInterval: 1000
+        })
+
+        return { e1 }
+      }
+    }).$mount()
+
+    // Does not fetch on mount
+    expect(count).toBe(0)
+    expect(vm.$el.textContent).toBe('')
+    timeout(100)
+    await tick(vm, 2)
+    expect(count).toBe(0)
+    expect(vm.$el.textContent).toBe('')
+
+    // Does not revalidate even after some time passes
+    timeout(100)
+    await tick(vm, 2)
+    expect(count).toBe(0)
+    expect(vm.$el.textContent).toBe('')
+
+    // does not revalidate on refresh interval
+    timeout(1000)
+    await tick(vm, 2)
+    expect(count).toBe(0)
+    expect(vm.$el.textContent).toBe('')
+
+    // does not revalidate on tab changes
+    let evt = new Event('visibilitychange')
+    document.dispatchEvent(evt)
+    timeout(100)
+    await tick(vm, 2)
+    expect(count).toBe(0)
+    expect(vm.$el.textContent).toBe('')
+
+    done()
+  })
+
   // From #24
   it('should only update refs of current cache key', async done => {
     const fetcher = (key) => new Promise(res => setTimeout(() => res(key), 1000))
@@ -346,7 +395,6 @@ describe('useSWRV', () => {
           })
 
           mutate = revalidate
-          console.log(mutate)
           return {
             data,
             isValidating
@@ -628,15 +676,15 @@ describe('useSWRV - listeners', () => {
     const f3 = jest.fn()
     const f4 = jest.fn()
 
-    document.addEventListener = f1
-    document.removeEventListener = f2
-    window.addEventListener = f3
-    window.removeEventListener = f4
+    jest.spyOn(document, 'addEventListener').mockImplementationOnce(f1)
+    jest.spyOn(document, 'removeEventListener').mockImplementationOnce(f2)
+    jest.spyOn(window, 'addEventListener').mockImplementationOnce(f3)
+    jest.spyOn(window, 'removeEventListener').mockImplementationOnce(f4)
 
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
-        const refs = useSWRV('cache-key-1', () => 'SWR')
+        const refs = useSWRV('cache-key-listeners-1', () => 'SWR')
         return refs
       }
     }).$mount()
@@ -649,7 +697,58 @@ describe('useSWRV - listeners', () => {
     expect(f2).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
     expect(f3).toHaveBeenLastCalledWith('focus', expect.any(Function), false)
     expect(f4).toHaveBeenLastCalledWith('focus', expect.any(Function), false)
+
+    expect(f1).toHaveBeenCalledTimes(1)
+    expect(f2).toHaveBeenCalledTimes(1)
+    expect(f3).toHaveBeenCalledTimes(1)
+    expect(f4).toHaveBeenCalledTimes(1)
     done()
+  })
+
+  it('events trigger revalidate - switching windows/tabs', async () => {
+    let revalidations = 0
+    const vm = new Vue({
+      template: `<div>hello, {{ data }}</div>`,
+      setup  () {
+        const refs = useSWRV('cache-key-listeners-2', () => {
+          revalidations += 1
+          return 'SWR'
+        })
+        return refs
+      }
+    }).$mount()
+
+    await tick(vm, 2)
+    expect(revalidations).toBe(1)
+
+    let evt = new Event('visibilitychange')
+    document.dispatchEvent(evt)
+
+    await tick(vm, 2)
+    expect(revalidations).toBe(2)
+  })
+
+  it('events trigger revalidate - focusing back on a window/tab', async () => {
+    let revalidations = 0
+    const vm = new Vue({
+      template: `<div>hello, {{ data }}</div>`,
+      setup  () {
+        const refs = useSWRV('cache-key-listeners-3', () => {
+          revalidations += 1
+          return 'SWR'
+        })
+        return refs
+      }
+    }).$mount()
+
+    await tick(vm, 2)
+    expect(revalidations).toBe(1)
+
+    let evt = new Event('focus')
+    window.dispatchEvent(evt)
+
+    await tick(vm, 2)
+    expect(revalidations).toBe(2)
   })
 })
 

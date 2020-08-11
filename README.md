@@ -41,6 +41,7 @@ automatically. Thus, the UI will be always fast and reactive.
   - [Return Values](#return-values)
   - [Config Options](#config-options)
 - [Prefetching](#prefetching)
+- [Dependent Fetching](#dependent-fetching)
 - [Stale-if-error](#stale-if-error)
 - [State Management](#state-management)
   - [useSwrvState](#useSwrvState)
@@ -163,6 +164,41 @@ function prefetch() {
   // the second parameter is a Promise
   // SWRV will use the result when it resolves
 }
+```
+
+## Dependent Fetching
+swrv also allows you to fetch data that depends on other data. It ensures the 
+maximum possible parallelism (avoiding waterfalls), as well as serial fetching
+when a piece of dynamic data is required for the next data fetch to happen.
+
+```vue
+<template>
+  <p v-if="!projects">loading...</p>
+  <p v-else>You have {{ projects.length }} projects</p>
+</template>
+
+<script>
+import { ref } from '@vue/composition-api'
+import useSWRV from 'swrv'
+
+export default {
+  name: 'Profile',
+
+  setup() {
+    const { data: user } = useSWRV('/api/user', fetch)
+    const { data: projects } = useSWRV(() => user.id && '/api/projects?uid=' + user.id, fetch)
+    // if the return value of the cache key function is falsy, the fetcher
+    // will not trigger, but since `user` is inside the cache key function,
+    // it is being watched so when it is available, then the projects will 
+    // be fetched.
+
+    return {
+      user, 
+      projects
+    }
+  },
+}
+</script>
 ```
 
 ## Stale-if-error
