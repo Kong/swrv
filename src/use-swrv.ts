@@ -177,7 +177,8 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
    */
   const revalidate = async (data?: fetcherFn<Data>) => {
     const keyVal = keyRef.value
-    if (!isDocumentVisible() || !keyVal) { return }
+    if (!keyVal) { return }
+
     const cacheItem = config.cache.get(keyVal)
     let newData = cacheItem && cacheItem.data
 
@@ -188,7 +189,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
     }
 
     const fetcher = data || fn
-    if (!fetcher) {
+    if (!fetcher || !isDocumentVisible()) {
       stateRef.isValidating = false
       return
     }
@@ -229,8 +230,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
       // if this is the case, but continue to revalidate since promises can't
       // be cancelled and new hook instances might rely on promise/data cache or
       // from pre-fetch
-      if (!stateRef.error && isDocumentVisible() && isOnline()) {
-        // only revalidate when the page is visible
+      if (!stateRef.error && isOnline()) {
         // if API request errored, we stop polling in this round
         // and let the error retry function handle it
         await revalidate()
