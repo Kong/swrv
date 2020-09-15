@@ -1,6 +1,7 @@
 interface ICacheItem {
   data: any,
-  createdAt: number
+  createdAt: number,
+  expiresAt: number
 }
 
 export default class SWRVCache {
@@ -15,37 +16,29 @@ export default class SWRVCache {
   /**
    * Get cache item while evicting
    */
-  get (k: string, ttl: number): ICacheItem {
-    this.shift(ttl)
+  get (k: string): ICacheItem {
     return this.items.get(k)
   }
 
-  set (k: string, v: any) {
-    const item: ICacheItem = {
+  set (k: string, v: any, ttl: number) {
+    const timeToLive = ttl || this.ttl
+    const now = Date.now()
+    const item = {
       data: v,
-      createdAt: Date.now()
+      createdAt: now,
+      expiresAt: timeToLive ? now + timeToLive : Infinity
     }
+
+    timeToLive && setTimeout(() => {
+      const current = Date.now()
+      const hasExpired = current >= item.expiresAt
+      if (hasExpired) this.delete(k)
+    }, timeToLive)
 
     this.items.set(k, item)
   }
 
   delete (k: string) {
     this.items.delete(k)
-  }
-
-  /**
-   * Eviction of cache items based on some ttl of ICacheItem.createdAt
-   */
-  private shift (ttl: number) {
-    const timeToLive = ttl || this.ttl
-    if (!timeToLive) {
-      return
-    }
-
-    this.items.forEach((v, k) => {
-      if (v.createdAt < (Date.now() - timeToLive)) {
-        this.items.delete(k)
-      }
-    })
   }
 }

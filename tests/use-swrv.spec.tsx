@@ -1,6 +1,7 @@
 import { createApp, watch, defineComponent, ref, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import useSWRV, { mutate } from '@/use-swrv'
+import { advanceBy, advanceTo, clear } from 'jest-date-mock'
 
 jest.useFakeTimers()
 const timeout: Function = milliseconds => jest.advanceTimersByTime(milliseconds)
@@ -11,7 +12,6 @@ const tick: Function = async (vm, times) => {
 }
 
 const container = document.createElement('div')
-
 describe('useSWRV', () => {
   it('should return data on hydration when fetch is not a promise', done => {
     const fetch = () => 'SWR'
@@ -135,10 +135,10 @@ describe('useSWRV', () => {
       }, 1000))
     }
 
-    const loadProfile = endpoint => {
+    const loadProfile = () => {
       return new Promise((res) => setTimeout(() => {
         count++
-        endpoint && res({
+        res({
           userId: 123,
           age: 20
         })
@@ -146,7 +146,7 @@ describe('useSWRV', () => {
     }
 
     const wrapper = mount(defineComponent({
-      template: `<div>d1:{{ data1 && data1.id }} e1:{{ error1 }} d2:{{ data2 && data2.userId }} e2:{{ error2 }}</div>`,
+      template: `<div>d1:{{ data1 && data1.id }} d2:{{ data2 && data2.userId }}</div>`,
       setup  () {
         const { data: data1, error: error1 } = useSWRV('/api/user', loadUser)
         // TODO: checking truthiness of data1.value to avoid watcher warning
@@ -155,23 +155,107 @@ describe('useSWRV', () => {
         return { data1, error1, data2, error2 }
       }
     }))
-    const vm = wrapper.vm
 
-    expect(wrapper.text()).toBe('d1: e1: d2: e2:')
+    expect(wrapper.text()).toBe('d1: d2:')
     timeout(100)
-    await tick(vm, 1)
-    expect(wrapper.text()).toBe('d1: e1: d2: e2:')
-    expect(count).toEqual(0) // Promises still in flight
+    await tick(wrapper.vm, 2)
+    expect(wrapper.text()).toBe('d1: d2:')
+    expect(count).toEqual(0) // Promise still in flight
 
     timeout(900)
-    await tick(vm, 1)
-    expect(wrapper.text()).toBe('d1:123 e1: d2: e2:')
-    expect(count).toEqual(2)
+    await tick(wrapper.vm, 2)
+    expect(wrapper.text()).toBe('d1:123 d2:')
+    expect(count).toEqual(1) // now that the first promise resolved, second one will fire
 
     timeout(200)
-    await tick(vm, 1)
-    expect(wrapper.text()).toBe('d1:123 e1: d2:123 e2:')
-    expect(count).toEqual(3)
+    await tick(wrapper.vm, 2)
+    expect(wrapper.text()).toBe('d1:123 d2:123')
+    expect(count).toEqual(2)
+    done()
+  })
+
+  it('should not fetch if key is falsy', async done => {
+    let count = 0
+    const fetch = key => {
+      count++
+      return new Promise(res => setTimeout(() => res(key), 100))
+    }
+    const wrapper = mount(defineComponent({
+      template: `<div>{{ d1 }},{{ d2 }},{{ d3 }}</div>`,
+      setup  () {
+        const { data: d1 } = useSWRV('d1', fetch)
+        const { data: d2 } = useSWRV(() => d1.value && 'd2', fetch)
+        const { data: d3 } = useSWRV(() => d2.value && 'd3', fetch)
+
+        return { d1, d2, d3 }
+      }
+    }))
+
+    expect(count).toBe(1)
+    expect(wrapper.text()).toBe(',,')
+
+    timeout(100)
+    await tick(wrapper.vm, 2)
+    expect(count).toBe(2)
+    expect(wrapper.text()).toBe('d1,,')
+
+    timeout(100)
+    await tick(wrapper.vm, 2)
+    expect(count).toBe(3)
+    expect(wrapper.text()).toBe('d1,d2,')
+
+    timeout(100)
+    await tick(wrapper.vm, 3)
+    expect(wrapper.text()).toBe('d1,d2,d3')
+    done()
+  })
+
+  it('should not revalidate if key is falsy', async done => {
+    let count = 0
+    const fetch = key => {
+      count++
+      return new Promise(res => setTimeout(() => res(key), 100))
+    }
+    const wrapper = mount(defineComponent({
+      template: `<div>{{ e1 }}</div>`,
+      setup  () {
+        const someDep = ref(undefined)
+        const { data: e1 } = useSWRV(() => someDep.value, fetch, {
+          refreshInterval: 1000
+        })
+
+        return { e1 }
+      }
+    }))
+
+    // Does not fetch on mount
+    expect(count).toBe(0)
+    expect(wrapper.text()).toBe('')
+    timeout(100)
+    await tick(wrapper.vm, 2)
+    expect(count).toBe(0)
+    expect(wrapper.text()).toBe('')
+
+    // Does not revalidate even after some time passes
+    timeout(100)
+    await tick(wrapper.vm, 2)
+    expect(count).toBe(0)
+    expect(wrapper.text()).toBe('')
+
+    // does not revalidate on refresh interval
+    timeout(1000)
+    await tick(wrapper.vm, 2)
+    expect(count).toBe(0)
+    expect(wrapper.text()).toBe('')
+
+    // does not revalidate on tab changes
+    let evt = new Event('visibilitychange')
+    document.dispatchEvent(evt)
+    timeout(100)
+    await tick(wrapper.vm, 2)
+    expect(count).toBe(0)
+    expect(wrapper.text()).toBe('')
+
     done()
   })
 
@@ -228,6 +312,243 @@ describe('useSWRV', () => {
 
     done()
   })
+
+  it('should return cache when no fetcher provided', async done => {
+    let invoked = 0
+    const wrapper = mount(defineComponent({
+      template: `<div>d:{{ data }} cache:{{ dataFromCache }}</div>`,
+      setup  () {
+        const fetcher = () => {
+          invoked += 1
+          return new Promise(res => setTimeout(() => res('SWR'), 200))
+        }
+        const { data } = useSWRV('cache-key-5', fetcher)
+        const { data: dataFromCache } = useSWRV('cache-key-5')
+
+        return { data, dataFromCache }
+      }
+    }))
+
+    expect(invoked).toBe(1)
+
+    expect(wrapper.text()).toBe('d: cache:')
+    expect(invoked).toBe(1)
+    timeout(200)
+    await tick(wrapper.vm, 2)
+
+    expect(wrapper.text()).toBe('d:SWR cache:SWR')
+    expect(invoked).toBe(1) // empty fetcher is OK
+    done()
+  })
+
+  it('should return cache when no fetcher provided, across components', async done => {
+    let invoked = 0
+
+    const Hello = (cacheKey: string) => {
+      return defineComponent({
+        template: '<div>hello {{fromCache}}</div>',
+        setup () {
+          const { data: fromCache } = useSWRV(cacheKey)
+          return { fromCache }
+        }
+      })
+    }
+
+    const wrapper = mount(defineComponent({
+      template: `<div>data:{{ data }} <Hello v-if="data" /></div>`,
+      components: { Hello: Hello('cache-key-6') },
+      setup  () {
+        const fetcher = () => {
+          invoked += 1
+          return new Promise(res => setTimeout(() => res('SWR'), 200))
+        }
+        const { data } = useSWRV('cache-key-6', fetcher)
+
+        return { data }
+      }
+    }))
+
+    expect(invoked).toBe(1)
+
+    expect(wrapper.text()).toBe('data:')
+    expect(invoked).toBe(1)
+    timeout(200)
+    await tick(wrapper.vm, 2)
+
+    timeout(200)
+    expect(wrapper.text()).toBe('data:SWR hello SWR')
+    expect(invoked).toBe(1) // empty fetcher is OK
+    done()
+  })
+
+  it('should return data even when cache ttl expires during request', async done => {
+    const loadData = () => new Promise(res => setTimeout(() => res('data'), 100))
+    let mutate
+    const wrapper = mount(defineComponent({
+      template: `<div>hello, {{data}}, {{isValidating ? 'loading' : 'ready'}}</div>`,
+      setup () {
+        const { data, isValidating, mutate: revalidate } = useSWRV('is-validating-3', loadData, {
+          ttl: 50
+        })
+
+        mutate = revalidate
+        return {
+          data,
+          isValidating
+        }
+      }
+    }))
+
+    timeout(75)
+    await tick(wrapper.vm, 2)
+    expect(wrapper.text()).toBe('hello, , loading')
+
+    timeout(25)
+    await tick(wrapper.vm, 2)
+    expect(wrapper.text()).toBe('hello, data, ready')
+
+    mutate()
+    await tick(wrapper.vm, 2)
+    expect(wrapper.text()).toBe('hello, data, loading')
+    timeout(25)
+    mutate()
+    await tick(wrapper.vm, 2)
+    expect(wrapper.text()).toBe('hello, data, loading')
+
+    mutate()
+    timeout(100)
+    await tick(wrapper.vm, 2)
+    expect(wrapper.text()).toBe('hello, data, ready')
+    done()
+  })
+
+  // from #54
+  it('does not invalidate cache when ttl is 0', async done => {
+    advanceTo(new Date())
+    const ttl = 0
+    let count = 0
+    const fetch = () => {
+      count++
+      return Promise.resolve(count)
+    }
+
+    mutate('ttlData1', fetch(), undefined, ttl)
+
+    const wrapper1 = mount(defineComponent({
+      template: `<div>{{ data1 }}</div>`,
+      setup  () {
+        const { data: data1 } = useSWRV('ttlData1', undefined, { ttl })
+
+        return { data1 }
+      }
+    }))
+    const component = {
+      template: `<div>{{ data2 }}</div>`,
+      setup  () {
+        const { data: data2 } = useSWRV('ttlData1', undefined, { ttl })
+
+        return { data2 }
+      }
+    }
+
+    let wrapper2
+    await tick(wrapper1.vm, 2)
+
+    // first time
+    expect(count).toBe(1)
+    expect(wrapper1.text()).toBe('1')
+    wrapper2 =  mount(defineComponent(component))
+    expect(wrapper2.text()).toBe('1')
+
+    // after #51 gracePeriod
+    advanceBy(6000)
+    timeout(6000)
+    mutate('ttlData1', fetch(), undefined, ttl)
+    await tick(wrapper1.vm, 2)
+
+    expect(count).toBe(2)
+    expect(wrapper1.text()).toBe('2')
+    wrapper2 = mount(defineComponent(component))
+    expect(wrapper2.text()).toBe('2')
+
+    // after a long time
+    advanceBy(100000)
+    timeout(100000)
+    await tick(wrapper1.vm, 2)
+
+    expect(count).toBe(2)
+    expect(wrapper1.text()).toBe('2')
+    wrapper2 = mount(defineComponent(component))
+    expect(wrapper2.text()).toBe('2')
+
+    clear()
+
+    done()
+  })
+
+  // from #54
+  it('does invalidate cache when ttl is NOT 0', async done => {
+    advanceTo(new Date())
+    const ttl = 100
+    let count = 0
+    const fetch = () => {
+      count++
+      return Promise.resolve(count)
+    }
+
+    mutate('ttlData2', fetch(), undefined, ttl)
+
+    const wrapper1 =  mount(defineComponent({
+      template: `<div>{{ data1 }}</div>`,
+      setup  () {
+        const { data: data1 } = useSWRV('ttlData2', undefined, { ttl })
+
+        return { data1 }
+      }
+    }))
+    const component = {
+      template: `<div>{{ data2 }}</div>`,
+      setup  () {
+        const { data: data2 } = useSWRV('ttlData2', undefined, { ttl })
+
+        return { data2 }
+      }
+    }
+
+    let wrapper2
+    await tick(wrapper1.vm, 2)
+
+    // first time
+    expect(count).toBe(1)
+    expect(wrapper1.text()).toBe('1')
+    wrapper2 = mount(defineComponent(component))
+    expect(wrapper2.text()).toBe('1')
+
+    // after #51 gracePeriod
+    advanceBy(6000)
+    timeout(6000)
+    mutate('ttlData2', fetch(), undefined, ttl)
+    await tick(wrapper1.vm, 2)
+
+    expect(count).toBe(2)
+    expect(wrapper1.text()).toBe('1')
+    wrapper2 = mount(defineComponent(component))
+    expect(wrapper2.text()).toBe('2')
+
+    // after a long time
+    advanceBy(100000)
+    timeout(100000)
+    await tick(wrapper1.vm, 2)
+
+    expect(count).toBe(2)
+    expect(wrapper1.text()).toBe('1')
+    wrapper2 = mount(defineComponent(component))
+    expect(wrapper2.text()).toBe('')
+
+    clear()
+
+    done()
+  })
 })
 
 describe('useSWRV - loading', () => {
@@ -245,13 +566,11 @@ describe('useSWRV - loading', () => {
       }
     }))
 
-    const vm = wrapper.vm
-
     expect(renderCount).toEqual(1)
     expect(wrapper.text()).toBe('hello, loading')
     timeout(100)
 
-    await tick(vm, 1)
+    await tick(wrapper.vm, 1)
 
     expect(wrapper.text()).toBe('hello, data')
     expect(renderCount).toEqual(2)
@@ -317,7 +636,7 @@ describe('useSWRV - mutate', () => {
   // it('mutate triggers revalidations', done => {
   //   const loadData = key => new Promise(res => setTimeout(() => res(key + Date.now()), 100))
   //   mutate('mutate-is-revalidated-1', loadData('mutate-is-revalidated-1')).then(async () => {
-  //     const vm = createApp({
+  //     const vm = new Vue({
   //       template: `<div>hello, {{ data }}</div>`,
   //       setup () {
   //         setTimeout(() => {
@@ -326,7 +645,7 @@ describe('useSWRV - mutate', () => {
 
   //         return useSWRV('mutate-is-revalidated-1', loadData)
   //       }
-  //     }).mount(container)
+  //     }).$mount()
 
   //     tick(vm, 4)
   //     expect(vm.$el.textContent).toContain('hello, mutate-is-revalidated-1')
@@ -347,24 +666,20 @@ describe('useSWRV - mutate', () => {
 
 describe('useSWRV - listeners', () => {
   it('tears down listeners', async done => {
-    let revalidate
-
     const f1 = jest.fn()
     const f2 = jest.fn()
     const f3 = jest.fn()
     const f4 = jest.fn()
 
-    document.addEventListener = f1
-    document.removeEventListener = f2
-    window.addEventListener = f3
-    window.removeEventListener = f4
+    jest.spyOn(document, 'addEventListener').mockImplementationOnce(f1)
+    jest.spyOn(document, 'removeEventListener').mockImplementationOnce(f2)
+    jest.spyOn(window, 'addEventListener').mockImplementationOnce(f3)
+    jest.spyOn(window, 'removeEventListener').mockImplementationOnce(f4)
 
     const app = createApp({
       template: `<div>hello, {{ data }}</div>`,
       setup  () {
-        const refs = useSWRV('cache-key-1', () => 'SWR')
-        revalidate = refs.revalidate
-        return refs
+        return useSWRV('cache-key-1', () => 'SWR')
       }
     })
     const vm = app.mount(container)
@@ -373,11 +688,62 @@ describe('useSWRV - listeners', () => {
 
     app.unmount(container)
 
-    expect(f1).toHaveBeenLastCalledWith('visibilitychange', revalidate, false)
-    expect(f2).toHaveBeenLastCalledWith('visibilitychange', revalidate, false)
-    expect(f3).toHaveBeenLastCalledWith('focus', revalidate, false)
-    expect(f4).toHaveBeenLastCalledWith('focus', revalidate, false)
+    expect(f1).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
+    expect(f2).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
+    expect(f3).toHaveBeenLastCalledWith('focus', expect.any(Function), false)
+    expect(f4).toHaveBeenLastCalledWith('focus', expect.any(Function), false)
+
+    expect(f1).toHaveBeenCalledTimes(1)
+    expect(f2).toHaveBeenCalledTimes(1)
+    expect(f3).toHaveBeenCalledTimes(1)
+    expect(f4).toHaveBeenCalledTimes(1)
     done()
+  })
+
+  it('events trigger revalidate - switching windows/tabs', async () => {
+    let revalidations = 0
+    const wrapper = mount(defineComponent({
+      template: `<div>hello, {{ data }}</div>`,
+      setup  () {
+        const refs = useSWRV('cache-key-listeners-2', () => {
+          revalidations += 1
+          return 'SWR'
+        })
+        return refs
+      }
+    }))
+
+    await tick(wrapper.vm, 2)
+    expect(revalidations).toBe(1)
+
+    let evt = new Event('visibilitychange')
+    document.dispatchEvent(evt)
+
+    await tick(wrapper.vm, 2)
+    expect(revalidations).toBe(2)
+  })
+
+  it('events trigger revalidate - focusing back on a window/tab', async () => {
+    let revalidations = 0
+    const wrapper = mount(defineComponent({
+      template: `<div>hello, {{ data }}</div>`,
+      setup  () {
+        const refs = useSWRV('cache-key-listeners-3', () => {
+          revalidations += 1
+          return 'SWR'
+        })
+        return refs
+      }
+    }))
+
+    await tick(wrapper.vm, 2)
+    expect(revalidations).toBe(1)
+
+    let evt = new Event('focus')
+    window.dispatchEvent(evt)
+
+    await tick(wrapper.vm, 2)
+    expect(revalidations).toBe(2)
   })
 })
 
@@ -585,6 +951,77 @@ describe('useSWRV - window events', () => {
 
     // put it back to visible for other tests
     toggleVisibility('visible')
+
+    done()
+  })
+
+  it('should get last known state when document is not visible', async done => {
+    let count = 0
+    mutate('dynamic-5-1', count)
+    toggleVisibility('hidden')
+
+    const wrapper = mount(defineComponent({
+      template: `<div>count: {{ data }}</div>`,
+      setup () {
+        return useSWRV('dynamic-5-1', () => ++count, {
+          refreshInterval: 200
+        })
+      }
+    }))
+
+    timeout(200)
+    await tick(wrapper.vm, 1)
+    expect(wrapper.text()).toBe('count: 0')
+    expect(count).toBe(0)
+
+    timeout(200)
+    await tick(wrapper.vm, 1)
+    expect(wrapper.text()).toBe('count: 0')
+    expect(count).toBe(0)
+
+    timeout(200)
+    await tick(wrapper.vm, 1)
+    expect(wrapper.text()).toBe('count: 0')
+    expect(count).toBe(0)
+
+    timeout(200)
+    await tick(wrapper.vm, 1)
+    expect(wrapper.text()).toBe('count: 0')
+    expect(count).toBe(0)
+
+    timeout(200)
+    await tick(wrapper.vm, 1)
+    expect(wrapper.text()).toBe('count: 0')
+    expect(count).toBe(0)
+
+    toggleVisibility('visible')
+
+    timeout(200)
+    await tick(wrapper.vm, 1)
+    expect(wrapper.text()).toBe('count: 1')
+    expect(count).toBe(1)
+
+    timeout(200)
+    await tick(wrapper.vm, 1)
+    expect(wrapper.text()).toBe('count: 1')
+    expect(count).toBe(1)
+
+    timeout(200)
+    await tick(wrapper.vm, 1)
+    expect(wrapper.text()).toBe('count: 2')
+    expect(count).toBe(2)
+
+    timeout(200)
+    await tick(wrapper.vm, 1)
+    expect(wrapper.text()).toBe('count: 2')
+    expect(count).toBe(2)
+
+    timeout(200)
+    await tick(wrapper.vm, 1)
+    expect(wrapper.text()).toBe('count: 3')
+    expect(count).toBe(3)
+
+    wrapper.unmount()
 
     done()
   })

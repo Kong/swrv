@@ -1,4 +1,26 @@
-import { reactive,
+/**              ____
+ *--------------/    \.------------------/
+ *            /  swrv  \.               /    //
+ *          /         / /\.            /    //
+ *        /     _____/ /   \.         /
+ *      /      /  ____/   .  \.      /
+ *    /        \ \_____        \.   /
+ *  /     .     \_____ \         \ /    //
+ *  \          _____/ /        ./ /    //
+ *    \       / _____/       ./  /
+ *      \    / /      .    ./   /
+ *        \ / /          ./    /
+ *    .     \/         ./     /    //
+ *            \      ./      /    //
+ *              \.. /       /
+ *         .     |||       /
+ *               |||      /
+ *     .         |||     /    //
+ *               |||    /    //
+ *               |||   /
+ */
+import {
+  reactive,
   watch,
   ref,
   toRefs,
@@ -19,7 +41,7 @@ const PROMISES_CACHE = new SWRVCache()
 const defaultConfig: IConfig = {
   cache: DATA_CACHE,
   refreshInterval: 0,
-  ttl: 1000 * 60 * 5,
+  ttl: 0,
   serverTTL: 1000,
   dedupingInterval: 2000,
   revalidateOnFocus: true,
@@ -30,11 +52,13 @@ const defaultConfig: IConfig = {
  * Cache the refs for later revalidation
  */
 function setRefCache (key, theRef, ttl) {
-  const refCacheItem = REF_CACHE.get(key, ttl)
+  const refCacheItem = REF_CACHE.get(key)
   if (refCacheItem) {
     refCacheItem.data.push(theRef)
   } else {
-    REF_CACHE.set(key, [theRef])
+    // #51 ensures ref cache does not evict too soon
+    const gracePeriod = 5000
+    REF_CACHE.set(key, [theRef], ttl > 0 ? ttl + gracePeriod : ttl)
   }
 }
 
@@ -42,8 +66,7 @@ function setRefCache (key, theRef, ttl) {
  * Main mutation function for receiving data from promises to change state and
  * set data cache
  */
-const mutate = async <Data>(key: string, res: Promise<Data> | Data,
-  cache = DATA_CACHE, ttl = defaultConfig.ttl) => {
+const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA_CACHE, ttl = defaultConfig.ttl) => {
   let data, error, isValidating
 
   if (isPromise(res)) {
@@ -60,13 +83,13 @@ const mutate = async <Data>(key: string, res: Promise<Data> | Data,
 
   const newData = { data, error, isValidating }
   if (typeof data !== 'undefined') {
-    cache.set(key, newData)
+    cache.set(key, newData, ttl)
   }
 
   /**
    * Revalidate all swrv instances with new data
    */
-  const stateRef = REF_CACHE.get(key, ttl)
+  const stateRef = REF_CACHE.get(key)
   if (stateRef && stateRef.data.length) {
     // This filter fixes #24 race conditions to only update ref data of current
     // key, while data cache will continue to be updated if revalidation is
@@ -100,7 +123,7 @@ type StateRef<Data, Error> = { data: Data, error: Error, isValidating: boolean, 
 /**
  * Stale-While-Revalidate hook to handle fetching, caching, validation, and more...
  */
-export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcherFn<Data>, config?: IConfig): IResponse<Data, Error> {
+export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetcherFn<Data>, config?: IConfig): IResponse<Data, Error> {
   let unmounted = false
   let isHydrated = false
 
@@ -159,10 +182,11 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   /**
    * Revalidate the cache, mutate data
    */
-  const revalidate = async () => {
+  const revalidate = async (data?: fetcherFn<Data>) => {
     const keyVal = keyRef.value
-    if (!isDocumentVisible()) { return }
-    const cacheItem = config.cache.get(keyVal, ttl)
+    if (!keyVal) { return }
+
+    const cacheItem = config.cache.get(keyVal)
     let newData = cacheItem && cacheItem.data
 
     stateRef.isValidating = true
@@ -171,18 +195,22 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
       stateRef.error = newData.error
     }
 
-    /**
-     * Currently getter's of SWRVCache will evict
-     */
+    const fetcher = data || fn
+    if (!fetcher || !isDocumentVisible()) {
+      stateRef.isValidating = false
+      return
+    }
+
     const trigger = async () => {
-      const promiseFromCache = PROMISES_CACHE.get(keyVal, config.dedupingInterval)
+      const promiseFromCache = PROMISES_CACHE.get(keyVal)
       if (!promiseFromCache) {
-        const newPromise = fn(keyVal)
-        PROMISES_CACHE.set(keyVal, newPromise)
+        const newPromise = fetcher(keyVal)
+        PROMISES_CACHE.set(keyVal, newPromise, config.dedupingInterval)
         await mutate(keyVal, newPromise, config.cache, ttl)
       } else {
         await mutate(keyVal, promiseFromCache.data, config.cache, ttl)
       }
+      stateRef.isValidating = false
     }
 
     if (newData && config.revalidateDebounce) {
@@ -198,6 +226,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     PROMISES_CACHE.delete(keyVal)
   }
 
+  const revalidateCall = async () => revalidate()
   let timer = null
   /**
    * Setup polling
@@ -208,8 +237,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
       // if this is the case, but continue to revalidate since promises can't
       // be cancelled and new hook instances might rely on promise/data cache or
       // from pre-fetch
-      if (!stateRef.error && isDocumentVisible() && isOnline()) {
-        // only revalidate when the page is visible
+      if (!stateRef.error && isOnline()) {
         // if API request errored, we stop polling in this round
         // and let the error retry function handle it
         await revalidate()
@@ -228,8 +256,8 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
       timer = setTimeout(tick, config.refreshInterval)
     }
     if (config.revalidateOnFocus) {
-      document.addEventListener('visibilitychange', revalidate, false)
-      window.addEventListener('focus', revalidate, false)
+      document.addEventListener('visibilitychange', revalidateCall, false)
+      window.addEventListener('focus', revalidateCall, false)
     }
   })
 
@@ -242,8 +270,8 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
       clearTimeout(timer)
     }
     if (config.revalidateOnFocus) {
-      document.removeEventListener('visibilitychange', revalidate, false)
-      window.removeEventListener('focus', revalidate, false)
+      document.removeEventListener('visibilitychange', revalidateCall, false)
+      window.removeEventListener('focus', revalidateCall, false)
     }
   })
 
@@ -292,21 +320,24 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
       keyRef.value = val
       stateRef.key = val
       setRefCache(keyRef.value, stateRef, ttl)
-      if (!IS_SERVER && !isHydrated) {
+
+      if (!IS_SERVER && !isHydrated && keyRef.value) {
         revalidate()
       }
       isHydrated = false
       if (timer) {
         clearTimeout(timer)
       }
-    }, { immediate: true })
-  } catch (e) {
+    }, {
+      immediate: true
+    })
+  } catch {
     // do nothing
   }
 
   return {
     ...toRefs(stateRef),
-    revalidate
+    mutate: revalidate
   } as IResponse<Data, Error>
 }
 
