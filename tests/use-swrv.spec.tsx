@@ -391,7 +391,8 @@ describe('useSWRV', () => {
         template: `<div>hello, {{data}}, {{isValidating ? 'loading' : 'ready'}}</div>`,
         setup () {
           const { data, isValidating, mutate: revalidate } = useSWRV('is-validating-3', loadData, {
-            ttl: 50
+            ttl: 50,
+            dedupingInterval: 0
           })
 
           mutate = revalidate
@@ -713,7 +714,7 @@ describe('useSWRV - listeners', () => {
         const refs = useSWRV('cache-key-listeners-2', () => {
           revalidations += 1
           return 'SWR'
-        })
+        }, { dedupingInterval: 0 })
         return refs
       }
     }).$mount()
@@ -736,7 +737,7 @@ describe('useSWRV - listeners', () => {
         const refs = useSWRV('cache-key-listeners-3', () => {
           revalidations += 1
           return 'SWR'
-        })
+        }, { dedupingInterval: 0 })
         return refs
       }
     }).$mount()
@@ -755,13 +756,12 @@ describe('useSWRV - listeners', () => {
 describe('useSWRV - refresh', () => {
   it('should rerender automatically on interval', async done => {
     let count = 0
-
     const vm = new Vue({
       template: `<div>count: {{ data }}</div>`,
       setup  () {
         return useSWRV('dynamic-1', () => count++, {
           refreshInterval: 200,
-          dedupingInterval: 100
+          dedupingInterval: 0
         })
       }
     }).$mount()
@@ -781,14 +781,15 @@ describe('useSWRV - refresh', () => {
   })
 
   it('should dedupe requests combined with intervals - promises', async done => {
+    advanceTo(new Date())
     /**
      * TODO: right now, only promises get deduped, so if the fetcherFn is a
      * regular function then it will keep refreshing.
      */
     let count = 0
     const loadData = () => new Promise(res => setTimeout(() => {
-      res(count++)
-    }, 10)) // Resolves quickly, but gets de-duplicated during refresh intervals
+      res(++count)
+    }, 100)) // Resolves quickly, but gets de-duplicated during refresh intervals
 
     const vm = new Vue({
       template: `<div>count: {{ data }}</div>`,
@@ -801,28 +802,36 @@ describe('useSWRV - refresh', () => {
     }).$mount()
 
     expect(vm.$el.textContent).toBe('count: ')
+    advanceBy(100)
     timeout(100)
     await tick(vm, 2)
-    expect(vm.$el.textContent).toBe('count: 0')
+    expect(vm.$el.textContent).toBe('count: 1') // first resolve
     /**
      * check inside promises cache within deduping interval so even though
      * promise resolves quickly, it will grab the promise out of the cache
      * instead and not increment the count
      */
-    timeout(100)
+    advanceBy(100)
+    timeout(100) // first fetcher fire
     await tick(vm, 1)
-    expect(vm.$el.textContent).toBe('count: 0')
+    expect(vm.$el.textContent).toBe('count: 1')
 
-    timeout(100) // update
+    advanceBy(100)
+    timeout(100) // deduped
     await tick(vm, 2)
     expect(vm.$el.textContent).toBe('count: 1')
 
-    timeout(200) // no update (deduped)
+    advanceBy(100)
+    timeout(100) // second fetcher fire
     await tick(vm, 2)
     expect(vm.$el.textContent).toBe('count: 1')
-    timeout(150) // update
+
+    advanceBy(200)
+    timeout(200)
     await tick(vm, 2)
     expect(vm.$el.textContent).toBe('count: 2')
+
+    clear()
     done()
   })
 })
@@ -887,7 +896,8 @@ describe('useSWRV - error', () => {
       template: `<div>count: {{ data }} {{ error }}</div>`,
       setup  () {
         return useSWRV('error-3', loadData, {
-          refreshInterval: 200
+          refreshInterval: 200,
+          dedupingInterval: 0
         })
       }
     }).$mount()
@@ -926,7 +936,8 @@ describe('useSWRV - window events', () => {
       template: `<div>count: {{ data }}</div>`,
       setup  () {
         return useSWRV('dynamic-5', () => count++, {
-          refreshInterval: 200
+          refreshInterval: 200,
+          dedupingInterval: 0
         })
       }
     }).$mount()
@@ -965,7 +976,8 @@ describe('useSWRV - window events', () => {
       template: `<div>count: {{ data }}</div>`,
       setup () {
         return useSWRV('dynamic-5-1', () => ++count, {
-          refreshInterval: 200
+          refreshInterval: 200,
+          dedupingInterval: 0
         })
       }
     }).$mount()
@@ -1035,7 +1047,7 @@ describe('useSWRV - window events', () => {
       setup  () {
         return useSWRV('dynamic-6', () => count++, {
           refreshInterval: 200,
-          dedupingInterval: 10
+          dedupingInterval: 0
         })
       }
     }).$mount()
