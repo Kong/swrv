@@ -57,7 +57,7 @@ const defaultConfig: IConfig = {
 /**
  * Cache the refs for later revalidation
  */
-function setRefCache (key: string, theRef: StateRef<any, any>, ttl: number) {
+function setRefCache (key, theRef, ttl) {
   const refCacheItem = REF_CACHE.get(key)
   if (refCacheItem) {
     refCacheItem.data.push(theRef)
@@ -138,19 +138,12 @@ const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA
   return newData
 }
 
-/* Stale-While-Revalidate hook to handle fetching, caching, validation, and more... */
-function useSWRV<Data = any, Error = any>(
-  key: IKey
-): IResponse<Data, Error>
-function useSWRV<Data = any, Error = any>(
-  key: IKey,
-  fn: fetcherFn<Data> | undefined | null,
-  config?: IConfig
-): IResponse<Data, Error>
-function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
-  let key: IKey
-  let fn: fetcherFn<Data> | undefined | null
-  let config: IConfig = { ...defaultConfig }
+type StateRef<Data, Error> = { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any };
+
+/**
+ * Stale-While-Revalidate hook to handle fetching, caching, validation, and more...
+ */
+export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetcherFn<Data>, config?: IConfig): IResponse<Data, Error> {
   let unmounted = false
   let isHydrated = false
 
@@ -227,8 +220,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
   /**
    * Revalidate the cache, mutate data
    */
-  const revalidate = async (data?: fetcherFn<Data>, opts?: revalidateOptions) => {
-    const isFirstFetch = stateRef.data === undefined
+  const revalidate = async (data?: fetcherFn<Data>) => {
     const keyVal = keyRef.value
     if (!keyVal) { return }
 
@@ -242,45 +234,21 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     }
 
     const fetcher = data || fn
-    if (
-      !fetcher ||
-      (!config.isDocumentVisible() && !isFirstFetch) ||
-      (opts?.forceRevalidate !== undefined && !opts?.forceRevalidate)
-    ) {
+    if (!fetcher || !isDocumentVisible()) {
       stateRef.isValidating = false
       return
-    }
-
-    // Dedupe items that were created in the last interval #76
-    if (cacheItem) {
-      const shouldRevalidate = Boolean(
-        ((Date.now() - cacheItem.createdAt) >= config.dedupingInterval) || opts?.forceRevalidate
-      )
-
-      if (!shouldRevalidate) {
-        stateRef.isValidating = false
-        return
-      }
     }
 
     const trigger = async () => {
       const promiseFromCache = PROMISES_CACHE.get(keyVal)
       if (!promiseFromCache) {
-        const fetcherArgs = Array.isArray(keyVal) ? keyVal : [keyVal]
-        const newPromise = fetcher(...fetcherArgs)
+        const newPromise = fetcher(keyVal)
         PROMISES_CACHE.set(keyVal, newPromise, config.dedupingInterval)
         await mutate(keyVal, newPromise, config.cache, ttl)
       } else {
         await mutate(keyVal, promiseFromCache.data, config.cache, ttl)
       }
       stateRef.isValidating = false
-      PROMISES_CACHE.delete(keyVal)
-      if (stateRef.error !== undefined) {
-        const shouldRetryOnError = config.shouldRetryOnError && (opts ? opts.shouldRetryOnError : true)
-        if (shouldRetryOnError) {
-          onErrorRetry(revalidate, opts ? opts.errorRetryCount : 1, config)
-        }
-      }
     }
 
     if (newData && config.revalidateDebounce) {
@@ -294,7 +262,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     }
   }
 
-  const revalidateCall = async () => revalidate(null, { shouldRetryOnError: false })
+  const revalidateCall = async () => revalidate()
   let timer = null
   /**
    * Setup polling
@@ -305,7 +273,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       // if this is the case, but continue to revalidate since promises can't
       // be cancelled and new hook instances might rely on promise/data cache or
       // from pre-fetch
-      if (!stateRef.error && config.isOnline()) {
+      if (!stateRef.error && isOnline()) {
         // if API request errored, we stop polling in this round
         // and let the error retry function handle it
         await revalidate()
@@ -340,10 +308,6 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     if (config.revalidateOnFocus) {
       document.removeEventListener('visibilitychange', revalidateCall, false)
       window.removeEventListener('focus', revalidateCall, false)
-    }
-    const refCacheItem = REF_CACHE.get(keyRef.value)
-    if (refCacheItem) {
-      refCacheItem.data = refCacheItem.data.filter((ref) => ref !== stateRef)
     }
   })
 
@@ -399,27 +363,25 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       stateRef.key = val
       stateRef.isValidating = Boolean(val)
       setRefCache(keyRef.value, stateRef, ttl)
-      if (!IS_SERVER && !isHydrated) {
+
+      if (!IS_SERVER && !isHydrated && keyRef.value) {
         revalidate()
       }
       isHydrated = false
       if (timer) {
         clearTimeout(timer)
       }
-    }, { immediate: true })
-  } catch (e) {
+    }, {
+      immediate: true
+    })
+  } catch {
     // do nothing
   }
 
   const res: IResponse = {
     ...toRefs(stateRef),
-    mutate: (data, opts: revalidateOptions) => revalidate(data, {
-      ...opts,
-      forceRevalidate: true
-    })
-  }
-
-  return res
+    mutate: revalidate
+  } as IResponse<Data, Error>
 }
 
 function isPromise<T> (p: any): p is Promise<T> {

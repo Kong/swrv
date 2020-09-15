@@ -26,7 +26,7 @@ export interface IResponse<Data = any, Error = any> {
   data: Ref<Data | undefined>
   error: Ref<Error | undefined>
   isValidating: Ref<boolean>
-  mutate: (data?: fetcherFn<Data>, opts?: revalidateOptions) => Promise<void>
+  mutate: () => Promise<void>
 }
 
 export type keyType = string | any[] | null | undefined
