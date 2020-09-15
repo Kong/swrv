@@ -61,6 +61,7 @@ $ yarn add swrv
 
 If you want to try out Vue 3 support (beta), install the beta release and 
 check out the [Vite example](https://github.com/Kong/swrv/tree/next/examples/vite).
+`swrv` code for Vue 3.0 exists on `next` branch.
 
 ```sh
 $ yarn add swrv@beta
