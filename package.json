@@ -31,7 +31,7 @@
     "@vue/compiler-dom": "^3.0.0-rc.11",
     "@vue/compiler-sfc": "^3.0.0-rc.11",    "@vue/eslint-config-standard": "^4.0.0",
     "@vue/eslint-config-typescript": "^4.0.0",
-    "@vue/test-utils": "2.0.0-alpha.6",
+    "@vue/test-utils": "2.0.0-beta.4",
     "all-contributors-cli": "^6.13.0",
     "babel-loader": "^8.1.0",
     "eslint": "^5.16.0",
