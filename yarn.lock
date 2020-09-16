@@ -2157,10 +2157,10 @@
   resolved "https://registry.npmjs.org/@vue/shared/-/shared-3.0.0-rc.11.tgz#9fea645d316771c04874b0f4c493c77609c09aea"
   integrity sha512-ys6eRLHxkMM/uEqi/UfeA/AUOmjsJ9AX21WGO2OIAm0v5zDmztjZ+rgcqz8Pgrr+odHY0egOIqc9wOeNtfuMJA==
 
-"@vue/test-utils@2.0.0-alpha.6":
-  version "2.0.0-alpha.6"
-  resolved "https://registry.yarnpkg.com/@vue/test-utils/-/test-utils-2.0.0-alpha.6.tgz#094ef8bf1234e60628c684d1e24b13ff74131580"
-  integrity sha512-7GaFJve/ljFBzZxhJstg53TlWIZ1hDVHHQnoSbcI32YYkmzZv1rFyMta6hQIAiH+Sel7P9XVfIvb8DTY5u9wEw==
+"@vue/test-utils@2.0.0-beta.4":
+  version "2.0.0-beta.4"
+  resolved "https://registry.npmjs.org/@vue/test-utils/-/test-utils-2.0.0-beta.4.tgz#7d275ca5d4e54ae32a9da4f03c1da6fdc3ce30e4"
+  integrity sha512-uW3GdeEEQFTdRoYmBxxHs0ENpbt8jB6OeQ8JCiTuPQecP51dI8IcGXDJhzv7bjWG6Ej+KjaTxKEmEikCyhLWtQ==
 
 "@vue/web-component-wrapper@^1.2.0":
   version "1.2.0"
