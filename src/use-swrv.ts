@@ -201,6 +201,15 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
       return
     }
 
+    // Dedupe items that were created in the last interval #76
+    if (cacheItem) {
+      const shouldRevalidate = (Date.now() - cacheItem.createdAt) >= config.dedupingInterval
+
+      if (!shouldRevalidate) {
+        return
+      }
+    }
+
     const trigger = async () => {
       const promiseFromCache = PROMISES_CACHE.get(keyVal)
       if (!promiseFromCache) {
@@ -211,6 +220,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
         await mutate(keyVal, promiseFromCache.data, config.cache, ttl)
       }
       stateRef.isValidating = false
+      PROMISES_CACHE.delete(keyVal)
     }
 
     if (newData && config.revalidateDebounce) {
@@ -222,8 +232,6 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
     } else {
       await trigger()
     }
-
-    PROMISES_CACHE.delete(keyVal)
   }
 
   const revalidateCall = async () => revalidate()
