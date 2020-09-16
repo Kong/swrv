@@ -187,7 +187,7 @@ export default {
 
   setup() {
     const { data: user } = useSWRV('/api/user', fetch)
-    const { data: projects } = useSWRV(() => user.id && '/api/projects?uid=' + user.id, fetch)
+    const { data: projects } = useSWRV(() => user.value.id && '/api/projects?uid=' + user.value.id, fetch)
     // if the return value of the cache key function is falsy, the fetcher
     // will not trigger, but since `user` is inside the cache key function,
     // it is being watched so when it is available, then the projects will 
