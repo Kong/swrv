@@ -6,11 +6,11 @@
     "build": "vite build"
   },
   "dependencies": {
-    "swrv": "1.0.0-beta.1",
-    "vue": "^3.0.0-beta.14"
+    "swrv": "1.0.0-beta.2",
+    "vue": "^3.0.0-rc.11"
   },
   "devDependencies": {
-    "@vue/compiler-sfc": "^3.0.0-beta.14",
+    "@vue/compiler-sfc": "^3.0.0-rc.11",
     "vite": "^0.20.7"
   }
 }
