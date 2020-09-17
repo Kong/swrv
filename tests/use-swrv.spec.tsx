@@ -102,7 +102,7 @@ describe('useSWRV', () => {
     done()
   })
 
-  it('should dedupe requests by default', async done => {
+  it('should dedupe requests by default - in flight promises', async done => {
     let count = 0
     const fetch = () => {
       count++
@@ -110,21 +110,57 @@ describe('useSWRV', () => {
     }
 
     const vm = new Vue({
-      template: `<div>{{v1}}, {{v2}}</div>`,
+      template: `<div>{{v1}}, {{v2}}, {{ validating1 ? 'yes' : 'no' }} {{ validating2 ? 'yes' : 'no' }}</div>`,
       setup  () {
-        const { data: v1 } = useSWRV('cache-key-4', fetch)
-        const { data: v2 } = useSWRV('cache-key-4', fetch)
-        return { v1, v2 }
+        const { data: v1, isValidating: validating1 } = useSWRV('cache-key-4', fetch)
+        const { data: v2, isValidating: validating2 } = useSWRV('cache-key-4', fetch)
+        return { v1, v2, validating1, validating2 }
       }
     }).$mount()
 
-    expect(vm.$el.textContent).toBe(', ')
+    expect(vm.$el.textContent).toBe(', , yes yes')
 
     timeout(200)
     await tick(vm, 2)
-    expect(vm.$el.textContent).toBe('SWR, SWR')
+    expect(vm.$el.textContent).toBe('SWR, SWR, no no')
 
     // only fetches once
+    expect(count).toEqual(1)
+    done()
+  })
+
+  it('should dedupe requests by default outside of in flight promises', async done => {
+    let count = 0
+    const fetch = () => {
+      count++
+      return new Promise(res => setTimeout(() => res('SWR'), 200))
+    }
+
+    const vm = new Vue({
+      template: `<div>{{v1}}, {{v2}}, {{ validating1 ? 'yes' : 'no' }} {{ validating2 ? 'yes' : 'no' }}</div>`,
+      setup  () {
+        const { data: v1, isValidating: validating1 } = useSWRV('cache-key-4a', fetch)
+        const { data: v2, isValidating: validating2 } = useSWRV('cache-key-4a', fetch, {
+          refreshInterval: 300
+        })
+        return { v1, v2, validating1, validating2 }
+      }
+    }).$mount()
+
+    expect(vm.$el.textContent).toBe(', , yes yes')
+
+    timeout(200)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('SWR, SWR, no no')
+
+    timeout(100)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('SWR, SWR, no no')
+
+    timeout(100)
+    await tick(vm, 4)
+    expect(vm.$el.textContent).toBe('SWR, SWR, no no')
+
     expect(count).toEqual(1)
     done()
   })
@@ -589,7 +625,8 @@ describe('useSWRV - loading', () => {
       render: h => h(defineComponent({
         setup () {
           const { data, isValidating } = useSWRV('is-validating-2', loadData, {
-            refreshInterval: 1000
+            refreshInterval: 1000,
+            dedupingInterval: 0
           })
 
           return () => <div>hello, {data.value}, {isValidating.value ? 'loading' : 'ready'}</div>
