@@ -206,6 +206,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
       const shouldRevalidate = (Date.now() - cacheItem.createdAt) >= config.dedupingInterval
 
       if (!shouldRevalidate) {
+        stateRef.isValidating = false
         return
       }
     }
