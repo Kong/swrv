@@ -2167,7 +2167,7 @@ supports-color@^7.1.0:
   dependencies:
     has-flag "^4.0.0"
 
-swrv@1.0.0-beta.2:
+swrv@beta:
   version "1.0.0-beta.2"
   resolved "https://registry.npmjs.org/swrv/-/swrv-1.0.0-beta.2.tgz#2326de91ba1ee7a9d1508f8dbf4a64e1757379ee"
   integrity sha512-dvh9guaY//vtizmnTbQ4r+bqp/JmmAkZfRvag74/2qO/FiD+g2Jzj1/ghg9Gt78WtR+2PgtGk0QwlSisrVbHTg==

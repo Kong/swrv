@@ -6,7 +6,7 @@
     "build": "vite build"
   },
   "dependencies": {
-    "swrv": "1.0.0-beta.2",
+    "swrv": "beta",
     "vue": "^3.0.0-rc.11"
   },
   "devDependencies": {
