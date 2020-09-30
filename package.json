@@ -3,6 +3,7 @@
   "version": "0.7.6",
   "main": "./dist/index.js",
   "module": "./esm/index.js",
+  "repository": "github:Kong/swrv",
   "scripts": {
     "build": "yarn build:esm && yarn build:cjs",
     "build:cjs": "tsc --target es5 --module CommonJs -p tsconfig.build.json",
