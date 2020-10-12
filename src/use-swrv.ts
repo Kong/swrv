@@ -100,9 +100,7 @@ const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA
       if (typeof newData.data !== 'undefined') {
         r.data = newData.data
       }
-      if (newData.error) {
-        r.error = newData.error
-      }
+      r.error = newData.error
       r.isValidating = newData.isValidating
 
       const isLast = idx === refs.length - 1
