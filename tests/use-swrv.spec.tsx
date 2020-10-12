@@ -1031,7 +1031,7 @@ describe('useSWRV - error', () => {
     let count = 0
     let revalidate
 
-    const vm = new Vue({
+    const wrapper = mount(defineComponent({
       template: `<div>count: {{ data }} {{ error }}</div>`,
       setup () {
         const { data, error, mutate } = useSWRV(
@@ -1044,166 +1044,24 @@ describe('useSWRV - error', () => {
         revalidate = mutate
         return { data, error }
       }
-    }).$mount()
+    }))
+    const vm = wrapper.vm
 
     timeout(100)
-    await tick(3)
-    expect(vm.$el.textContent).toBe('count: 1 ')
+    await tick(vm, 3)
+    expect(wrapper.text()).toBe('count: 1')
 
     revalidate()
     timeout(100)
-    await tick(3)
+    await tick(vm, 3)
     // stale data sticks around even when error exists
-    expect(vm.$el.textContent).toBe('count: 1 Error: uh oh!')
+    expect(wrapper.text()).toBe('count: 1 "Error: uh oh!"')
 
     revalidate()
     timeout(100)
-    await tick(3)
+    await tick(vm, 3)
     // error must be reset if fetching succeeds
-    expect(vm.$el.textContent).toBe('count: 3 ')
-    done()
-  })
-
-  it('should trigger error retry', async done => {
-    let count = 0
-
-    const vm = new Vue({
-      template: `<div>count: {{ data }}, {{ error }}</div>`,
-      setup () {
-        const { data, error } = useSWRV(
-          'error-retry-1',
-          () => new Promise((resolve, reject) => setTimeout(() => {
-            ++count <= 2 ? reject(new Error(`${count}`)) : resolve(count)
-          }, 100)),
-          {
-            dedupingInterval: 0,
-            errorRetryInterval: 500
-          }
-        )
-        return { data, error }
-      }
-    }).$mount()
-
-    expect(vm.$el.textContent.trim()).toBe('count: ,')
-
-    timeout(100)
-    await tick(2)
-    expect(vm.$el.textContent.trim()).toBe('count: , Error: 1')
-
-    timeout(600)
-    await tick(2)
-    expect(vm.$el.textContent).toBe('count: , Error: 2')
-
-    timeout(900)
-    await tick(2)
-    expect(vm.$el.textContent).toBe('count: , Error: 2')
-
-    timeout(200)
-    await tick(2)
-    expect(vm.$el.textContent.trim()).toBe('count: 3,')
-    done()
-  })
-
-  it('should trigger error retry and stop at count max', async done => {
-    let count = 0
-
-    const vm = new Vue({
-      template: `<div>count: {{ data }}, {{ error }}</div>`,
-      setup () {
-        const { data, error } = useSWRV(
-          'error-retry-2',
-          () => new Promise((resolve, reject) => setTimeout(() => {
-            ++count <= 6 ? reject(new Error(`${count}`)) : resolve(count)
-          }, 100)),
-          {
-            dedupingInterval: 0,
-            errorRetryInterval: 500,
-            errorRetryCount: 3
-          }
-        )
-        return { data, error }
-      }
-    }).$mount()
-
-    expect(vm.$el.textContent.trim()).toBe('count: ,')
-
-    timeout(100)
-    await tick(2)
-    expect(vm.$el.textContent.trim()).toBe('count: , Error: 1')
-
-    timeout(600)
-    await tick(2)
-    expect(vm.$el.textContent).toBe('count: , Error: 2')
-
-    timeout(1100)
-    await tick(2)
-    expect(vm.$el.textContent).toBe('count: , Error: 3')
-
-    timeout(1600)
-    await tick(2)
-    expect(vm.$el.textContent.trim()).toBe('count: , Error: 4')
-
-    timeout(2100)
-    await tick(2)
-    expect(vm.$el.textContent.trim()).toBe('count: , Error: 4') // Does not exceed retry count
-
-    done()
-  })
-
-  it('should respect disabled error retry', async done => {
-    let count = 0
-
-    const vm = new Vue({
-      template: `<div>count: {{ data }}, {{ error }}</div>`,
-      setup () {
-        const { data, error } = useSWRV(
-          'error-retry-3',
-          () => new Promise((resolve, reject) => setTimeout(() => {
-            ++count <= 3 ? reject(new Error(`${count}`)) : resolve(count)
-          }, 100)),
-          {
-            dedupingInterval: 0,
-            shouldRetryOnError: false,
-            errorRetryInterval: 500
-          }
-        )
-        return { data, error }
-      }
-    }).$mount()
-
-    expect(vm.$el.textContent.trim()).toBe('count: ,')
-
-    timeout(100)
-    await tick(2)
-    expect(vm.$el.textContent.trim()).toBe('count: , Error: 1')
-
-    timeout(600)
-    await tick(2)
-    expect(vm.$el.textContent).toBe('count: , Error: 1')
-
-    done()
-  })
-
-  it('should display friendly error message when swrv is not top level in setup', async done => {
-    const spy = jest.spyOn(console, 'error').mockImplementation(() => { })
-    const vm = new Vue({
-      template: '<button v-on:click="dontDoThis">bad idea</button>',
-      setup () {
-        function dontDoThis () {
-          useSWRV(() => 'error-top-level', () => 'hello')
-        }
-
-        return {
-          dontDoThis
-        }
-      }
-    }).$mount()
-
-    vm.$el.click()
-
-    expect(spy).toHaveBeenCalledWith(expect.stringContaining('Could not get current instance, check to make sure that `useSwrv` is declared in the top level of the setup function.'))
-
-    spy.mockRestore()
+    expect(wrapper.text()).toBe('count: 3')
     done()
   })
 })
