@@ -953,6 +953,43 @@ describe('useSWRV - error', () => {
     expect(vm.$el.textContent).toBe('count: 2 Error: uh oh!')
     done()
   })
+
+  it('should reset error if fetching succeeds', async done => {
+    let count = 0
+    let revalidate
+
+    const vm = new Vue({
+      template: `<div>count: {{ data }} {{ error }}</div>`,
+      setup () {
+        const { data, error, mutate } = useSWRV(
+          'error-4',
+          () => new Promise(
+            (resolve, reject) => setTimeout(() => ++count === 2 ? reject(new Error('uh oh!')) : resolve(count), 100)
+          ),
+          { dedupingInterval: 0 }
+        )
+        revalidate = mutate
+        return { data, error }
+      }
+    }).$mount()
+
+    timeout(100)
+    await tick(vm, 3)
+    expect(vm.$el.textContent).toBe('count: 1 ')
+
+    revalidate()
+    timeout(100)
+    await tick(vm, 3)
+    // stale data sticks around even when error exists
+    expect(vm.$el.textContent).toBe('count: 1 Error: uh oh!')
+
+    revalidate()
+    timeout(100)
+    await tick(vm, 3)
+    // error must be reset if fetching succeeds
+    expect(vm.$el.textContent).toBe('count: 3 ')
+    done()
+  })
 })
 
 describe('useSWRV - window events', () => {
