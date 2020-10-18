@@ -11,6 +11,9 @@ export interface IConfig {
   serverTTL?: number
   revalidateOnFocus?: boolean
   revalidateDebounce?: number
+  shouldRetryOnError?: boolean
+  errorRetryInterval?: number
+  errorRetryCount?: number
 }
 
 export interface IResponse<Data = any, Error = any> {
@@ -23,3 +26,8 @@ export interface IResponse<Data = any, Error = any> {
 type keyFunction = () => string | null
 
 export type IKey = keyFunction | string | null
+
+export interface revalidateOptions {
+  shouldRetryOnError?: boolean,
+  errorRetryCount?: number
+}
