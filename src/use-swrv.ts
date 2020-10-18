@@ -33,7 +33,7 @@ import {
 import isDocumentVisible from './lib/is-document-visible'
 import isOnline from './lib/is-online'
 import SWRVCache from './lib/cache'
-import { IConfig, IKey, IResponse, fetcherFn } from './types'
+import { IConfig, IKey, IResponse, fetcherFn, revalidateOptions } from './types'
 
 const DATA_CACHE = new SWRVCache()
 const REF_CACHE = new SWRVCache()
@@ -46,13 +46,16 @@ const defaultConfig: IConfig = {
   serverTTL: 1000,
   dedupingInterval: 2000,
   revalidateOnFocus: true,
-  revalidateDebounce: 0
+  revalidateDebounce: 0,
+  shouldRetryOnError: true,
+  errorRetryInterval: 5000,
+  errorRetryCount: 5
 }
 
 /**
  * Cache the refs for later revalidation
  */
-function setRefCache (key, theRef, ttl) {
+function setRefCache (key: string, theRef: StateRef<any, any>, ttl: number) {
   const refCacheItem = REF_CACHE.get(key)
   if (refCacheItem) {
     refCacheItem.data.push(theRef)
@@ -61,6 +64,22 @@ function setRefCache (key, theRef, ttl) {
     const gracePeriod = 5000
     REF_CACHE.set(key, [theRef], ttl > 0 ? ttl + gracePeriod : ttl)
   }
+}
+
+function onErrorRetry (revalidate: (any, opts: revalidateOptions) => void, errorRetryCount: number, config: IConfig): void {
+  if (!isDocumentVisible()) {
+    return
+  }
+
+  if (config.errorRetryCount && errorRetryCount > config.errorRetryCount) {
+    return
+  }
+
+  const count = Math.min(errorRetryCount || 0, config.errorRetryCount)
+  const timeout = count * config.errorRetryInterval
+  setTimeout(() => {
+    revalidate(null, { errorRetryCount: count + 1, shouldRetryOnError: true })
+  }, timeout)
 }
 
 /**
@@ -164,7 +183,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
   if (!stateRef) {
     stateRef = reactive({
       data: undefined,
-      error: null,
+      error: undefined,
       isValidating: true,
       key: null
     }) as StateRef<Data, Error>
@@ -173,7 +192,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
   /**
    * Revalidate the cache, mutate data
    */
-  const revalidate = async (data?: fetcherFn<Data>) => {
+  const revalidate = async (data?: fetcherFn<Data>, opts?: revalidateOptions) => {
     const keyVal = keyRef.value
     if (!keyVal) { return }
 
@@ -213,6 +232,12 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
       }
       stateRef.isValidating = false
       PROMISES_CACHE.delete(keyVal)
+      if (stateRef.error !== undefined) {
+        const shouldRetryOnError = config.shouldRetryOnError && (opts ? opts.shouldRetryOnError : true)
+        if (shouldRetryOnError) {
+          onErrorRetry(revalidate, opts ? opts.errorRetryCount : 1, config)
+        }
+      }
     }
 
     if (newData && config.revalidateDebounce) {
@@ -226,7 +251,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
     }
   }
 
-  const revalidateCall = async () => revalidate()
+  const revalidateCall = async () => revalidate(null, { shouldRetryOnError: false })
   let timer = null
   /**
    * Setup polling
