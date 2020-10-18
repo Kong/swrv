@@ -1064,6 +1064,129 @@ describe('useSWRV - error', () => {
     expect(wrapper.text()).toBe('count: 3')
     done()
   })
+
+  it('should trigger error retry', async done => {
+    let count = 0
+
+    const wrapper = mount(defineComponent({
+      template: `<div>count: {{ data }}, {{ error }}</div>`,
+      setup () {
+        const { data, error } = useSWRV(
+          'error-retry-1',
+          () => new Promise((resolve, reject) => setTimeout(() => {
+            ++count <= 2 ? reject(new Error(`${count}`)) : resolve(count)
+          }, 100)),
+          {
+            dedupingInterval: 0,
+            errorRetryInterval: 500
+          }
+        )
+        return { data, error }
+      }
+    }))
+    const vm = wrapper.vm
+
+    expect(vm.$el.textContent.trim()).toBe('count: ,')
+
+    timeout(100)
+    await tick(vm, 2)
+    expect(vm.$el.textContent.trim()).toBe('count: , "Error: 1"')
+
+    timeout(600)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('count: , "Error: 2"')
+
+    timeout(900)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('count: , "Error: 2"')
+
+    timeout(200)
+    await tick(vm, 2)
+    expect(vm.$el.textContent.trim()).toBe('count: 3,')
+    done()
+  })
+
+  it('should trigger error retry and stop at count max', async done => {
+    let count = 0
+
+    const wrapper = mount(defineComponent({
+      template: `<div>count: {{ data }}, {{ error }}</div>`,
+      setup () {
+        const { data, error } = useSWRV(
+          'error-retry-2',
+          () => new Promise((resolve, reject) => setTimeout(() => {
+            ++count <= 6 ? reject(new Error(`${count}`)) : resolve(count)
+          }, 100)),
+          {
+            dedupingInterval: 0,
+            errorRetryInterval: 500,
+            errorRetryCount: 3
+          }
+        )
+        return { data, error }
+      }
+    }))
+    const vm = wrapper.vm
+
+    expect(vm.$el.textContent.trim()).toBe('count: ,')
+
+    timeout(100)
+    await tick(vm, 2)
+    expect(vm.$el.textContent.trim()).toBe('count: , "Error: 1"')
+
+    timeout(600)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('count: , "Error: 2"')
+
+    timeout(1100)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('count: , "Error: 3"')
+
+    timeout(1600)
+    await tick(vm, 2)
+    expect(vm.$el.textContent.trim()).toBe('count: , "Error: 4"')
+
+    timeout(2100)
+    await tick(vm, 2)
+    expect(vm.$el.textContent.trim()).toBe('count: , "Error: 4"') // Does not exceed retry count
+
+    done()
+  })
+
+  it('should respect disabled error retry', async done => {
+    let count = 0
+
+    const wrapper = mount(defineComponent({
+      template: `<div>count: {{ data }}, {{ error }}</div>`,
+      setup () {
+        const { data, error } = useSWRV(
+          'error-retry-3',
+          () => new Promise((resolve, reject) => setTimeout(() => {
+            ++count <= 3 ? reject(new Error(`${count}`)) : resolve(count)
+          }, 100)),
+          {
+            dedupingInterval: 0,
+            shouldRetryOnError: false,
+            errorRetryInterval: 500
+          }
+        )
+        return { data, error }
+      }
+    }))
+    const vm = wrapper.vm
+
+    expect(vm.$el.textContent.trim()).toBe('count: ,')
+
+    timeout(100)
+    await tick(vm, 2)
+    expect(vm.$el.textContent.trim()).toBe('count: , "Error: 1"')
+
+    timeout(600)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('count: , "Error: 1"')
+
+    done()
+  })
 })
 
 describe('useSWRV - window events', () => {

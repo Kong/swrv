@@ -17,9 +17,6 @@ export interface IConfig<
   shouldRetryOnError?: boolean
   errorRetryInterval?: number
   errorRetryCount?: number
-  fetcher?: Fn,
-  isOnline?: () => boolean
-  isDocumentVisible?: () => boolean
 }
 
 export interface IResponse<Data = any, Error = any> {
@@ -32,10 +29,9 @@ export interface IResponse<Data = any, Error = any> {
 export type keyType = string | any[] | null | undefined
 type keyFunction = () => keyType
 
-export type IKey = keyType | keyFunction | WatchSource<keyType>
+export type IKey = keyFunction | string | null
 
 export interface revalidateOptions {
   shouldRetryOnError?: boolean,
-  errorRetryCount?: number,
-  forceRevalidate?: boolean,
+  errorRetryCount?: number
 }
