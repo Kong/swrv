@@ -14,7 +14,7 @@ const tick: Function = async (vm, times) => {
 }
 
 describe('useSWRV', () => {
-  it('should return data on hydration when fetch is not a promise', done => {
+  it('should return data on hydration when fetch is not a promise', async done => {
     const fetch = () => 'SWR'
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
@@ -81,6 +81,32 @@ describe('useSWRV', () => {
     // immediately available via cache without waiting for $nextTick
     expect(vm.$el.textContent).toBe('hello, SWR')
     done()
+  })
+
+  it('should accept object args', async () => {
+    const obj = { v: 'hello' }
+    const arr = ['world']
+
+    const vm = new Vue({
+      template: `<div>{{v1}}, {{v2}}, {{v3}}</div>`,
+      setup  () {
+        const { data: v1 } = useSWRV(['args-1', obj, arr], (a, b, c) => {
+          return a + b.v + c[0]
+        })
+
+        // reuse the cache
+        const { data: v2 } = useSWRV(['args-1', obj, arr], () => 'not called!')
+
+        // different object
+        const { data: v3 } = useSWRV(['args-2', obj, 'world'], (a, b, c) => {
+          return a + b.v + c
+        })
+
+        return { v1, v2, v3 }
+      }
+    }).$mount()
+
+    expect(vm.$el.textContent).toBe(`args-1helloworld, args-1helloworld, args-2helloworld`)
   })
 
   it('should allow async fetcher functions', async done => {
