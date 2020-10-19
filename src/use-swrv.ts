@@ -137,10 +137,20 @@ const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA
 
 type StateRef<Data, Error> = { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any };
 
-/**
- * Stale-While-Revalidate hook to handle fetching, caching, validation, and more...
- */
-export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetcherFn<Data>, config?: IConfig): IResponse<Data, Error> {
+/* Stale-While-Revalidate hook to handle fetching, caching, validation, and more... */
+function useSWRV<Data = any, Error = any>(
+  key: IKey
+): IResponse<Data, Error>
+function useSWRV<Data = any, Error = any>(
+  key: IKey,
+  fn?: fetcherFn<Data>,
+  config?: IConfig
+): IResponse<Data, Error>
+function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
+  // console.log(args, args.length)
+  let key: IKey
+  let fn: fetcherFn<Data> | undefined
+  let config: IConfig = { ...defaultConfig }
   let unmounted = false
   let isHydrated = false
 
@@ -158,10 +168,20 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
   */
   // #endregion
 
-  config = {
-    ...defaultConfig,
-    ...config
+  if (args.length >= 1) {
+    key = args[0]
   }
+  if (args.length >= 2) {
+    fn = args[1]
+  }
+  if (args.length > 2) {
+    config = {
+      ...config,
+      ...args[2]
+    }
+  }
+
+  // console.log(key, fn, config)
 
   const ttl = IS_SERVER ? config.serverTTL : config.ttl
   const keyRef = typeof key === 'function' ? (key as any) : ref(key)
@@ -231,7 +251,8 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn?: fetche
     const trigger = async () => {
       const promiseFromCache = PROMISES_CACHE.get(keyVal)
       if (!promiseFromCache) {
-        const newPromise = fetcher(keyVal)
+        const fetcherArgs = Array.isArray(keyVal) ? keyVal : [keyVal]
+        const newPromise = fetcher(...fetcherArgs)
         PROMISES_CACHE.set(keyVal, newPromise, config.dedupingInterval)
         await mutate(keyVal, newPromise, config.cache, ttl)
       } else {
@@ -378,3 +399,4 @@ function isPromise<T> (p: any): p is Promise<T> {
 }
 
 export { mutate }
+export default useSWRV

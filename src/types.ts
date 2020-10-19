@@ -23,9 +23,10 @@ export interface IResponse<Data = any, Error = any> {
   mutate: () => Promise<void>
 }
 
-type keyFunction = () => string | null
+export type keyType = string | any[] | null
+type keyFunction = () => keyType
 
-export type IKey = keyFunction | string | null
+export type IKey = keyFunction | keyType
 
 export interface revalidateOptions {
   shouldRetryOnError?: boolean,

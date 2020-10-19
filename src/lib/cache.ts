@@ -1,7 +1,30 @@
+import { IKey } from '@/types'
+import hash from './hash'
+
 interface ICacheItem {
   data: any,
   createdAt: number,
   expiresAt: number
+}
+
+function serializeKeyDefault (key: IKey): string {
+  if (typeof key === 'function') {
+    try {
+      key = key()
+    } catch (err) {
+      // dependencies not ready
+      key = ''
+    }
+  }
+
+  if (Array.isArray(key)) {
+    key = hash(key)
+  } else {
+    // convert null to ''
+    key = String(key || '')
+  }
+
+  return key
 }
 
 export default class SWRVCache {
@@ -13,14 +36,20 @@ export default class SWRVCache {
     this.ttl = ttl
   }
 
+  serializeKey (key: IKey): string {
+    return serializeKeyDefault(key)
+  }
+
   /**
    * Get cache item while evicting
    */
   get (k: string): ICacheItem {
-    return this.items.get(k)
+    const _key = this.serializeKey(k)
+    return this.items.get(_key)
   }
 
   set (k: string, v: any, ttl: number) {
+    const _key = this.serializeKey(k)
     const timeToLive = ttl || this.ttl
     const now = Date.now()
     const item = {
@@ -32,13 +61,14 @@ export default class SWRVCache {
     timeToLive && setTimeout(() => {
       const current = Date.now()
       const hasExpired = current >= item.expiresAt
-      if (hasExpired) this.delete(k)
+      if (hasExpired) this.delete(_key)
     }, timeToLive)
 
-    this.items.set(k, item)
+    this.items.set(_key, item)
   }
 
   delete (k: string) {
-    this.items.delete(k)
+    const _key = this.serializeKey(k)
+    this.items.delete(_key)
   }
 }
