@@ -23,7 +23,7 @@ export interface IResponse<Data = any, Error = any> {
   data: Ref<Data | undefined>
   error: Ref<Error | undefined>
   isValidating: Ref<boolean>
-  mutate: () => Promise<void>
+  mutate: (data?: fetcherFn<Data>, opts?: revalidateOptions) => Promise<void>
 }
 
 export type keyType = string | any[] | null
@@ -33,5 +33,6 @@ export type IKey = keyFunction | keyType
 
 export interface revalidateOptions {
   shouldRetryOnError?: boolean,
-  errorRetryCount?: number
+  errorRetryCount?: number,
+  forceRevalidate?: boolean,
 }

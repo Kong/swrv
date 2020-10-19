@@ -707,36 +707,42 @@ describe('useSWRV - mutate', () => {
     timeout(100)
   })
 
-  test.todo('mutate triggers revalidations')
-  // it('mutate triggers revalidations', done => {
-  //   const loadData = key => new Promise(res => setTimeout(() => res(key + Date.now()), 100))
-  //   mutate('mutate-is-revalidated-1', loadData('mutate-is-revalidated-1')).then(async () => {
-  //     const vm = new Vue({
-  //       template: `<div>hello, {{ data }}</div>`,
-  //       setup () {
-  //         setTimeout(() => {
-  //           mutate('mutate-is-revalidated-1', new Promise((resolve) => resolve('hey')))
-  //         }, 50)
+  it('mutate triggers revalidations', async done => {
+    let count = 0
+    const loadData = () => new Promise(res => {
+      setTimeout(() => {
+        res(++count)
+      }, 100)
+    })
+    const wrapper = mount(defineComponent({
+      template: `<div>hello, {{data}}</div>`,
+      setup () {
+        const { data, mutate } = useSWRV('mutate-no-arg', loadData)
 
-  //         return useSWRV('mutate-is-revalidated-1', loadData)
-  //       }
-  //     }).$mount()
+        setTimeout(() => {
+          // immune to deduping interval
+          mutate()
+        }, 200)
 
-  //     tick(vm, 4)
-  //     expect(vm.$el.textContent).toContain('hello, mutate-is-revalidated-1')
-  //     timeout(100)
-  //     tick(vm, 4)
-  //     expect(vm.$el.textContent).toContain('hello, mutate-is-revalidated-1')
-  //     timeout(50)
-  //     tick(vm, 4)
-  //
-  //     // TODO: understand why revalidation isn't working here
-  //     expect(vm.$el.textContent).toBe('hello, hey')
-  //     done()
-  //   })
+        return {
+          data
+        }
+      }
+    }))
+    const vm = wrapper.vm
 
-  //   timeout(100)
-  // })
+    expect(vm.$el.textContent).toBe('hello, ')
+
+    timeout(100)
+    await tick(vm, 2)
+    expect(vm.$el.textContent).toBe('hello, 1')
+
+    timeout(200)
+    await tick(vm, 4)
+    expect(vm.$el.textContent).toBe('hello, 2')
+
+    done()
+  })
 })
 
 describe('useSWRV - listeners', () => {
