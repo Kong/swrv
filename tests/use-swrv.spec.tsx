@@ -623,17 +623,15 @@ describe('useSWRV - loading', () => {
 
   it('should return loading state via undefined data', async done => {
     let renderCount = 0
-    const vm = new Vue({
-      render: h => h(defineComponent({
-        setup () {
-          const { data } = useSWRV('is-validating-1', loadData)
-          return () => {
-            renderCount++
-            return <div>hello, {!data.value ? 'loading' : data.value}</div>
-          }
-        }
-      }))
-    }).$mount()
+    const vm = new Vue(defineComponent({
+      render (h) {
+        renderCount++
+        return h('div', `hello, ${!this.data ? 'loading' : this.data}`)
+      },
+      setup () {
+        return useSWRV('is-validating-1', loadData)
+      }
+    })).$mount()
 
     expect(renderCount).toEqual(1)
     expect(vm.$el.textContent).toBe('hello, loading')
@@ -647,18 +645,15 @@ describe('useSWRV - loading', () => {
   })
 
   it('should return loading state via isValidating', async done => {
-    const vm = new Vue({
-      render: h => h(defineComponent({
-        setup () {
-          const { data, isValidating } = useSWRV('is-validating-2', loadData, {
-            refreshInterval: 1000,
-            dedupingInterval: 0
-          })
-
-          return () => <div>hello, {data.value}, {isValidating.value ? 'loading' : 'ready'}</div>
-        }
-      }))
-    }).$mount()
+    const vm = new Vue(defineComponent({
+      template: `<div>hello, {{this.data}}, {{this.isValidating ? 'loading' : 'ready'}}</div>`,
+      setup () {
+        return useSWRV('is-validating-2', loadData, {
+          refreshInterval: 1000,
+          dedupingInterval: 0
+        })
+      }
+    })).$mount()
 
     expect(vm.$el.textContent).toBe('hello, , loading')
 
@@ -682,6 +677,9 @@ describe('useSWRV - mutate', () => {
     mutate('is-prefetched-1', loadData('is-prefetched-1')).then(() => {
       const vm = new Vue({
         render: h => h(defineComponent({
+          render (h) {
+            return h('div', `hello, ${this.msg1} and ${this.msg2}`)
+          },
           setup () {
             const { data: dataFromCache } = useSWRV('is-prefetched-1', loadData)
             const { data: dataNotFromCache } = useSWRV('is-prefetched-2', loadData)
@@ -689,7 +687,7 @@ describe('useSWRV - mutate', () => {
             const msg1 = !dataFromCache.value ? 'loading' : dataFromCache.value
             const msg2 = !dataNotFromCache.value ? 'loading' : dataNotFromCache.value
 
-            return () => <div>hello, {msg1} and {msg2}</div>
+            return { msg1, msg2 }
           }
         }))
       }).$mount()
