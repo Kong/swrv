@@ -233,7 +233,8 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
 
     // Dedupe items that were created in the last interval #76
     if (cacheItem) {
-      const shouldRevalidate = (Date.now() - cacheItem.createdAt) >= config.dedupingInterval
+      const shouldRevalidate = ((Date.now() - cacheItem.createdAt) >= config.dedupingInterval) ||
+        opts?.forceRevalidate
 
       if (!shouldRevalidate) {
         stateRef.isValidating = false
@@ -384,10 +385,15 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     // do nothing
   }
 
-  return {
+  const res: IResponse = {
     ...toRefs(stateRef),
-    mutate: revalidate
-  } as IResponse<Data, Error>
+    mutate: (data, opts: revalidateOptions) => revalidate(data, {
+      ...opts,
+      forceRevalidate: true
+    })
+  }
+
+  return res
 }
 
 function isPromise<T> (p: any): p is Promise<T> {
