@@ -26,10 +26,10 @@ export interface IResponse<Data = any, Error = any> {
   mutate: () => Promise<void>
 }
 
-export type keyType = string | any[] | null | undefined
+export type keyType = string | any[] | null
 type keyFunction = () => keyType
 
-export type IKey = keyFunction | string | null
+export type IKey = keyFunction | keyType
 
 export interface revalidateOptions {
   shouldRetryOnError?: boolean,

@@ -82,48 +82,13 @@ describe('useSWRV', () => {
     done()
   })
 
-  it('should allow refs (reactive / WatchSource) as key', async () => {
-    const count = ref('refs:0')
-    const vm = new Vue({
-      template: '<button v-on:click="bumpIt">{{ data }}</button>',
-      setup () {
-        const { data } = useSWRV(count, () => count.value)
-
-        function bumpIt () {
-          const parts = count.value.split(':')
-          count.value = `${parts[0]}:${parseInt(parts[1] + 1)}`
-        }
-
-        return {
-          bumpIt,
-          data
-        }
-      }
-    }).$mount()
-
-    expect(vm.$el.textContent).toBe('refs:0')
-    vm.$el.click()
-    await tick(2)
-    expect(vm.$el.textContent).toBe('refs:1')
-
-    const vm2 = new Vue({
-      template: '<div>{{ data }}</div>',
-      setup () {
-        return useSWRV(count, () => count.value)
-      }
-    }).$mount()
-
-    // ref is good for another swrv instance (i.e. object reference works)
-    expect(vm2.$el.textContent).toBe('refs:1')
-  })
-
   it('should accept object args', async () => {
     const obj = { v: 'hello' }
     const arr = ['world']
 
-    const vm = new Vue({
+    const vm = createApp({
       template: `<div>{{v1}}, {{v2}}, {{v3}}</div>`,
-      setup () {
+      setup  () {
         const { data: v1 } = useSWRV(['args-1', obj, arr], (a, b, c) => {
           return a + b.v + c[0]
         })
@@ -138,7 +103,7 @@ describe('useSWRV', () => {
 
         return { v1, v2, v3 }
       }
-    }).$mount()
+    }).mount(container)
 
     expect(vm.$el.textContent).toBe(`args-1helloworld, args-1helloworld, args-2helloworld`)
   })
