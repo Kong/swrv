@@ -226,15 +226,16 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     }
 
     const fetcher = data || fn
-    if (!fetcher || !isDocumentVisible()) {
+    if (!fetcher || !isDocumentVisible() || (opts?.forceRevalidate !== undefined && !opts?.forceRevalidate)) {
       stateRef.isValidating = false
       return
     }
 
     // Dedupe items that were created in the last interval #76
     if (cacheItem) {
-      const shouldRevalidate = ((Date.now() - cacheItem.createdAt) >= config.dedupingInterval) ||
-        opts?.forceRevalidate
+      const shouldRevalidate = Boolean(
+        ((Date.now() - cacheItem.createdAt) >= config.dedupingInterval) || opts?.forceRevalidate
+      )
 
       if (!shouldRevalidate) {
         stateRef.isValidating = false
