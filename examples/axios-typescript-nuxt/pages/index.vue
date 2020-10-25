@@ -31,7 +31,7 @@ import {
 
 type RequestKey = (() => AxiosRequestConfig) | AxiosRequestConfig
 
-function useRequest<Data = unknown, Error = unknown>(
+function useRequest<Data = unknown, Error = unknown> (
   request: Ref<RequestKey>,
   config?: IConfig
 ) {
@@ -44,7 +44,7 @@ function useRequest<Data = unknown, Error = unknown>(
 
 export default defineComponent({
   name: 'App',
-  setup(props, context) {
+  setup (props, context) {
     const page = ref(1)
     watch(
       () => context.root.$route.query.page,
@@ -60,7 +60,7 @@ export default defineComponent({
       return requestConfig
     })
     const { data, isValidating } = useRequest<Post[]>(request)
-    function nextPage() {
+    function nextPage () {
       page.value += 1
     }
     return { data, nextPage, page, isValidating }
@@ -69,7 +69,7 @@ export default defineComponent({
 
 type QueryParam = string | (string | null)[]
 
-function parseNumberQueryParam(
+function parseNumberQueryParam (
   param: QueryParam | undefined,
   defaultValue: number
 ): number {
