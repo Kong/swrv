@@ -27,8 +27,8 @@ export default {
       required: true
     }
   },
-  setup ({ org }) {
-    const endpoint = `https://api.github.com/orgs/${org}/repos`
+  setup (props) {
+    const endpoint = `https://api.github.com/orgs/${props.org}/repos`
     const { data, error } = useSWRV(endpoint, fetcher, {
       revalidateOnFocus: false
     })
