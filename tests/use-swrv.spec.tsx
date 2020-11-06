@@ -1,6 +1,6 @@
 import { createApp, watch, defineComponent, ref, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import useSWRV, { mutate } from '@/use-swrv'
+import useSWRV, { mutate } from '../src/use-swrv'
 import { advanceBy, advanceTo, clear } from 'jest-date-mock'
 
 jest.useFakeTimers()

@@ -1,7 +1,8 @@
 import { IKey } from '../types'
-import hash from '../lib/hash'
-export interface ICacheItem<Data> {
-  data: Data,
+import hash from './hash'
+
+interface ICacheItem {
+  data: any,
   createdAt: number,
   expiresAt: number
 }
