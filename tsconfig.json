@@ -20,11 +20,6 @@
       "webpack-env",
       "node", "jest"
     ],
-    "paths": {
-      "@/*": [
-        "src/*"
-      ]
-    },
     "lib": [
       "esnext",
       "dom",

@@ -1,6 +1,6 @@
 import Vue from 'vue/dist/vue.common.js'
 import VueCompositionApi, { watch, defineComponent, ref } from '@vue/composition-api'
-import useSWRV, { mutate } from '@/use-swrv'
+import useSWRV, { mutate } from '../src/use-swrv'
 import { advanceBy, advanceTo, clear } from 'jest-date-mock'
 
 Vue.use(VueCompositionApi)
