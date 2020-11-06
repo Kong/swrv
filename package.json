@@ -1,6 +1,6 @@
 {
   "name": "swrv",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "main": "./dist/index.js",
   "module": "./esm/index.js",
   "repository": "github:Kong/swrv",
