@@ -1,4 +1,4 @@
-import { IKey } from '@/types'
+import { IKey } from '../types'
 import hash from './hash'
 
 interface ICacheItem {
