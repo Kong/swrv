@@ -3,6 +3,7 @@
     "target": "es5",
     "module": "esnext",
     "declaration": true,
+    "downlevelIteration": true,
     "jsx": "preserve",
     "importHelpers": true,
     "moduleResolution": "node",
