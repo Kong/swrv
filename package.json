@@ -20,6 +20,9 @@
     "dist/**",
     "esm/**"
   ],
+  "dependencies": {
+    "tslib": "^2.0.1"
+  },
   "peerDependencies": {
     "@vue/composition-api": "^0.5.0 || ^1.0.0-beta.17"
   },
