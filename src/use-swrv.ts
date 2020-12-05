@@ -148,7 +148,6 @@ function useSWRV<Data = any, Error = any>(
   config?: IConfig
 ): IResponse<Data, Error>
 function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
-  // console.log(args, args.length)
   let key: IKey
   let fn: fetcherFn<Data> | undefined
   let config: IConfig = { ...defaultConfig }
@@ -176,8 +175,6 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       ...args[2]
     }
   }
-
-  // console.log(key, fn, config)
 
   const ttl = IS_SERVER ? config.serverTTL : config.ttl
   const keyRef = typeof key === 'function' ? (key as any) : ref(key)
