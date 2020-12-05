@@ -19,18 +19,17 @@ SWR first returns the data from cache (stale), then sends the fetch request
 
 Features:
 
-- Transport and protocol agnostic data fetching
-- Fast page navigation
-- Revalidation on focus
-- Interval polling
-- Request deduplication
-- TypeScript ready
-- Minimal API
-- stale-if-error
-- Customizable cache implementation
-- Error Retry
-- SSR support
-- Vue 3 Support
+- [x] Transport and protocol agnostic data fetching
+- [x] Fast page navigation
+- [x] Revalidation on focus
+- [x] Interval polling
+- [x] Request deduplication
+- [x] TypeScript ready
+- [x] Minimal API
+- [x] stale-if-error
+- [x] Customizable cache implementation
+- [x] Error Retry
+- [x] SSR support
 
 With `swrv`, components will get a stream of data updates constantly and
 automatically. Thus, the UI will be always fast and reactive.
@@ -64,30 +63,7 @@ automatically. Thus, the UI will be always fast and reactive.
 ## Installation
 
 ```sh
-# npm
-npm install swrv
-
-# yarn
 yarn add swrv
-
-# pnpm 
-pnpm add swrv
-
-```
-
-If you want to try out Vue 3 support (beta), install the beta release and
-check out the [Vite example](https://github.com/Kong/swrv/tree/next/examples/vite).
-`swrv` code for Vue 3.0 exists on `next` branch.
-
-```sh
-# npm
-npm install swrv@beta
-
-# yarn
-yarn add swrv@beta
-
-# pnpm 
-pnpm add swrv@beta
 ```
 
 ## Getting Started
@@ -196,6 +172,7 @@ function prefetch() {
 }
 ```
 
+
 ## Dependent Fetching
 
 swrv also allows you to fetch data that depends on other data. It ensures the
@@ -217,7 +194,7 @@ export default {
 
   setup() {
     const { data: user } = useSWRV('/api/user', fetch)
-    const { data: projects } = useSWRV(() => user.value && '/api/projects?uid=' + user.value.id, fetch)
+    const { data: projects } = useSWRV(() => user.value.id && '/api/projects?uid=' + user.value.id, fetch)
     // if the return value of the cache key function is falsy, the fetcher
     // will not trigger, but since `user` is inside the cache key function,
     // it is being watched so when it is available, then the projects will
@@ -231,6 +208,7 @@ export default {
 }
 </script>
 ```
+
 
 ## Stale-if-error
 
@@ -465,6 +443,7 @@ const { data } = useSWRV('/api/config', fetcher)
 const { data } = useSWRV('/api/config', null)
 ```
 
+
 ## Error Handling
 
 Since `error` is returned as a Vue Ref, you can use watchers to handle any
@@ -517,12 +496,14 @@ eventually. You can disable some of the eager fetching such as
 cache while also revalidating so users are always getting the most up to date
 data.
 
+
 ### How can I refetch swrv data to update it
 
-Swrv fetcher functions can be triggered on-demand by using the `mutate`
+Swrv fetcher functions can be triggered on-demand by using the `revalidate`
 [return value](https://github.com/Kong/swrv/#return-values). This is useful when
 there is some event that needs to trigger a revalidation such a PATCH request that
 updates the initial GET request response data.
+
 
 ## Contributors ✨
 
