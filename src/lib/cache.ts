@@ -40,9 +40,6 @@ export default class SWRVCache {
     return serializeKeyDefault(key)
   }
 
-  /**
-   * Get cache item while evicting
-   */
   get (k: string): ICacheItem {
     const _key = this.serializeKey(k)
     return this.items.get(_key)
