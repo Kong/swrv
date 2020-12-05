@@ -26,45 +26,51 @@ Features:
 - [x] Minimal API
 - [x] stale-if-error
 - [x] Customizable cache implementation
+- [x] Error Retry
 - [x] SSR support
 - [x] Vue 3 Support
 
 With `swrv`, components will get a stream of data updates constantly and
 automatically. Thus, the UI will be always fast and reactive.
 
-## Table of Contents
+## Table of Contents<!-- omit in toc -->
 
 - [Installation](#installation)
 - [Getting Started](#getting-started)
 - [Api](#api)
   - [Parameters](#parameters)
   - [Return Values](#return-values)
-  - [Config Options](#config-options)
+  - [Config options](#config-options)
 - [Prefetching](#prefetching)
 - [Dependent Fetching](#dependent-fetching)
 - [Stale-if-error](#stale-if-error)
 - [State Management](#state-management)
-  - [useSwrvState](#useSwrvState)
+  - [useSwrvState](#useswrvstate)
   - [Vuex](#vuex)
 - [Cache](#cache)
   - [localStorage](#localstorage)
   - [Serve from cache only](#serve-from-cache-only)
 - [Error Handling](#error-handling)
 - [FAQ](#faq)
-- [Contributors](#contributors)
+  - [How is swrv different from the swr react library](#how-is-swrv-different-from-the-swr-react-library)
+    - [Vue and Reactivity](#vue-and-reactivity)
+    - [Features](#features)
+  - [Why does swrv make so many requests](#why-does-swrv-make-so-many-requests)
+  - [How can I refetch swrv data to update it](#how-can-i-refetch-swrv-data-to-update-it)
+- [Contributors ✨](#contributors-)
 
 ## Installation
 
 ```sh
-$ yarn add swrv
+yarn add swrv
 ```
 
-If you want to try out Vue 3 support (beta), install the beta release and 
+If you want to try out Vue 3 support (beta), install the beta release and
 check out the [Vite example](https://github.com/Kong/swrv/tree/next/examples/vite).
 `swrv` code for Vue 3.0 exists on `next` branch.
 
 ```sh
-$ yarn add swrv@beta
+yarn add swrv@beta
 ```
 
 ## Getting Started
@@ -140,6 +146,9 @@ const { data, error, isValidating, mutate } = useSWRV(key, fetcher, options)
   span
 - `ttl = 0` - time to live of response data in cache. 0 mean it stays around
   forever.
+- `shouldRetryOnError = true` - retry when fetcher has an error
+- `errorRetryInterval = 5000` - error retry interval
+- `errorRetryCount: 5` - max error retry count
 - `revalidateOnFocus = true` - auto revalidate when window gets focused
 - `revalidateDebounce = 0` - debounce in milliseconds for revalidation. Useful
   for when a component is serving from the cache immediately, but then un-mounts
@@ -168,7 +177,8 @@ function prefetch() {
 ```
 
 ## Dependent Fetching
-swrv also allows you to fetch data that depends on other data. It ensures the 
+
+swrv also allows you to fetch data that depends on other data. It ensures the
 maximum possible parallelism (avoiding waterfalls), as well as serial fetching
 when a piece of dynamic data is required for the next data fetch to happen.
 
@@ -190,11 +200,11 @@ export default {
     const { data: projects } = useSWRV(() => user.value.id && '/api/projects?uid=' + user.value.id, fetch)
     // if the return value of the cache key function is falsy, the fetcher
     // will not trigger, but since `user` is inside the cache key function,
-    // it is being watched so when it is available, then the projects will 
+    // it is being watched so when it is available, then the projects will
     // be fetched.
 
     return {
-      user, 
+      user,
       projects
     }
   },
@@ -421,7 +431,7 @@ This can be useful when there is some higher level swrv composable that is alway
 you can assume that fetcher-less composables will have data available.
 
 ```ts
-// Component A 
+// Component A
 const { data } = useSWRV('/api/config', fetcher)
 
 // Component B, only retrieve from cache
@@ -455,7 +465,7 @@ export default {
 
 ## FAQ
 
-### How is swrv different from the [swr](https://github.com/zeit/swr) react library?
+### How is swrv different from the [swr](https://github.com/zeit/swr) react library
 
 #### Vue and Reactivity
 
@@ -472,7 +482,7 @@ Features were built as needed for `swrv`, and while the initial development of
 `swrv` was mostly a port of swr, the feature sets are not 1-1, and are subject
 to diverge as they already have.
 
-### Why does swrv make so many requests?
+### Why does swrv make so many requests
 
 The idea behind stale-while-revalidate is that you always get fresh data
 eventually. You can disable some of the eager fetching such as
@@ -480,9 +490,9 @@ eventually. You can disable some of the eager fetching such as
 cache while also revalidating so users are always getting the most up to date
 data.
 
-### How can I refetch swrv data to update it?
+### How can I refetch swrv data to update it
 
-Swrv fetcher functions can be triggered on-demand by using the `revalidate` 
+Swrv fetcher functions can be triggered on-demand by using the `revalidate`
 [return value](https://github.com/Kong/swrv/#return-values). This is useful when
 there is some event that needs to trigger a revalidation such a PATCH request that
 updates the initial GET request response data.
