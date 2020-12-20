@@ -45,7 +45,6 @@
     "vue": "^2.6.11",
     "vue-server-renderer": "^2.6.11",
     "vue-template-compiler": "^2.6.10",
-    "webpack": "^4.41.6",
-    "whatwg-fetch": "^3.5.0"
+    "webpack": "^4.41.6"
   }
 }
