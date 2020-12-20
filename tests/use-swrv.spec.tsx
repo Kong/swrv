@@ -614,6 +614,23 @@ describe('useSWRV', () => {
 
     done()
   })
+
+  it('should use fetch api as default fetcher', async () => {
+    const users = [{ name: 'bob' }, { name: 'sue' }]
+    const mockFetch = body => Promise.resolve({ json: () => Promise.resolve(body) } as any)
+    jest.spyOn(window, 'fetch').mockImplementation(() => mockFetch(users))
+
+    const vm = new Vue({
+      template: `<div v-if="data">hello, {{ data.map(u => u.name).join(' and ') }}</div>`,
+      setup  () {
+        return useSWRV('http://localhost:3000/api/users')
+      }
+    }).$mount()
+
+    await tick(vm, 4)
+
+    expect(vm.$el.textContent).toBe('hello, bob and sue')
+  })
 })
 
   it('should return cache when no fetcher provided', async done => {

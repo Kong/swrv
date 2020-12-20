@@ -17,6 +17,9 @@ export interface IConfig<
   shouldRetryOnError?: boolean
   errorRetryInterval?: number
   errorRetryCount?: number
+  fetcher?: Fn,
+  isOnline?: () => boolean
+  isDocumentVisible?: () => boolean
 }
 
 export interface IResponse<Data = any, Error = any> {
