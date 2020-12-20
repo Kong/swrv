@@ -30,7 +30,7 @@ import {
   getCurrentInstance
 } from 'vue'
 import webPreset from './lib/web-preset'
-import SWRVCache from './lib/cache'
+import SWRVCache from './cache'
 import { IConfig, IKey, IResponse, fetcherFn, revalidateOptions } from './types'
 
 const DATA_CACHE = new SWRVCache<Omit<IResponse, 'mutate'>>()

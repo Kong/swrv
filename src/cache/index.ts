@@ -1,5 +1,5 @@
 import { IKey } from '../types'
-import hash from './hash'
+import hash from '../lib/hash'
 
 interface ICacheItem {
   data: any,
@@ -27,9 +27,9 @@ function serializeKeyDefault (key: IKey): string {
   return key
 }
 
-export default class SWRVCache<CacheData> {
+export default class SWRVCache {
   protected ttl: number
-  private items?: Map<string, ICacheItem<CacheData>>
+  private items?: Map<string, ICacheItem>
 
   constructor (ttl = 0) {
     this.items = new Map()
