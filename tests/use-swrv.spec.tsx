@@ -617,6 +617,7 @@ describe('useSWRV', () => {
 
   it('should use fetch api as default fetcher', async () => {
     const users = [{ name: 'bob' }, { name: 'sue' }]
+    global['fetch'] = () => Promise.resolve()
     const mockFetch = body => Promise.resolve({ json: () => Promise.resolve(body) } as any)
     jest.spyOn(window, 'fetch').mockImplementation(() => mockFetch(users))
 
@@ -630,6 +631,7 @@ describe('useSWRV', () => {
     await tick(vm, 4)
 
     expect(vm.$el.textContent).toBe('hello, bob and sue')
+    delete global['fetch']
   })
 })
 
