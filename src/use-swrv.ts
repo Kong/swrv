@@ -156,7 +156,8 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
   let unmounted = false
   let isHydrated = false
 
-  const vm = getCurrentInstance() as any
+  const instance = getCurrentInstance() as any
+  const vm = instance
   const IS_SERVER = vm.$isServer
   const isSsrHydration = Boolean(
     !IS_SERVER &&
