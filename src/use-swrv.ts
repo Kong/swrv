@@ -157,7 +157,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
   let isHydrated = false
 
   const instance = getCurrentInstance() as any
-  const vm = instance
+  const vm = instance.proxy || instance // https://github.com/vuejs/composition-api/pull/520
   const IS_SERVER = vm.$isServer
 
   // #region ssr
