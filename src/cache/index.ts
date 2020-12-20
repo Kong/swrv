@@ -1,5 +1,5 @@
 import { IKey } from '../types'
-import hash from './hash'
+import hash from '../lib/hash'
 
 interface ICacheItem {
   data: any,
@@ -28,8 +28,8 @@ function serializeKeyDefault (key: IKey): string {
 }
 
 export default class SWRVCache {
-  private ttl: number
-  private items: Map<string, ICacheItem>
+  protected ttl: number
+  private items?: Map<string, ICacheItem>
 
   constructor (ttl = 0) {
     this.items = new Map()
@@ -55,17 +55,19 @@ export default class SWRVCache {
       expiresAt: timeToLive ? now + timeToLive : Infinity
     }
 
-    timeToLive && setTimeout(() => {
-      const current = Date.now()
-      const hasExpired = current >= item.expiresAt
-      if (hasExpired) this.delete(_key)
-    }, timeToLive)
-
+    this.dispatchExpire(timeToLive, item, _key)
     this.items.set(_key, item)
   }
 
-  delete (k: string) {
-    const _key = this.serializeKey(k)
-    this.items.delete(_key)
+  dispatchExpire (ttl, item, serializedKey) {
+    ttl && setTimeout(() => {
+      const current = Date.now()
+      const hasExpired = current >= item.expiresAt
+      if (hasExpired) this.delete(serializedKey)
+    }, ttl)
+  }
+
+  delete (serializedKey: string) {
+    this.items.delete(serializedKey)
   }
 }
