@@ -1660,10 +1660,10 @@
   optionalDependencies:
     prettier "^1.18.2"
 
-"@vue/composition-api@1.0.0-beta.18":
-  version "1.0.0-beta.18"
-  resolved "https://registry.npmjs.org/@vue/composition-api/-/composition-api-1.0.0-beta.18.tgz#9c91ed2fc297e643defee95f16c551d457384239"
-  integrity sha512-5Ins/G+un8rZoXRllMquvuihHYUMz7EKxgCPTvJiBRml0gRrOz2eRisQbjzj8fuTC6yeURjySpOKXdVkTV4HJA==
+"@vue/composition-api@^1.0.0-beta.22":
+  version "1.0.0-beta.22"
+  resolved "https://registry.npmjs.org/@vue/composition-api/-/composition-api-1.0.0-beta.22.tgz#8b0046bda138820c6d79c91dc961839a52d853c7"
+  integrity sha512-KkTeHVWgsJbtoA5t6pUien/ARw7JhVM7QZh05ko/UdgzALYMGwJsBf4WlcvbpMKE5eAu4ONYJypQ+r8LwBIOhA==
   dependencies:
     tslib "^2.0.1"
 
