@@ -1,4 +1,4 @@
-import SWRVCache from './lib/cache'
+import SWRVCache from './cache'
 import useSWRV, { mutate } from './use-swrv'
 
 export {
