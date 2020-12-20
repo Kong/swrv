@@ -30,8 +30,7 @@ import {
   onServerPrefetch,
   getCurrentInstance
 } from '@vue/composition-api'
-import isDocumentVisible from './lib/is-document-visible'
-import isOnline from './lib/is-online'
+import webPreset from './lib/web-preset'
 import SWRVCache from './lib/cache'
 import { IConfig, IKey, IResponse, fetcherFn, revalidateOptions } from './types'
 
@@ -49,7 +48,10 @@ const defaultConfig: IConfig = {
   revalidateDebounce: 0,
   shouldRetryOnError: true,
   errorRetryInterval: 5000,
-  errorRetryCount: 5
+  errorRetryCount: 5,
+  fetcher: webPreset.fetcher,
+  isOnline: webPreset.isOnline,
+  isDocumentVisible: webPreset.isDocumentVisible
 }
 
 /**
@@ -67,7 +69,7 @@ function setRefCache (key: string, theRef: StateRef<any, any>, ttl: number) {
 }
 
 function onErrorRetry (revalidate: (any, opts: revalidateOptions) => void, errorRetryCount: number, config: IConfig): void {
-  if (!isDocumentVisible()) {
+  if (!config.isDocumentVisible()) {
     return
   }
 
@@ -154,7 +156,8 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
   let unmounted = false
   let isHydrated = false
 
-  const vm = getCurrentInstance() as any
+  const instance = getCurrentInstance() as any
+  const vm = instance
   const IS_SERVER = vm.$isServer
   const isSsrHydration = Boolean(
     !IS_SERVER &&
@@ -178,6 +181,11 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
 
   const ttl = IS_SERVER ? config.serverTTL : config.ttl
   const keyRef = typeof key === 'function' ? (key as any) : ref(key)
+
+  if (typeof fn === 'undefined') {
+    // use the global fetcher
+    fn = config.fetcher
+  }
 
   let stateRef = null as StateRef<Data, Error>
   if (isSsrHydration) {
@@ -223,7 +231,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     }
 
     const fetcher = data || fn
-    if (!fetcher || !isDocumentVisible() || (opts?.forceRevalidate !== undefined && !opts?.forceRevalidate)) {
+    if (!fetcher || !config.isDocumentVisible() || (opts?.forceRevalidate !== undefined && !opts?.forceRevalidate)) {
       stateRef.isValidating = false
       return
     }
@@ -282,7 +290,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       // if this is the case, but continue to revalidate since promises can't
       // be cancelled and new hook instances might rely on promise/data cache or
       // from pre-fetch
-      if (!stateRef.error && isOnline()) {
+      if (!stateRef.error && config.isOnline()) {
         // if API request errored, we stop polling in this round
         // and let the error retry function handle it
         await revalidate()

@@ -3,7 +3,10 @@ import SWRVCache from './lib/cache'
 
 export type fetcherFn<Data> = (...args: any) => Data | Promise<Data>
 
-export interface IConfig {
+export interface IConfig<
+  Data = any,
+  Fn extends fetcherFn<Data> = fetcherFn<Data>
+> {
   refreshInterval?: number
   cache?: SWRVCache
   dedupingInterval?: number
@@ -14,6 +17,9 @@ export interface IConfig {
   shouldRetryOnError?: boolean
   errorRetryInterval?: number
   errorRetryCount?: number
+  fetcher?: Fn,
+  isOnline?: () => boolean
+  isDocumentVisible?: () => boolean
 }
 
 export interface IResponse<Data = any, Error = any> {
