@@ -1,15 +1,16 @@
 <template>
   <div>
     <div v-if="todo === undefined && !error">Loading...</div>
-    <div v-if="error">{{error}}</div>
     {{ todo }}
+    <div v-if="error">{{error}}</div>
   </div>
 </template>
 
 <script>
-import useSWRV from 'swrv'
+import { defineComponent } from '@vue/composition-api'
+import useTodos from '../useTodos'
 
-export default {
+export default defineComponent({
   props: {
     id: {
       type: Number,
@@ -17,17 +18,12 @@ export default {
     }
   },
   setup ({ id }, { root }) {
-    const { data: todo, error } = useSWRV(`/todos/${id}`, path => root.$api(`${path}`), {
-      cache: root.$swrvCache
-    })
+    const { data, error } = useTodos(root, `/todos/${id}`)
 
     return {
-      todo,
+      todo: data,
       error
     }
   }
-}
+})
 </script>
-
-<style lang="scss" scoped>
-</style>

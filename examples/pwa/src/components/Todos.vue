@@ -24,13 +24,12 @@
 </template>
 
 <script>
-import useSWRV from 'swrv'
+import { defineComponent } from '@vue/composition-api'
+import useTodos from '../useTodos'
 
-export default {
+export default defineComponent({
   setup (props, { root, emit }) {
-    const { data: todos, error } = useSWRV(`/todos`, path => root.$api(`${path}`), {
-      cache: root.$swrvCache
-    })
+    const { data: todos, error } = useTodos(root, `/todos`)
 
     function viewTodo (id) {
       emit('view', id)
@@ -42,7 +41,7 @@ export default {
       viewTodo
     }
   }
-}
+})
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
