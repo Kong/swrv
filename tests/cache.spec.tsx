@@ -35,7 +35,7 @@ describe('cache - adapters', () => {
 
       await timeout(100)
 
-      const localStorageData: Record<string, ICacheItem<any>> = JSON.parse(atob(localStorage.getItem('swrv')))
+      const localStorageData: Record<string, ICacheItem<any>> = JSON.parse(localStorage.getItem('swrv'))
 
       expect(localStorage.getItem('swrv')).toBeDefined()
       expect(localStorageData).toHaveProperty('/api/users')
@@ -59,7 +59,7 @@ describe('cache - adapters', () => {
 
       expect(localStorage.getItem('swrv')).toBeDefined()
       const checkStorage = (key): Record<string, ICacheItem<any>> => {
-        return JSON.parse(atob(localStorage.getItem('swrv')))[key]
+        return JSON.parse(localStorage.getItem('swrv'))[key]
       }
 
       await timeout(100)
@@ -92,7 +92,7 @@ describe('cache - adapters', () => {
         if (!db) {
           return undefined
         }
-        return JSON.parse(atob(db))[key]
+        return JSON.parse(db)[key]
       }
 
       await timeout(100)
