@@ -500,7 +500,7 @@ describe('useSWRV', () => {
     const vm1 = new Vue({
       template: `<div>{{ data1 }}</div>`,
       setup  () {
-        const { data: data1 } = useSWRV('ttlData1', undefined, { ttl })
+        const { data: data1 } = useSWRV('ttlData1', undefined, { ttl, fetcher: undefined })
 
         return { data1 }
       }
@@ -508,7 +508,7 @@ describe('useSWRV', () => {
     const component = {
       template: `<div>{{ data2 }}</div>`,
       setup  () {
-        const { data: data2 } = useSWRV('ttlData1', undefined, { ttl })
+        const { data: data2 } = useSWRV('ttlData1', undefined, { ttl, fetcher: undefined })
 
         return { data2 }
       }
@@ -564,7 +564,7 @@ describe('useSWRV', () => {
     const vm1 = new Vue({
       template: `<div>{{ data1 }}</div>`,
       setup  () {
-        const { data: data1 } = useSWRV('ttlData2', undefined, { ttl })
+        const { data: data1 } = useSWRV('ttlData2', undefined, { ttl, fetcher: undefined })
 
         return { data1 }
       }
@@ -572,7 +572,7 @@ describe('useSWRV', () => {
     const component = {
       template: `<div>{{ data2 }}</div>`,
       setup  () {
-        const { data: data2 } = useSWRV('ttlData2', undefined, { ttl })
+        const { data: data2 } = useSWRV('ttlData2', undefined, { ttl, fetcher: undefined })
 
         return { data2 }
       }
