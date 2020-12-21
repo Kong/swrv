@@ -33,6 +33,8 @@ import webPreset from './lib/web-preset'
 import SWRVCache from './cache'
 import { IConfig, IKey, IResponse, fetcherFn, revalidateOptions } from './types'
 
+type StateRef<Data, Error> = { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any };
+
 const DATA_CACHE = new SWRVCache<Omit<IResponse, 'mutate'>>()
 const REF_CACHE = new SWRVCache<StateRef<any, any>[]>()
 const PROMISES_CACHE = new SWRVCache<Omit<IResponse, 'mutate'>>()
@@ -136,8 +138,6 @@ const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA
 
   return newData
 }
-
-type StateRef<Data, Error> = { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any };
 
 /* Stale-While-Revalidate hook to handle fetching, caching, validation, and more... */
 function useSWRV<Data = any, Error = any>(

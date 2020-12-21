@@ -1,5 +1,6 @@
 import { Ref } from 'vue'
 import SWRVCache from './cache'
+import LocalStorageCache from './cache/adapters/localStorage'
 
 export type fetcherFn<Data> = (...args: any) => Data | Promise<Data>
 
