@@ -21,7 +21,7 @@ export default class LocalStorageCache extends SWRVCache<any> {
       const _key = this.serializeKey(k)
       const itemParsed: ICacheItem<any> = JSON.parse(item)[_key]
 
-      if (itemParsed.expiresAt === null) {
+      if (itemParsed?.expiresAt === null) {
         itemParsed.expiresAt = Infinity // localStorage sets Infinity to 'null'
       }
 
