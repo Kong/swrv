@@ -12,14 +12,14 @@ export default class LocalStorageCache extends SWRVCache<any> {
     this.STORAGE_KEY = key
   }
 
-  private encode (storage) { return btoa(JSON.stringify(storage)) }
-  private decode (storage) { return JSON.parse(atob(storage)) }
+  private encode (storage) { return JSON.stringify(storage) }
+  private decode (storage) { return JSON.parse(storage) }
 
   get (k) {
     const item = localStorage.getItem(this.STORAGE_KEY)
     if (item) {
       const _key = this.serializeKey(k)
-      const itemParsed: ICacheItem<any> = JSON.parse(atob(item))[_key]
+      const itemParsed: ICacheItem<any> = JSON.parse(item)[_key]
 
       if (itemParsed.expiresAt === null) {
         itemParsed.expiresAt = Infinity // localStorage sets Infinity to 'null'
