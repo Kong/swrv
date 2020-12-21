@@ -1,8 +1,7 @@
 import { IKey } from '../types'
 import hash from '../lib/hash'
-
-interface ICacheItem {
-  data: any,
+export interface ICacheItem<Data> {
+  data: Data,
   createdAt: number,
   expiresAt: number
 }
@@ -27,9 +26,9 @@ function serializeKeyDefault (key: IKey): string {
   return key
 }
 
-export default class SWRVCache {
+export default class SWRVCache<CacheData> {
   protected ttl: number
-  private items?: Map<string, ICacheItem>
+  private items?: Map<string, ICacheItem<CacheData>>
 
   constructor (ttl = 0) {
     this.items = new Map()
@@ -40,7 +39,7 @@ export default class SWRVCache {
     return serializeKeyDefault(key)
   }
 
-  get (k: string): ICacheItem {
+  get (k: string): ICacheItem<CacheData> {
     const _key = this.serializeKey(k)
     return this.items.get(_key)
   }

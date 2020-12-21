@@ -1,5 +1,6 @@
 import { Ref } from 'vue'
 import SWRVCache from './cache'
+import LocalStorageCache from './cache/adapters/localStorage'
 
 export type fetcherFn<Data> = (...args: any) => Data | Promise<Data>
 
@@ -8,7 +9,7 @@ export interface IConfig<
   Fn extends fetcherFn<Data> = fetcherFn<Data>
 > {
   refreshInterval?: number
-  cache?: SWRVCache
+  cache?: LocalStorageCache | SWRVCache<any>
   dedupingInterval?: number
   ttl?: number
   serverTTL?: number
