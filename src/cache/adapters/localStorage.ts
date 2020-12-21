@@ -1,10 +1,10 @@
-import SWRVCache from '..'
+import SWRVCache, { ICacheItem } from '..'
 
 /**
  * LocalStorage cache adapter for swrv data cache.
  * https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage
  */
-export default class LocalStorageCache extends SWRVCache {
+export default class LocalStorageCache extends SWRVCache<any> {
   private STORAGE_KEY
 
   constructor (key = 'swrv', ttl = 0) {
@@ -19,8 +19,16 @@ export default class LocalStorageCache extends SWRVCache {
     const item = localStorage.getItem(this.STORAGE_KEY)
     if (item) {
       const _key = this.serializeKey(k)
-      return JSON.parse(atob(item))[_key]
+      const itemParsed: ICacheItem<any> = JSON.parse(atob(item))[_key]
+
+      if (itemParsed.expiresAt === null) {
+        itemParsed.expiresAt = Infinity // localStorage sets Infinity to 'null'
+      }
+
+      return itemParsed
     }
+
+    return undefined
   }
 
   set (k: string, v: any, ttl: number) {
