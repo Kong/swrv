@@ -358,60 +358,28 @@ some logic).
 
 ## Cache
 
-By default, a custom cache implementation is used to store both fetcher response
-data cache, and in-flight promise cache. Response data cache can be customized
-via the `config.cache` property.
-
-```ts
-import { SWRVCache } from 'swrv'
-
-class NoCache extends SWRVCache {
-  get(k: string, ttl: number): any {}
-  set(k: string, v: any) {}
-  delete(k: string) {}
-}
-
-const { data, error } = useSWRV(key, fetch, { cache: new NoCache() })
-```
+By default, a custom cache implementation is used to store fetcher response
+data cache, in-flight promise cache, and ref cache. Response data cache can be 
+customized via the `config.cache` property. Built in cache adapters:
 
 ### localStorage
 
 A common usage case to have a better _offline_ experience is to read from
 `localStorage`. Checkout the [PWA example](/examples/pwa/) for more inspiration.
 
-```js
-class LocalStorageCache extends SWRVCache {
-  STORAGE_KEY = 'swrv'
+```ts
+import useSWRV from 'swrv'
+import LocalStorageCache from 'swrv/dist/cache/adapters/localStorage'
 
-  private encode (storage) { return btoa(JSON.stringify(storage)) }
-  private decode (storage) { return JSON.parse(atob(storage)) }
+function useTodos () {
+  const { data, error } = useSWRV('/todos', undefined, {
+    cache: new LocalStorageCache(),
+    shouldRetryOnError: false
+  })
 
-  get (k, ttl) {
-    const item = localStorage.getItem(this.STORAGE_KEY)
-    if (item) {
-      return JSON.parse(atob(item))[k]
-    }
-  }
-
-  set (k, v) {
-    let payload = {}
-    const storage = localStorage.getItem(this.STORAGE_KEY)
-    if (storage) {
-      payload = this.decode(storage)
-      payload[k] = { data: v, ttl: Date.now() }
-    } else {
-      payload = { [k]: { data: v, ttl: Date.now() } }
-    }
-
-    localStorage.setItem(this.STORAGE_KEY, this.encode(payload))
-  }
-}
-
-const myCache = new LocalStorageCache()
-
-export default {
-  setup () {
-    return useSWRV(key, fetch, { cache: myCache })
+  return {
+    data,
+    error
   }
 }
 ```
