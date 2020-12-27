@@ -114,7 +114,8 @@ component. This is because `data` and `error` are Vue
 values will be set by the fetcher response.
 
 Note that fetcher can be any asynchronous function, so you can use your favorite
-data-fetching library to handle that part.
+data-fetching library to handle that part. If ommitted, swrv uses the 
+[Fetch api](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
 
 ## Api
 
@@ -127,7 +128,7 @@ const { data, error, isValidating, mutate } = useSWRV(key, fetcher, options)
 | Param     | Required | Description                                                                         |
 | --------- | -------- | ----------------------------------------------------------------------------------- |
 | `key`     | yes      | a unique key string for the request (or a watcher function / null) (advanced usage) |
-| `fetcher` |          | a Promise returning function to fetch your data (details)                           |
+| `fetcher` |          | a Promise returning function to fetch your data                                     |
 | `options` |          | an object of configuration options                                                  |
 
 ### Return Values
@@ -139,6 +140,8 @@ const { data, error, isValidating, mutate } = useSWRV(key, fetcher, options)
 - `mutate`: function to trigger the validation manually
 
 ### Config options
+
+See [Config Defaults](https://github.com/Kong/swrv/blob/1587416e59dad12f9261e289b8cf63da81aa2dd4/src/use-swrv.ts#L43)
 
 - `refreshInterval = 0` - polling interval in milliseconds. 0 means this is
   disabled.
