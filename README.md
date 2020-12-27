@@ -107,7 +107,7 @@ component. This is because `data` and `error` are Vue
 values will be set by the fetcher response.
 
 Note that fetcher can be any asynchronous function, so you can use your favorite
-data-fetching library to handle that part. If ommitted, swrv uses the 
+data-fetching library to handle that part. If ommitted, swrv uses the
 [Fetch api](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
 
 ## Api
@@ -118,11 +118,11 @@ const { data, error, isValidating, mutate } = useSWRV(key, fetcher, options)
 
 ### Parameters
 
-| Param     | Required | Description                                                                                                                                                                                                                                  |
-| --------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`     | yes      | a unique key string for the request (or a reactive reference / watcher function / null) (advanced usage)                                                                                                                                     |
-| `fetcher` |          | a Promise returning function to fetch your data. If `null`, swrv will fetch from cache only and not revalidate. If omitted (i.e. `undefined`) then the [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) api will be used. |
-| `options` |          | an object of configuration options                                                                                                                                                                                                           |
+| Param     | Required | Description                                                                         |
+| --------- | -------- | ----------------------------------------------------------------------------------- |
+| `key`     | yes      | a unique key string for the request (or a watcher function / null) (advanced usage) |
+| `fetcher` |          | a Promise returning function to fetch your data                                     |
+| `options` |          | an object of configuration options                                                  |
 
 ### Return Values
 
@@ -402,7 +402,7 @@ export default defineComponent({
 ## Cache
 
 By default, a custom cache implementation is used to store fetcher response
-data cache, in-flight promise cache, and ref cache. Response data cache can be 
+data cache, in-flight promise cache, and ref cache. Response data cache can be
 customized via the `config.cache` property. Built in cache adapters:
 
 ### localStorage
