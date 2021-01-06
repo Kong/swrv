@@ -930,6 +930,48 @@ describe('useSWRV - refresh', () => {
     clear()
     done()
   })
+
+  it('should refresh on interval using dependent watchers', async done => {
+    type User = { id: string }
+    let count = -1
+    const wrapper = mount(defineComponent({
+      template: `<div><template v-if="user">User-{{user.id}} votes: {{ votes }}</template></div>`,
+      setup  () {
+        const { data: user } = useSWRV<User>('/users', () => {
+          return new Promise((res) => {
+            setTimeout(() => res({ id: '1' }), 200)
+          })
+        })
+        const { data: votes } = useSWRV(() => user.value && `/users/${user.value.id}/votes`, () => {
+          return ++count
+        }, {
+          refreshInterval: 200,
+          dedupingInterval: 0
+        })
+
+        return {
+          user,
+          votes
+        }
+      }
+    }))
+
+    await tick(2)
+    expect(wrapper.text()).toEqual('')
+    timeout(210)
+    await tick(2)
+    expect(wrapper.text()).toEqual('User-1 votes: 0')
+    timeout(50)
+    await tick(2)
+    expect(wrapper.text()).toEqual('User-1 votes: 0')
+    timeout(150)
+    await tick(2)
+    expect(wrapper.text()).toEqual('User-1 votes: 1')
+    timeout(200)
+    await tick(2)
+    expect(wrapper.text()).toEqual('User-1 votes: 2')
+    done()
+  })
 })
 
 describe('useSWRV - error', () => {
