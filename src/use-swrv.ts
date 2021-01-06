@@ -385,9 +385,6 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
         revalidate()
       }
       isHydrated = false
-      if (timer) {
-        clearTimeout(timer)
-      }
     }, {
       immediate: true
     })
