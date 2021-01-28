@@ -57,6 +57,7 @@ automatically. Thus, the UI will be always fast and reactive.
     - [Features](#features)
   - [Why does swrv make so many requests](#why-does-swrv-make-so-many-requests)
   - [How can I refetch swrv data to update it](#how-can-i-refetch-swrv-data-to-update-it)
+  - [Does swrv support glocal configuration?](#faq)
 - [Contributors ✨](#contributors-)
 
 ## Installation
@@ -463,10 +464,16 @@ data.
 
 ### How can I refetch swrv data to update it
 
-Swrv fetcher functions can be triggered on-demand by using the `revalidate`
+Swrv fetcher functions can be triggered on-demand by using the `mutate`
 [return value](https://github.com/Kong/swrv/#return-values). This is useful when
 there is some event that needs to trigger a revalidation such a PATCH request that
 updates the initial GET request response data.
+
+### Does swrv support glocal configuration?
+
+No, but you can easily wrap the `useSWRV` function with your own config.
+See this [comment in #91](https://github.com/Kong/swrv/issues/91#issuecomment-768200933)
+for an example.
 
 ## Contributors ✨
 
