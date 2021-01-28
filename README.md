@@ -57,7 +57,7 @@ automatically. Thus, the UI will be always fast and reactive.
     - [Features](#features)
   - [Why does swrv make so many requests](#why-does-swrv-make-so-many-requests)
   - [How can I refetch swrv data to update it](#how-can-i-refetch-swrv-data-to-update-it)
-  - [Does swrv support glocal configuration?](#faq)
+  - [Does swrv support glocal configuration?](#does-swrv-support-glocal-configuration)
 - [Contributors ✨](#contributors-)
 
 ## Installation
