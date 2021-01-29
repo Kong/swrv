@@ -1199,14 +1199,14 @@ describe('useSWRV - error', () => {
 })
 
 describe('useSWRV - window events', () => {
-  const toggleVisibility = state => Object.defineProperty(document, 'visibilityState', {
+  const toggleVisibility = (state: VisibilityState) => Object.defineProperty(document, 'visibilityState', {
     configurable: true,
-    get: function () { return state }
+    get: function (): VisibilityState { return state }
   })
 
-  const toggleOnline = state => Object.defineProperty(navigator, 'onLine', {
+  const toggleOnline = (state: boolean) => Object.defineProperty(navigator, 'onLine', {
     configurable: true,
-    get: function () { return state }
+    get: function (): boolean { return state }
   })
 
   it('should not rerender when document is not visible', async done => {
@@ -1262,42 +1262,34 @@ describe('useSWRV - window events', () => {
       }
     }).$mount()
 
+    // first fetch always renders #128
     timeout(200)
     await tick(1)
-    expect(vm.$el.textContent).toBe('count: 0')
-    expect(count).toBe(0)
+    expect(vm.$el.textContent).toBe('count: 1')
+    expect(count).toBe(1)
 
     timeout(200)
     await tick(1)
-    expect(vm.$el.textContent).toBe('count: 0')
-    expect(count).toBe(0)
+    expect(vm.$el.textContent).toBe('count: 1')
+    expect(count).toBe(1)
+
+    // subsequent fetches while document is hidden do not rerender
+    timeout(200)
+    await tick(1)
+    expect(vm.$el.textContent).toBe('count: 1')
+    expect(count).toBe(1)
 
     timeout(200)
     await tick(1)
-    expect(vm.$el.textContent).toBe('count: 0')
-    expect(count).toBe(0)
+    expect(vm.$el.textContent).toBe('count: 1')
+    expect(count).toBe(1)
 
     timeout(200)
     await tick(1)
-    expect(vm.$el.textContent).toBe('count: 0')
-    expect(count).toBe(0)
-
-    timeout(200)
-    await tick(1)
-    expect(vm.$el.textContent).toBe('count: 0')
-    expect(count).toBe(0)
+    expect(vm.$el.textContent).toBe('count: 1')
+    expect(count).toBe(1)
 
     toggleVisibility('visible')
-
-    timeout(200)
-    await tick(1)
-    expect(vm.$el.textContent).toBe('count: 1')
-    expect(count).toBe(1)
-
-    timeout(200)
-    await tick(1)
-    expect(vm.$el.textContent).toBe('count: 1')
-    expect(count).toBe(1)
 
     timeout(200)
     await tick(1)
@@ -1313,6 +1305,16 @@ describe('useSWRV - window events', () => {
     await tick(1)
     expect(vm.$el.textContent).toBe('count: 3')
     expect(count).toBe(3)
+
+    timeout(200)
+    await tick(1)
+    expect(vm.$el.textContent).toBe('count: 3')
+    expect(count).toBe(3)
+
+    timeout(200)
+    await tick(1)
+    expect(vm.$el.textContent).toBe('count: 4')
+    expect(count).toBe(4)
 
     vm.$destroy()
 
@@ -1350,6 +1352,36 @@ describe('useSWRV - window events', () => {
     // should not rerender cuz offline
     expect(vm.$el.textContent).toBe('count: 1')
 
+    toggleOnline(true)
     done()
+  })
+
+  // https://github.com/Kong/swrv/issues/128
+  it('fetches data on first render even when document is not visible', async () => {
+    let revalidations = 0
+
+    toggleVisibility('hidden')
+
+    const vm = new Vue({
+      template: `<div>{{ data }}</div>`,
+      setup  () {
+        const { data, error } = useSWRV(
+          'fetches-data-even-when-document-is-not-visible',
+          () => new Promise(res => setTimeout(() => {
+            res(++revalidations)
+          }, 100)),
+          {
+            dedupingInterval: 0,
+          }
+        )
+        return { data, error }
+      }
+    }).$mount()
+
+    timeout(100)
+    await tick(2)
+    expect(vm.$el.textContent).toBe('1')
+
+    toggleVisibility('visible')
   })
 })
