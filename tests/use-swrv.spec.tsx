@@ -1209,7 +1209,12 @@ describe('useSWRV - window events', () => {
     get: function (): boolean { return state }
   })
 
-  it('should not rerender when document is not visible', async done => {
+  afterEach(() => {
+    toggleOnline(true)
+    toggleVisibility('visible')
+  })
+
+  it('should not rerender when document is not visible', async () => {
     let count = 0
 
     const vm = new Vue({
@@ -1240,14 +1245,9 @@ describe('useSWRV - window events', () => {
     expect(vm.$el.textContent).toBe('count: 1')
 
     vm.$destroy()
-
-    // put it back to visible for other tests
-    toggleVisibility('visible')
-
-    done()
   })
 
-  it('should get last known state when document is not visible', async done => {
+  it('should get last known state when document is not visible', async () => {
     let count = 0
     mutate('dynamic-5-1', count)
     toggleVisibility('hidden')
@@ -1317,11 +1317,9 @@ describe('useSWRV - window events', () => {
     expect(count).toBe(4)
 
     vm.$destroy()
-
-    done()
   })
 
-  it('should not rerender when offline', async done => {
+  it('should not rerender when offline', async () => {
     let count = 0
 
     const vm = new Vue({
@@ -1351,15 +1349,10 @@ describe('useSWRV - window events', () => {
     await tick(1)
     // should not rerender cuz offline
     expect(vm.$el.textContent).toBe('count: 1')
-
-    toggleOnline(true)
-    done()
   })
 
   // https://github.com/Kong/swrv/issues/128
   it('fetches data on first render even when document is not visible', async () => {
-    let revalidations = 0
-
     toggleVisibility('hidden')
 
     const vm = new Vue({
@@ -1367,21 +1360,17 @@ describe('useSWRV - window events', () => {
       setup  () {
         const { data, error } = useSWRV(
           'fetches-data-even-when-document-is-not-visible',
-          () => new Promise(res => setTimeout(() => {
-            res(++revalidations)
-          }, 100)),
-          {
-            dedupingInterval: 0,
-          }
+          () => new Promise(res => setTimeout(() => res('first'), 100))
         )
         return { data, error }
       }
     }).$mount()
 
-    timeout(100)
-    await tick(2)
-    expect(vm.$el.textContent).toBe('1')
+    expect(vm.$el.textContent).toBe('')
 
-    toggleVisibility('visible')
+    timeout(100)
+    await tick()
+
+    expect(vm.$el.textContent).toBe('first')
   })
 })
