@@ -1264,38 +1264,9 @@ describe('useSWRV - window events', () => {
     expect(vm.$el.textContent).toBe('count: 1')
 
     app.unmount(container)
-
-    toggleVisibility('visible')
-
-    timeout(200)
-    await tick(1)
-    expect(vm.$el.textContent).toBe('count: 2')
-    expect(count).toBe(2)
-
-    timeout(200)
-    await tick(1)
-    expect(vm.$el.textContent).toBe('count: 2')
-    expect(count).toBe(2)
-
-    timeout(200)
-    await tick(1)
-    expect(vm.$el.textContent).toBe('count: 3')
-    expect(count).toBe(3)
-
-    timeout(200)
-    await tick(1)
-    expect(vm.$el.textContent).toBe('count: 3')
-    expect(count).toBe(3)
-
-    timeout(200)
-    await tick(1)
-    expect(vm.$el.textContent).toBe('count: 4')
-    expect(count).toBe(4)
-
-    vm.$destroy()
   })
 
-  it('should get last known state when document is not visible', async done => {
+  it('should get last known state when document is not visible', async () => {
     let count = 0
     mutate('dynamic-5-1', count)
     toggleVisibility('hidden')
@@ -1310,45 +1281,37 @@ describe('useSWRV - window events', () => {
       }
     }))
 
+    // first fetch always renders #128
     timeout(200)
     await tick(1)
-    expect(wrapper.text()).toBe('count: 0')
-    expect(count).toBe(0)
+    expect(wrapper.text()).toBe('count: 1')
+    expect(count).toBe(1)
 
     timeout(200)
     await tick(1)
-    expect(wrapper.text()).toBe('count: 0')
-    expect(count).toBe(0)
+    expect(wrapper.text()).toBe('count: 1')
+    expect(count).toBe(1)
 
     timeout(200)
     await tick(1)
-    expect(wrapper.text()).toBe('count: 0')
-    expect(count).toBe(0)
+    expect(wrapper.text()).toBe('count: 1')
+    expect(count).toBe(1)
 
     timeout(200)
     await tick(1)
-    expect(wrapper.text()).toBe('count: 0')
-    expect(count).toBe(0)
+    expect(wrapper.text()).toBe('count: 1')
+    expect(count).toBe(1)
 
+    // subsequent fetches while document is hidden do not rerender
     timeout(200)
     await tick(1)
-    expect(wrapper.text()).toBe('count: 0')
-    expect(count).toBe(0)
+    expect(wrapper.text()).toBe('count: 1')
+    expect(count).toBe(1)
 
     toggleVisibility('visible')
 
     timeout(200)
     await tick(1)
-    expect(wrapper.text()).toBe('count: 1')
-    expect(count).toBe(1)
-
-    timeout(200)
-    await tick(1)
-    expect(wrapper.text()).toBe('count: 1')
-    expect(count).toBe(1)
-
-    timeout(200)
-    await tick(1)
     expect(wrapper.text()).toBe('count: 2')
     expect(count).toBe(2)
 
@@ -1356,18 +1319,33 @@ describe('useSWRV - window events', () => {
     await tick(1)
     expect(wrapper.text()).toBe('count: 2')
     expect(count).toBe(2)
+
+    toggleVisibility('visible')
 
     timeout(200)
     await tick(1)
     expect(wrapper.text()).toBe('count: 3')
     expect(count).toBe(3)
 
-    wrapper.unmount()
+    timeout(200)
+    await tick(1)
+    expect(wrapper.text()).toBe('count: 3')
+    expect(count).toBe(3)
 
-    done()
+    timeout(200)
+    await tick(1)
+    expect(wrapper.text()).toBe('count: 4')
+    expect(count).toBe(4)
+
+    timeout(200)
+    await tick(1)
+    expect(wrapper.text()).toBe('count: 4')
+    expect(count).toBe(4)
+
+    wrapper.unmount()
   })
 
-  it('should not rerender when offline', async done => {
+  it('should not rerender when offline', async () => {
     let count = 0
 
     const wrapper = mount(defineComponent({
@@ -1397,79 +1375,28 @@ describe('useSWRV - window events', () => {
     await tick(1)
     // should not rerender cuz offline
     expect(wrapper.text()).toBe('count: 1')
+  })
 
   // https://github.com/Kong/swrv/issues/128
   it('fetches data on first render even when document is not visible', async () => {
     toggleVisibility('hidden')
 
-    const vm = new Vue({
+    const wrapper = mount(defineComponent({
       template: `<div>{{ data }}</div>`,
-      setup () {
+      setup  () {
         const { data, error } = useSWRV(
           'fetches-data-even-when-document-is-not-visible',
           () => new Promise(res => setTimeout(() => res('first'), 100))
         )
         return { data, error }
       }
-    }).$mount()
+    }))
 
-    expect(vm.$el.textContent).toBe('')
+    expect(wrapper.text()).toBe('')
 
     timeout(100)
     await tick()
 
-    expect(vm.$el.textContent).toBe('first')
-  })
-})
-
-describe('useSWRV - ref cache management', () => {
-  beforeEach(() => {
-    // Isolate the changes to the caches made by the tests in this block.
-    if (mockDataCache) {
-      mockDataCache.items = new Map()
-    }
-    if (mockRefCache) {
-      mockRefCache.items = new Map()
-    }
-    if (mockPromisesCache) {
-      mockPromisesCache.items = new Map()
-    }
-  })
-  it('useSwrv should remove stateRef from ref cache when the component is unmounted', async () => {
-    const key = 'key'
-    const fetchedValue = 'SWR'
-    const fetch = () => fetchedValue
-    const vm = new Vue({
-      template: '<div></div>',
-      setup () {
-        return useSWRV(key, fetch)
-      }
-    }).$mount()
-    expect(mockRefCache.get(key).data).toHaveLength(1)
-    vm.$destroy()
-    expect(mockRefCache.get(key).data).toHaveLength(0)
-  })
-
-  it('useSwrv should keep stateRefs from other components when its component is unmounted', async () => {
-    const key = 'key'
-    const fetchedValue = 'SWR'
-    const fetch = () => fetchedValue
-    const originalVm = new Vue({
-      template: '<div></div>',
-      setup () {
-        return useSWRV(key, fetch)
-      }
-    }).$mount()
-    expect(mockRefCache.get(key).data).toHaveLength(1)
-    // Create another Vue component that calls useSwrv with the same key.
-    new Vue({
-      template: '<div></div>',
-      setup () {
-        return useSWRV(key, fetch)
-      }
-    }).$mount()
-    expect(mockRefCache.get(key).data).toHaveLength(2)
-    originalVm.$destroy()
-    expect(mockRefCache.get(key).data).toHaveLength(1)
+    expect(wrapper.text()).toBe('first')
   })
 })
