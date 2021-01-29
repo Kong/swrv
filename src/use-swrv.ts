@@ -225,6 +225,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
    * Revalidate the cache, mutate data
    */
   const revalidate = async (data?: fetcherFn<Data>, opts?: revalidateOptions) => {
+    const isFirstFetch = stateRef.data === undefined
     const keyVal = keyRef.value
     if (!keyVal) { return }
 
@@ -238,7 +239,11 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     }
 
     const fetcher = data || fn
-    if (!fetcher || !config.isDocumentVisible() || (opts?.forceRevalidate !== undefined && !opts?.forceRevalidate)) {
+    if (
+      !fetcher ||
+      (!config.isDocumentVisible() && !isFirstFetch) ||
+      (opts?.forceRevalidate !== undefined && !opts?.forceRevalidate)
+    ) {
       stateRef.isValidating = false
       return
     }

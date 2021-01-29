@@ -1208,17 +1208,22 @@ describe('useSWRV - error', () => {
 })
 
 describe('useSWRV - window events', () => {
-  const toggleVisibility = state => Object.defineProperty(document, 'visibilityState', {
+  const toggleVisibility = (state: VisibilityState) => Object.defineProperty(document, 'visibilityState', {
     configurable: true,
-    get: function () { return state }
+    get: function (): VisibilityState { return state }
   })
 
-  const toggleOnline = state => Object.defineProperty(navigator, 'onLine', {
+  const toggleOnline = (state: boolean) => Object.defineProperty(navigator, 'onLine', {
     configurable: true,
-    get: function () { return state }
+    get: function (): boolean { return state }
   })
 
-  it('should not rerender when document is not visible', async done => {
+  afterEach(() => {
+    toggleOnline(true)
+    toggleVisibility('visible')
+  })
+
+  it('should not rerender when document is not visible', async () => {
     let count = 0
 
     const app = createApp({
@@ -1250,14 +1255,9 @@ describe('useSWRV - window events', () => {
     expect(vm.$el.textContent).toBe('count: 1')
 
     app.unmount(container)
-
-    // put it back to visible for other tests
-    toggleVisibility('visible')
-
-    done()
   })
 
-  it('should get last known state when document is not visible', async done => {
+  it('should get last known state when document is not visible', async () => {
     let count = 0
     mutate('dynamic-5-1', count)
     toggleVisibility('hidden')
@@ -1272,45 +1272,37 @@ describe('useSWRV - window events', () => {
       }
     }))
 
+    // first fetch always renders #128
     timeout(200)
     await tick(1)
-    expect(wrapper.text()).toBe('count: 0')
-    expect(count).toBe(0)
+    expect(wrapper.text()).toBe('count: 1')
+    expect(count).toBe(1)
 
     timeout(200)
     await tick(1)
-    expect(wrapper.text()).toBe('count: 0')
-    expect(count).toBe(0)
+    expect(wrapper.text()).toBe('count: 1')
+    expect(count).toBe(1)
 
     timeout(200)
     await tick(1)
-    expect(wrapper.text()).toBe('count: 0')
-    expect(count).toBe(0)
+    expect(wrapper.text()).toBe('count: 1')
+    expect(count).toBe(1)
 
     timeout(200)
     await tick(1)
-    expect(wrapper.text()).toBe('count: 0')
-    expect(count).toBe(0)
+    expect(wrapper.text()).toBe('count: 1')
+    expect(count).toBe(1)
 
+    // subsequent fetches while document is hidden do not rerender
     timeout(200)
     await tick(1)
-    expect(wrapper.text()).toBe('count: 0')
-    expect(count).toBe(0)
+    expect(wrapper.text()).toBe('count: 1')
+    expect(count).toBe(1)
 
     toggleVisibility('visible')
 
     timeout(200)
     await tick(1)
-    expect(wrapper.text()).toBe('count: 1')
-    expect(count).toBe(1)
-
-    timeout(200)
-    await tick(1)
-    expect(wrapper.text()).toBe('count: 1')
-    expect(count).toBe(1)
-
-    timeout(200)
-    await tick(1)
     expect(wrapper.text()).toBe('count: 2')
     expect(count).toBe(2)
 
@@ -1318,18 +1310,33 @@ describe('useSWRV - window events', () => {
     await tick(1)
     expect(wrapper.text()).toBe('count: 2')
     expect(count).toBe(2)
+
+    toggleVisibility('visible')
 
     timeout(200)
     await tick(1)
     expect(wrapper.text()).toBe('count: 3')
     expect(count).toBe(3)
 
-    wrapper.unmount()
+    timeout(200)
+    await tick(1)
+    expect(wrapper.text()).toBe('count: 3')
+    expect(count).toBe(3)
 
-    done()
+    timeout(200)
+    await tick(1)
+    expect(wrapper.text()).toBe('count: 4')
+    expect(count).toBe(4)
+
+    timeout(200)
+    await tick(1)
+    expect(wrapper.text()).toBe('count: 4')
+    expect(count).toBe(4)
+
+    wrapper.unmount()
   })
 
-  it('should not rerender when offline', async done => {
+  it('should not rerender when offline', async () => {
     let count = 0
 
     const wrapper = mount(defineComponent({
@@ -1359,7 +1366,28 @@ describe('useSWRV - window events', () => {
     await tick(1)
     // should not rerender cuz offline
     expect(wrapper.text()).toBe('count: 1')
+  })
 
-    done()
+  // https://github.com/Kong/swrv/issues/128
+  it('fetches data on first render even when document is not visible', async () => {
+    toggleVisibility('hidden')
+
+    const wrapper = mount(defineComponent({
+      template: `<div>{{ data }}</div>`,
+      setup  () {
+        const { data, error } = useSWRV(
+          'fetches-data-even-when-document-is-not-visible',
+          () => new Promise(res => setTimeout(() => res('first'), 100))
+        )
+        return { data, error }
+      }
+    }))
+
+    expect(wrapper.text()).toBe('')
+
+    timeout(100)
+    await tick()
+
+    expect(wrapper.text()).toBe('first')
   })
 })
