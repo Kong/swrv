@@ -1214,6 +1214,29 @@ describe('useSWRV - error', () => {
 
     done()
   })
+
+  it('should display friendly error message when swrv is not top level in setup', async done => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const vm = new Vue({
+      template: '<button v-on:click="dontDoThis">bad idea</button>',
+      setup  () {
+        function dontDoThis () {
+          useSWRV(() => 'error-top-level', () => 'hello')
+        }
+
+        return {
+          dontDoThis
+        }
+      }
+    }).$mount()
+
+    vm.$el.click()
+
+    expect(spy).toHaveBeenCalledWith(expect.stringContaining('Could not get current instance, check to make sure that `useSwrv` is declared in the top level of the setup function.'))
+
+    spy.mockRestore()
+    done()
+  })
 })
 
 describe('useSWRV - window events', () => {
