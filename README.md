@@ -10,6 +10,8 @@
 [@vue/composition-api](https://github.com/vuejs/composition-api) for remote data
 fetching. It is largely a port of [swr](https://github.com/zeit/swr).
 
+- [Documentation](https://docs-swrv.netlify.app/)
+
 The name “SWR” is derived from stale-while-revalidate, a cache invalidation
 strategy popularized by HTTP [RFC 5861](https://tools.ietf.org/html/rfc5861).
 SWR first returns the data from cache (stale), then sends the fetch request
