@@ -17,18 +17,18 @@ SWR first returns the data from cache (stale), then sends the fetch request
 
 Features:
 
-- [x] Transport and protocol agnostic data fetching
-- [x] Fast page navigation
-- [x] Revalidation on focus
-- [x] Interval polling
-- [x] Request deduplication
-- [x] TypeScript ready
-- [x] Minimal API
-- [x] stale-if-error
-- [x] Customizable cache implementation
-- [x] Error Retry
-- [x] SSR support
-- [x] Vue 3 Support
+- Transport and protocol agnostic data fetching
+- Fast page navigation
+- Revalidation on focus
+- Interval polling
+- Request deduplication
+- TypeScript ready
+- Minimal API
+- stale-if-error
+- Customizable cache implementation
+- Error Retry
+- SSR support
+- Vue 3 Support
 
 With `swrv`, components will get a stream of data updates constantly and
 automatically. Thus, the UI will be always fast and reactive.

@@ -12,7 +12,10 @@
     "test-compat": "./tests/test-compat-all.sh",
     "types:check": "tsc --noEmit",
     "lint": "vue-cli-service lint",
-    "ac": "all-contributors"
+    "ac": "all-contributors",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:serve": "vitepress serve docs"
   },
   "license": "Apache-2.0",
   "types": "./dist/index.d.ts",
@@ -42,6 +45,7 @@
     "file-loader": "^5.0.2",
     "jest-date-mock": "^1.0.8",
     "typescript": "~3.9.5",
+    "vitepress": "^0.12.2",
     "vue": "^2.6.11",
     "vue-server-renderer": "^2.6.11",
     "vue-template-compiler": "^2.6.10",
