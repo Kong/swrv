@@ -1,13 +1,29 @@
 # Basic Example
 
-Install dependencies
+## Install dependencies
+
+yarn
 
 ```sh
 yarn install
 ```
 
-Run app:
+npm
+
+```
+npm install
+```
+
+## Run app
+
+yarn
 
 ```sh
 yarn serve
+```
+
+npm 
+
+```sh
+npm run serve
 ```
