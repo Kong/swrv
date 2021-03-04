@@ -50,5 +50,8 @@
     "vue-server-renderer": "^2.6.11",
     "vue-template-compiler": "^2.6.10",
     "webpack": "^4.41.6"
+  },
+  "dependencies": {
+    "swrv": "^1.0.0-beta.8"
   }
 }

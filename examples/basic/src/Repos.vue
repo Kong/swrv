@@ -9,16 +9,19 @@
 </template>
 
 <script>
-import useSWRV from 'swrv'
+import useSWRV from "swrv";
 
-const fetcher = key => fetch(key).then(resp => {
-  return resp && resp.json()
-}).then(data => {
-  if (data.message) {
-    throw new Error(data.message)
-  }
-  return data
-})
+const fetcher = key =>
+  fetch(key)
+    .then(resp => {
+      return resp && resp.json();
+    })
+    .then(data => {
+      if (data.message) {
+        throw new Error(data.message);
+      }
+      return data;
+    });
 
 export default {
   props: {
@@ -27,16 +30,17 @@ export default {
       required: true
     }
   },
-  setup (props) {
-    const endpoint = `https://api.github.com/orgs/${props.org}/repos`
+  setup(props) {
+    const endpoint = `https://api.github.com/orgs/${props.org}/repos`;
+    console.log(props);
     const { data, error } = useSWRV(endpoint, fetcher, {
       revalidateOnFocus: false
-    })
+    });
 
     return {
       data,
       error
-    }
+    };
   }
-}
+};
 </script>
