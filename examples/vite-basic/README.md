@@ -8,22 +8,10 @@ yarn
 yarn install
 ```
 
-npm
-
-```
-npm install
-```
-
 ## Run app
 
 yarn
 
 ```sh
-yarn serve
-```
-
-npm 
-
-```sh
-npm run serve
+yarn dev
 ```
