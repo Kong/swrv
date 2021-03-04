@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@vue/composition-api": "^1.0.0-rc.3",
-    "swrv": "^0.9.3",
+    "swrv": "beta",
     "vue": "^3.0.7"
   },
   "devDependencies": {
