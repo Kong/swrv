@@ -32,7 +32,6 @@ export default {
   },
   setup(props) {
     const endpoint = `https://api.github.com/orgs/${props.org}/repos`;
-    console.log(props);
     const { data, error } = useSWRV(endpoint, fetcher, {
       revalidateOnFocus: false
     });
