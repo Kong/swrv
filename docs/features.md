@@ -206,6 +206,43 @@ custom composable function so that you can do application level side effects if
 desired (e.g. dispatch a vuex action when data changes to log events or perform
 some logic).
 
+Vue 3 example
+
+```vue
+<script>
+import { defineComponent, ref, computed, watch } from 'vue'
+import { useStore } from 'vuex'
+import useSWRV from 'swrv'
+import { getAllTasks } from './api'
+
+export default defineComponent({
+  setup() {
+    const store = useStore()
+
+    const tasks = computed({
+      get: () => store.getters.allTasks,
+      set: (tasks) => {
+        store.dispatch('setTaskList', tasks)
+      },
+    })
+
+    const addTasks = (newTasks) => store.dispatch('addTasks', { tasks: newTasks })
+
+    const { data } = useSWRV('tasks', getAllTasks)
+
+    // Using a watcher, you can update the store with any changes coming from swrv
+    watch(data, newTasks => {
+      store.dispatch('addTasks', { source: 'Todoist', tasks: newTasks })
+    })
+
+    return {
+      tasks
+    }
+  },
+})
+</script>
+```
+
 ## Error Handling
 
 Since `error` is returned as a Vue Ref, you can use watchers to handle any
