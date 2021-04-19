@@ -359,6 +359,58 @@ custom composable function so that you can do application level side effects if
 desired (e.g. dispatch a vuex action when data changes to log events or perform
 some logic).
 
+```vue
+<script>
+import { ref, computed, watch } from 'vue';
+import { useStore } from 'vuex';
+import axios from 'axios';
+import useSWRV from 'swrv';
+
+function fetcher(url) {
+  return axios
+    .get(url, { data: {}, headers: { Authorization: `Bearer ${todoistKey}` } })
+    .then((response) => response.data)
+    .catch((error) => {
+      console.error(error);
+    });
+}
+
+export default {
+  setup() {
+    const allTaskURL = 'https://api.todoist.com/rest/v1/tasks?filter=today';
+    const todoistKey = process.env.VUE_APP_TODOISTKEY;
+    const store = useStore();
+
+    // Task data from store
+    const tasks = computed({
+      get: () => store.getters.allTasks,
+      set: (listItem) => {
+        store.dispatch('setTaskList', listItem);
+      },
+    });
+
+    // Method to add tasks to the store
+    const addTasks = (newTasks) => store.dispatch('addTasks', { source: 'Todoist', tasks: newTasks });
+
+    // Use SWRV to retrieve todoist data
+    const { data: todoistTasks, error: taskError } = useSWRV(allTaskURL, fetcher);
+
+    // Using the watch you can update the store with any changes coming from swrv
+    watch(todoistTasks, () => {
+      addTasks(todoistTasks.value);
+    });
+
+    return {
+      taskError,
+      // Computed
+      tasks,
+    };
+  },
+};
+</script>
+
+```
+
 ## Cache
 
 By default, a custom cache implementation is used to store fetcher response
