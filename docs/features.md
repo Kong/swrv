@@ -298,14 +298,16 @@ function useTodos () {
 
 ### Serve from cache only
 
-To only retrieve a swrv cache response without revalidating, you can omit the fetcher function from the useSWRV call.
-This can be useful when there is some higher level swrv composable that is always sending data to other instances, so
-you can assume that fetcher-less composables will have data available.
+To only retrieve a swrv cache response without revalidating, you can set the fetcher function to `null` from the useSWRV
+call. This can be useful when there is some higher level swrv composable that is always sending data to other instances,
+so you can assume that composables with a `null` fetcher will have data available. This 
+[isn't very intuitive](https://github.com/Kong/swrv/issues/148), so will be looking for ways to improve this api in the
+future.
 
 ```ts
 // Component A
 const { data } = useSWRV('/api/config', fetcher)
 
 // Component B, only retrieve from cache
-const { data } = useSWRV('/api/config')
+const { data } = useSWRV('/api/config', null)
 ```

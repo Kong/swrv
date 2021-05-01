@@ -127,11 +127,11 @@ const { data, error, isValidating, mutate } = useSWRV(key, fetcher, options)
 
 ### Parameters
 
-| Param     | Required | Description                                                                         |
-| --------- | -------- | ----------------------------------------------------------------------------------- |
-| `key`     | yes      | a unique key string for the request (or a watcher function / null) (advanced usage) |
-| `fetcher` |          | a Promise returning function to fetch your data                                     |
-| `options` |          | an object of configuration options                                                  |
+| Param     | Required | Description                                                                                                                                                                                                                                  |
+| --------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`     | yes      | a unique key string for the request (or a watcher function / null) (advanced usage)                                                                                                                                                          |
+| `fetcher` |          | a Promise returning function to fetch your data. If `null`, swrv will fetch from cache only and not revalidate. If omitted (i.e. `undefined`) then the [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) api will be used. |
+| `options` |          | an object of configuration options                                                                                                                                                                                                           |
 
 ### Return Values
 
@@ -436,16 +436,18 @@ function useTodos () {
 
 ### Serve from cache only
 
-To only retrieve a swrv cache response without revalidating, you can omit the fetcher function from the useSWRV call.
-This can be useful when there is some higher level swrv composable that is always sending data to other instances, so
-you can assume that fetcher-less composables will have data available.
+To only retrieve a swrv cache response without revalidating, you can set the fetcher function to `null` from the useSWRV
+call. This can be useful when there is some higher level swrv composable that is always sending data to other instances,
+so you can assume that composables with a `null` fetcher will have data available. This 
+[isn't very intuitive](https://github.com/Kong/swrv/issues/148), so will be looking for ways to improve this api in the
+future.
 
 ```ts
 // Component A
 const { data } = useSWRV('/api/config', fetcher)
 
 // Component B, only retrieve from cache
-const { data } = useSWRV('/api/config')
+const { data } = useSWRV('/api/config', null)
 ```
 
 ## Error Handling
