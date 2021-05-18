@@ -30,7 +30,7 @@ export interface IResponse<Data = any, Error = any> {
   mutate: (data?: fetcherFn<Data>, opts?: revalidateOptions) => Promise<void>
 }
 
-export type keyType = string | any[] | null
+export type keyType = string | any[] | null | undefined
 type keyFunction = () => keyType
 
 export type IKey = keyFunction | keyType
