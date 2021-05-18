@@ -31,8 +31,9 @@ export interface IResponse<Data = any, Error = any> {
 }
 
 export type keyType = string | any[] | null | undefined
+type keyFunction = () => keyType
 
-export type IKey = keyType | WatchSource<keyType>
+export type IKey = keyType | keyFunction | WatchSource<keyType>
 
 export interface revalidateOptions {
   shouldRetryOnError?: boolean,
