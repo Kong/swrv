@@ -37,6 +37,9 @@ jobs:
       CI_JOB_NUMBER: 1
     steps:
       - uses: actions/checkout@v1
+      - name: install, lint
+        run: |
+          yarn install
       - uses: artiomtr/jest-coverage-report-action@v1.3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
