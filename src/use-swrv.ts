@@ -384,6 +384,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     watch(keyRef, (val) => {
       keyRef.value = val
       stateRef.key = val
+      stateRef.isValidating = Boolean(val)
       setRefCache(keyRef.value, stateRef, ttl)
 
       if (!IS_SERVER && !isHydrated && keyRef.value) {
