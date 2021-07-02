@@ -688,6 +688,19 @@ describe('useSWRV - loading', () => {
     expect(wrapper.text()).toBe('hello, data, ready')
     done()
   })
+
+  // #195
+  it('should return loading state isValidating with nullish key', async done => {
+    const vm = new Vue(defineComponent({
+      template: `<div>{{ error }}:{{this.isValidating ? 'loading' : 'ready'}}</div>`,
+      setup () {
+        return useSWRV(() => null)
+      }
+    })).$mount()
+
+    expect(vm.$el.textContent).toBe(':ready')
+    done()
+  })
 })
 
 describe('useSWRV - mutate', () => {
