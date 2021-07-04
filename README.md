@@ -504,7 +504,7 @@ data.
 
 ### How can I refetch swrv data to update it
 
-Swrv fetcher functions can be triggered on-demand by using the `revalidate`
+Swrv fetcher functions can be triggered on-demand by using the `mutate`
 [return value](https://github.com/Kong/swrv/#return-values). This is useful when
 there is some event that needs to trigger a revalidation such a PATCH request that
 updates the initial GET request response data.
