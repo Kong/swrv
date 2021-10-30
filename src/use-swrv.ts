@@ -146,12 +146,12 @@ function useSWRV<Data = any, Error = any>(
 ): IResponse<Data, Error>
 function useSWRV<Data = any, Error = any>(
   key: IKey,
-  fn?: fetcherFn<Data>,
+  fn: fetcherFn<Data> | undefined | null,
   config?: IConfig
 ): IResponse<Data, Error>
 function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
   let key: IKey
-  let fn: fetcherFn<Data> | undefined
+  let fn: fetcherFn<Data> | undefined | null
   let config: IConfig = { ...defaultConfig }
   let unmounted = false
   let isHydrated = false
