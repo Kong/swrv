@@ -16,7 +16,8 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist/**",
-    "esm/**"
+    "esm/**",
+    "src/**"
   ],
   "peerDependencies": {
     "vue": "^3.0.0"
