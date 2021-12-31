@@ -8,31 +8,31 @@ import { advanceBy, advanceTo, clear } from 'jest-date-mock'
 Vue.use(VueCompositionApi)
 
 // "Mock" the three caches that use-swrv.ts creates so that tests can make assertions about their contents.
-let mockDataCache;
-let mockRefCache;
-let mockPromisesCache;
+let mockDataCache
+let mockRefCache
+let mockPromisesCache
 
-jest.mock("../src/cache", () => {
-  const originalCache = jest.requireActual("../src/cache");
-  const Cache = originalCache.default;
+jest.mock('../src/cache', () => {
+  const originalCache = jest.requireActual('../src/cache')
+  const Cache = originalCache.default
   return {
     __esModule: true,
     default: jest
       .fn()
       .mockImplementationOnce(() => {
-        mockDataCache = new Cache();
-        return mockDataCache;
+        mockDataCache = new Cache()
+        return mockDataCache
       })
       .mockImplementationOnce(() => {
-        mockRefCache = new Cache();
-        return mockRefCache;
+        mockRefCache = new Cache()
+        return mockRefCache
       })
-      .mockImplementationOnce(function() {
-        mockPromisesCache = new Cache();
-        return mockPromisesCache;
+      .mockImplementationOnce(function () {
+        mockPromisesCache = new Cache()
+        return mockPromisesCache
       })
-  };
-});
+  }
+})
 
 jest.useFakeTimers()
 
@@ -1438,54 +1438,54 @@ describe('useSWRV - window events', () => {
   })
 })
 
-describe("useSWRV - ref cache management", () => {
+describe('useSWRV - ref cache management', () => {
   beforeEach(() => {
     // Isolate the changes to the caches made by the tests in this block.
     if (mockDataCache) {
-      mockDataCache.items = new Map();
+      mockDataCache.items = new Map()
     }
     if (mockRefCache) {
-      mockRefCache.items = new Map();
+      mockRefCache.items = new Map()
     }
     if (mockPromisesCache) {
-      mockPromisesCache.items = new Map();
+      mockPromisesCache.items = new Map()
     }
   })
-  it("useSwrv should remove stateRef from ref cache when the component is unmounted", async () => {
-    const key = "key";
-    const fetchedValue = "SWR";
-    const fetch = () => fetchedValue;
+  it('useSwrv should remove stateRef from ref cache when the component is unmounted', async () => {
+    const key = 'key'
+    const fetchedValue = 'SWR'
+    const fetch = () => fetchedValue
     const vm = new Vue({
-      template: "<div></div>",
-      setup() {
-        return useSWRV(key, fetch);
+      template: '<div></div>',
+      setup () {
+        return useSWRV(key, fetch)
       }
-    }).$mount();
-    expect(mockRefCache.get(key).data).toHaveLength(1);
-    vm.$destroy();
-    expect(mockRefCache.get(key).data).toHaveLength(0);
-  });
+    }).$mount()
+    expect(mockRefCache.get(key).data).toHaveLength(1)
+    vm.$destroy()
+    expect(mockRefCache.get(key).data).toHaveLength(0)
+  })
 
-  it("useSwrv should keep stateRefs from other components when its component is unmounted", async () => {
-    const key = "key";
-    const fetchedValue = "SWR";
-    const fetch = () => fetchedValue;
+  it('useSwrv should keep stateRefs from other components when its component is unmounted', async () => {
+    const key = 'key'
+    const fetchedValue = 'SWR'
+    const fetch = () => fetchedValue
     const originalVm = new Vue({
-      template: "<div></div>",
-      setup() {
-        return useSWRV(key, fetch);
+      template: '<div></div>',
+      setup () {
+        return useSWRV(key, fetch)
       }
-    }).$mount();
-    expect(mockRefCache.get(key).data).toHaveLength(1);
+    }).$mount()
+    expect(mockRefCache.get(key).data).toHaveLength(1)
     // Create another Vue component that calls useSwrv with the same key.
     new Vue({
-      template: "<div></div>",
-      setup() {
-        return useSWRV(key, fetch);
+      template: '<div></div>',
+      setup () {
+        return useSWRV(key, fetch)
       }
-    }).$mount();
-    expect(mockRefCache.get(key).data).toHaveLength(2);
-    originalVm.$destroy();
-    expect(mockRefCache.get(key).data).toHaveLength(1);
-  });
-});
+    }).$mount()
+    expect(mockRefCache.get(key).data).toHaveLength(2)
+    originalVm.$destroy()
+    expect(mockRefCache.get(key).data).toHaveLength(1)
+  })
+})
