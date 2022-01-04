@@ -346,6 +346,10 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       document.removeEventListener('visibilitychange', revalidateCall, false)
       window.removeEventListener('focus', revalidateCall, false)
     }
+    const refCacheItem = REF_CACHE.get(keyRef.value)
+    if (refCacheItem) {
+      refCacheItem.data = refCacheItem.data.filter((ref) => ref !== stateRef)
+    }
   })
 
   // #region ssr

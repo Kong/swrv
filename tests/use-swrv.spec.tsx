@@ -5,6 +5,33 @@ import tick from './utils/tick'
 import timeout from './utils/jest-timeout'
 import { advanceBy, advanceTo, clear } from 'jest-date-mock'
 
+// "Mock" the three caches that use-swrv.ts creates so that tests can make assertions about their contents.
+let mockDataCache
+let mockRefCache
+let mockPromisesCache
+
+jest.mock('../src/cache', () => {
+  const originalCache = jest.requireActual('../src/cache')
+  const Cache = originalCache.default
+  return {
+    __esModule: true,
+    default: jest
+      .fn()
+      .mockImplementationOnce(() => {
+        mockDataCache = new Cache()
+        return mockDataCache
+      })
+      .mockImplementationOnce(() => {
+        mockRefCache = new Cache()
+        return mockRefCache
+      })
+      .mockImplementationOnce(function () {
+        mockPromisesCache = new Cache()
+        return mockPromisesCache
+      })
+  }
+})
+
 jest.useFakeTimers()
 
 const mockFetch = (res?) => {
@@ -1434,5 +1461,59 @@ describe('useSWRV - window events', () => {
     await tick()
 
     expect(wrapper.text()).toBe('first')
+  })
+})
+
+describe('useSWRV - ref cache management', () => {
+  beforeEach(() => {
+    // Isolate the changes to the caches made by the tests in this block.
+    if (mockDataCache) {
+      mockDataCache.items = new Map()
+    }
+    if (mockRefCache) {
+      mockRefCache.items = new Map()
+    }
+    if (mockPromisesCache) {
+      mockPromisesCache.items = new Map()
+    }
+  })
+  it('useSwrv should remove stateRef from ref cache when the component is unmounted', async () => {
+    const key = 'key'
+    const fetchedValue = 'SWR'
+    const fetch = () => fetchedValue
+    const vm = mount(defineComponent({
+      template: '<div></div>',
+      setup () {
+        return useSWRV(key, fetch)
+      }
+    }))
+    expect(mockRefCache.get(key).data).toHaveLength(1)
+    vm.unmount()
+    expect(mockRefCache.get(key).data).toHaveLength(0)
+  })
+
+  it('useSwrv should keep stateRefs from other components when its component is unmounted', async () => {
+    const key = 'key'
+    const fetchedValue = 'SWR'
+    const fetch = () => fetchedValue
+    const originalVm = mount(defineComponent({
+      template: '<div></div>',
+      setup () {
+        return useSWRV(key, fetch)
+      }
+    }))
+
+    expect(mockRefCache.get(key).data).toHaveLength(1)
+    // Create another Vue component that calls useSwrv with the same key.
+    mount(defineComponent({
+      template: '<div></div>',
+      setup () {
+        return useSWRV(key, fetch)
+      }
+    }))
+
+    expect(mockRefCache.get(key).data).toHaveLength(2)
+    originalVm.unmount()
+    expect(mockRefCache.get(key).data).toHaveLength(1)
   })
 })
