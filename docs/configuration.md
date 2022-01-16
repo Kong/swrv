@@ -8,7 +8,7 @@ const { data, error, isValidating, mutate } = useSWRV(key, fetcher, options)
 
 | Param     | Required | Description                                                                                                                                                                                                                                  |
 | --------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`     | yes      | a unique key string for the request (or a watcher function / null) (advanced usage)                                                                                                                                                          |
+| `key`     | yes      | a unique key string for the request (or a reactive reference / watcher function / null) (advanced usage)                                                                                                                                     |
 | `fetcher` |          | a Promise returning function to fetch your data. If `null`, swrv will fetch from cache only and not revalidate. If omitted (i.e. `undefined`) then the [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) api will be used. |
 | `options` |          | an object of configuration options                                                                                                                                                                                                           |
 
