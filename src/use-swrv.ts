@@ -75,7 +75,7 @@ function onErrorRetry (revalidate: (any, opts: revalidateOptions) => void, error
     return
   }
 
-  if (config.errorRetryCount && errorRetryCount > config.errorRetryCount) {
+  if (config.errorRetryCount !== undefined && errorRetryCount > config.errorRetryCount) {
     return
   }
 
