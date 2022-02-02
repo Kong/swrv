@@ -111,13 +111,48 @@ describe('useSWRV', () => {
     done()
   })
 
+  it('should allow refs (reactive / WatchSource) as key', async () => {
+    const count = ref('refs:0')
+    const wrapper = mount(defineComponent({
+      template: '<button v-on:click="bumpIt">{{ data }}</button>',
+      setup () {
+        const { data } = useSWRV(count, () => count.value)
+
+        function bumpIt () {
+          const parts = count.value.split(':')
+          count.value = `${parts[0]}:${parseInt(parts[1] + 1)}`
+        }
+
+        return {
+          bumpIt,
+          data
+        }
+      }
+    }))
+
+    expect(wrapper.text()).toBe('refs:0')
+    wrapper.find('button').trigger('click')
+    await tick(1)
+    expect(wrapper.text()).toBe('refs:1')
+
+    const wrapper2 = mount(defineComponent({
+      template: '<div>{{ data }}</div>',
+      setup () {
+        return useSWRV(count, () => count.value)
+      }
+    }))
+
+    // ref is good for another swrv instance (i.e. object reference works)
+    expect(wrapper2.text()).toBe('refs:1')
+  })
+
   it('should accept object args', async () => {
     const obj = { v: 'hello' }
     const arr = ['world']
 
     const vm = createApp({
       template: `<div>{{v1}}, {{v2}}, {{v3}}</div>`,
-      setup  () {
+      setup () {
         const { data: v1 } = useSWRV(['args-1', obj, arr], (a, b, c) => {
           return a + b.v + c[0]
         })
@@ -165,7 +200,7 @@ describe('useSWRV', () => {
 
     const vm = createApp({
       template: `<div>{{v1}}, {{v2}}, {{ validating1 ? 'yes' : 'no' }} {{ validating2 ? 'yes' : 'no' }}</div>`,
-      setup  () {
+      setup () {
         const { data: v1, isValidating: validating1 } = useSWRV('cache-key-4', fetch)
         const { data: v2, isValidating: validating2 } = useSWRV('cache-key-4', fetch)
         return { v1, v2, validating1, validating2 }
@@ -192,7 +227,7 @@ describe('useSWRV', () => {
 
     const vm = createApp({
       template: `<div>{{v1}}, {{v2}}, {{ validating1 ? 'yes' : 'no' }} {{ validating2 ? 'yes' : 'no' }}</div>`,
-      setup  () {
+      setup () {
         const { data: v1, isValidating: validating1 } = useSWRV('cache-key-4a', fetch)
         const { data: v2, isValidating: validating2 } = useSWRV('cache-key-4a', fetch, {
           refreshInterval: 300
@@ -240,7 +275,7 @@ describe('useSWRV', () => {
 
     const wrapper = mount(defineComponent({
       template: `<div>d1:{{ data1 && data1.id }} d2:{{ data2 && data2.userId }}</div>`,
-      setup  () {
+      setup () {
         const { data: data1, error: error1 } = useSWRV('/api/user', loadUser)
         // TODO: checking truthiness of data1.value to avoid watcher warning
         // https://github.com/vuejs/composition-api/issues/242
@@ -275,7 +310,7 @@ describe('useSWRV', () => {
     }
     const wrapper = mount(defineComponent({
       template: `<div>{{ d1 }},{{ d2 }},{{ d3 }}</div>`,
-      setup  () {
+      setup () {
         const { data: d1 } = useSWRV('d1', fetch)
         const { data: d2 } = useSWRV(() => d1.value && 'd2', fetch)
         const { data: d3 } = useSWRV(() => d2.value && 'd3', fetch)
@@ -311,7 +346,7 @@ describe('useSWRV', () => {
     }
     const wrapper = mount(defineComponent({
       template: `<div>{{ e1 }}</div>`,
-      setup  () {
+      setup () {
         const someDep = ref(undefined)
         const { data: e1 } = useSWRV(() => someDep.value, fetch, {
           refreshInterval: 1000
@@ -410,7 +445,7 @@ describe('useSWRV', () => {
     let invoked = 0
     const wrapper = mount(defineComponent({
       template: `<div>d:{{ data }} cache:{{ dataFromCache }}</div>`,
-      setup  () {
+      setup () {
         const fetcher = () => {
           invoked += 1
           return new Promise(res => setTimeout(() => res('SWR'), 200))
@@ -450,7 +485,7 @@ describe('useSWRV', () => {
     const wrapper = mount(defineComponent({
       template: `<div>data:{{ data }} <Hello v-if="data" /></div>`,
       components: { Hello: Hello('cache-key-6') },
-      setup  () {
+      setup () {
         const fetcher = () => {
           invoked += 1
           return new Promise(res => setTimeout(() => res('SWR'), 200))
@@ -594,7 +629,7 @@ describe('useSWRV', () => {
 
     const wrapper1 = mount(defineComponent({
       template: `<div>{{ data1 }}</div>`,
-      setup  () {
+      setup () {
         const { data: data1 } = useSWRV('ttlData2', undefined, { ttl, fetcher: undefined })
 
         return { data1 }
@@ -602,7 +637,7 @@ describe('useSWRV', () => {
     }))
     const component = {
       template: `<div>{{ data2 }}</div>`,
-      setup  () {
+      setup () {
         const { data: data2 } = useSWRV('ttlData2', undefined, { ttl, fetcher: undefined })
 
         return { data2 }
@@ -650,7 +685,7 @@ describe('useSWRV', () => {
 
     const wrapper = mount(defineComponent({
       template: `<div v-if="data">hello, {{ data.map(u => u.name).join(' and ') }}</div>`,
-      setup  () {
+      setup () {
         return useSWRV('http://localhost:3000/api/users')
       }
     }))
@@ -815,7 +850,7 @@ describe('useSWRV - listeners', () => {
 
     const app = createApp({
       template: `<div>hello, {{ data }}</div>`,
-      setup  () {
+      setup () {
         return useSWRV('cache-key-1', () => 'SWR')
       }
     })
@@ -841,7 +876,7 @@ describe('useSWRV - listeners', () => {
     let revalidations = 0
     mount(defineComponent({
       template: `<div>hello, {{ data }}</div>`,
-      setup  () {
+      setup () {
         const refs = useSWRV('cache-key-listeners-2', () => {
           revalidations += 1
           return 'SWR'
@@ -866,7 +901,7 @@ describe('useSWRV - listeners', () => {
     let revalidations = 0
     mount(defineComponent({
       template: `<div>hello, {{ data }}</div>`,
-      setup  () {
+      setup () {
         const refs = useSWRV('cache-key-listeners-3', () => {
           revalidations += 1
           return 'SWR'
@@ -976,7 +1011,7 @@ describe('useSWRV - refresh', () => {
     let count = -1
     const wrapper = mount(defineComponent({
       template: `<div><template v-if="user">User-{{user.id}} votes: {{ votes }}</template></div>`,
-      setup  () {
+      setup () {
         const { data: user } = useSWRV<User>('/users', () => {
           return new Promise((res) => {
             setTimeout(() => res({ id: '1' }), 200)
@@ -1259,7 +1294,7 @@ describe('useSWRV - error', () => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
     const wrapper = mount(defineComponent({
       template: '<button v-on:click="dontDoThis">bad idea</button>',
-      setup  () {
+      setup () {
         function dontDoThis () {
           useSWRV(() => 'error-top-level', () => 'hello')
         }
@@ -1446,7 +1481,7 @@ describe('useSWRV - window events', () => {
 
     const wrapper = mount(defineComponent({
       template: `<div>{{ data }}</div>`,
-      setup  () {
+      setup () {
         const { data, error } = useSWRV(
           'fetches-data-even-when-document-is-not-visible',
           () => new Promise(res => setTimeout(() => res('first'), 100))
