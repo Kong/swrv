@@ -1,4 +1,4 @@
-import { Ref } from 'vue'
+import { Ref, WatchSource } from 'vue'
 import SWRVCache from './cache'
 import LocalStorageCache from './cache/adapters/localStorage'
 
@@ -31,9 +31,8 @@ export interface IResponse<Data = any, Error = any> {
 }
 
 export type keyType = string | any[] | null | undefined
-type keyFunction = () => keyType
 
-export type IKey = keyFunction | keyType
+export type IKey = keyType | WatchSource<keyType>
 
 export interface revalidateOptions {
   shouldRetryOnError?: boolean,
