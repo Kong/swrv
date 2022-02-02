@@ -41,7 +41,7 @@ describe('useSWRV', () => {
     const fetch = () => 'SWR'
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
-      setup  () {
+      setup () {
         return useSWRV('cache-key-not-a-promise', fetch)
       }
     }).$mount()
@@ -54,7 +54,7 @@ describe('useSWRV', () => {
     const fetch = () => new Promise(res => setTimeout(() => res('SWR'), 1))
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
-      setup  () {
+      setup () {
         return useSWRV('cache-key-1', fetch)
       }
     }).$mount()
@@ -66,7 +66,7 @@ describe('useSWRV', () => {
   it('should return data after hydration', async done => {
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
-      setup  () {
+      setup () {
         return useSWRV('cache-key-2', () => 'SWR')
       }
     }).$mount()
@@ -80,7 +80,7 @@ describe('useSWRV', () => {
   it('should return data from a promise', async done => {
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
-      setup  () {
+      setup () {
         return useSWRV('cache-key-promise', () => new Promise(resolve => resolve('SWR')))
       }
     }).$mount()
@@ -96,7 +96,7 @@ describe('useSWRV', () => {
   it('should allow functions as key and reuse the cache', async done => {
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
-      setup  () {
+      setup () {
         return useSWRV(() => 'cache-key-2', () => 'SWR')
       }
     }).$mount()
@@ -106,13 +106,48 @@ describe('useSWRV', () => {
     done()
   })
 
+  it('should allow refs (reactive / WatchSource) as key', async () => {
+    const count = ref('refs:0')
+    const vm = new Vue({
+      template: '<button v-on:click="bumpIt">{{ data }}</button>',
+      setup () {
+        const { data } = useSWRV(count, () => count.value)
+
+        function bumpIt () {
+          const parts = count.value.split(':')
+          count.value = `${parts[0]}:${parseInt(parts[1] + 1)}`
+        }
+
+        return {
+          bumpIt,
+          data
+        }
+      }
+    }).$mount()
+
+    expect(vm.$el.textContent).toBe('refs:0')
+    vm.$el.click()
+    await tick(1)
+    expect(vm.$el.textContent).toBe('refs:1')
+
+    const vm2 = new Vue({
+      template: '<div>{{ data }}</div>',
+      setup () {
+        return useSWRV(count, () => count.value)
+      }
+    }).$mount()
+
+    // ref is good for another swrv instance (i.e. object reference works)
+    expect(vm2.$el.textContent).toBe('refs:1')
+  })
+
   it('should accept object args', async () => {
     const obj = { v: 'hello' }
     const arr = ['world']
 
     const vm = new Vue({
       template: `<div>{{v1}}, {{v2}}, {{v3}}</div>`,
-      setup  () {
+      setup () {
         const { data: v1 } = useSWRV(['args-1', obj, arr], (a, b, c) => {
           return a + b.v + c[0]
         })
@@ -135,7 +170,7 @@ describe('useSWRV', () => {
   it('should allow async fetcher functions', async done => {
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
-      setup  () {
+      setup () {
         return useSWRV('cache-key-3', () =>
           new Promise(res => setTimeout(() => res('SWR'), 200))
         )
@@ -160,7 +195,7 @@ describe('useSWRV', () => {
 
     const vm = new Vue({
       template: `<div>{{v1}}, {{v2}}, {{ validating1 ? 'yes' : 'no' }} {{ validating2 ? 'yes' : 'no' }}</div>`,
-      setup  () {
+      setup () {
         const { data: v1, isValidating: validating1 } = useSWRV('cache-key-4', fetch)
         const { data: v2, isValidating: validating2 } = useSWRV('cache-key-4', fetch)
         return { v1, v2, validating1, validating2 }
@@ -187,7 +222,7 @@ describe('useSWRV', () => {
 
     const vm = new Vue({
       template: `<div>{{v1}}, {{v2}}, {{ validating1 ? 'yes' : 'no' }} {{ validating2 ? 'yes' : 'no' }}</div>`,
-      setup  () {
+      setup () {
         const { data: v1, isValidating: validating1 } = useSWRV('cache-key-4a', fetch)
         const { data: v2, isValidating: validating2 } = useSWRV('cache-key-4a', fetch, {
           refreshInterval: 300
@@ -235,7 +270,7 @@ describe('useSWRV', () => {
 
     const vm = new Vue({
       template: `<div>d1:{{ data1 && data1.id }} d2:{{ data2 && data2.userId }}</div>`,
-      setup  () {
+      setup () {
         const { data: data1, error: error1 } = useSWRV('/api/user', loadUser)
         // TODO: checking truthiness of data1.value to avoid watcher warning
         // https://github.com/vuejs/composition-api/issues/242
@@ -270,7 +305,7 @@ describe('useSWRV', () => {
     }
     const vm = new Vue({
       template: `<div>{{ d1 }},{{ d2 }},{{ d3 }}</div>`,
-      setup  () {
+      setup () {
         const { data: d1 } = useSWRV('d1', fetch)
         const { data: d2 } = useSWRV(() => d1.value && 'd2', fetch)
         const { data: d3 } = useSWRV(() => d2.value && 'd3', fetch)
@@ -306,7 +341,7 @@ describe('useSWRV', () => {
     }
     const vm = new Vue({
       template: `<div>{{ e1 }}</div>`,
-      setup  () {
+      setup () {
         const someDep = ref(undefined)
         const { data: e1 } = useSWRV(() => someDep.value, fetch, {
           refreshInterval: 1000
@@ -353,7 +388,7 @@ describe('useSWRV', () => {
 
     const vm = new Vue({
       template: `<div>Page: {{ data }}</div>`,
-      setup  () {
+      setup () {
         const page = ref('1')
         const { data, error } = useSWRV(() => {
           return page.value
@@ -404,7 +439,7 @@ describe('useSWRV', () => {
     let invoked = 0
     const vm = new Vue({
       template: `<div>d:{{ data }} cache:{{ dataFromCache }}</div>`,
-      setup  () {
+      setup () {
         const fetcher = () => {
           invoked += 1
           return new Promise(res => setTimeout(() => res('SWR'), 200))
@@ -444,7 +479,7 @@ describe('useSWRV', () => {
     const vm = new Vue({
       template: `<div>data:{{ data }} <Hello v-if="data" /></div>`,
       components: { Hello: Hello('cache-key-6') },
-      setup  () {
+      setup () {
         const fetcher = () => {
           invoked += 1
           return new Promise(res => setTimeout(() => res('SWR'), 200))
@@ -526,7 +561,7 @@ describe('useSWRV', () => {
 
     const vm1 = new Vue({
       template: `<div>{{ data1 }}</div>`,
-      setup  () {
+      setup () {
         const { data: data1 } = useSWRV('ttlData1', undefined, { ttl, fetcher: undefined })
 
         return { data1 }
@@ -534,7 +569,7 @@ describe('useSWRV', () => {
     }).$mount()
     const component = {
       template: `<div>{{ data2 }}</div>`,
-      setup  () {
+      setup () {
         const { data: data2 } = useSWRV('ttlData1', undefined, { ttl, fetcher: undefined })
 
         return { data2 }
@@ -590,7 +625,7 @@ describe('useSWRV', () => {
 
     const vm1 = new Vue({
       template: `<div>{{ data1 }}</div>`,
-      setup  () {
+      setup () {
         const { data: data1 } = useSWRV('ttlData2', undefined, { ttl, fetcher: undefined })
 
         return { data1 }
@@ -598,7 +633,7 @@ describe('useSWRV', () => {
     }).$mount()
     const component = {
       template: `<div>{{ data2 }}</div>`,
-      setup  () {
+      setup () {
         const { data: data2 } = useSWRV('ttlData2', undefined, { ttl, fetcher: undefined })
 
         return { data2 }
@@ -648,7 +683,7 @@ describe('useSWRV', () => {
 
     const vm = new Vue({
       template: `<div v-if="data">hello, {{ data.map(u => u.name).join(' and ') }}</div>`,
-      setup  () {
+      setup () {
         return useSWRV('http://localhost:3000/api/users')
       }
     }).$mount()
@@ -805,7 +840,7 @@ describe('useSWRV - listeners', () => {
 
     const vm = new Vue({
       template: `<div>hello, {{ data }}</div>`,
-      setup  () {
+      setup () {
         const refs = useSWRV('cache-key-listeners-1', () => 'SWR')
         return refs
       }
@@ -831,7 +866,7 @@ describe('useSWRV - listeners', () => {
     let revalidations = 0
     new Vue({
       template: `<div>hello, {{ data }}</div>`,
-      setup  () {
+      setup () {
         const refs = useSWRV('cache-key-listeners-2', () => {
           revalidations += 1
           return 'SWR'
@@ -854,7 +889,7 @@ describe('useSWRV - listeners', () => {
     let revalidations = 0
     new Vue({
       template: `<div>hello, {{ data }}</div>`,
-      setup  () {
+      setup () {
         const refs = useSWRV('cache-key-listeners-3', () => {
           revalidations += 1
           return 'SWR'
@@ -879,7 +914,7 @@ describe('useSWRV - refresh', () => {
     let count = 0
     const vm = new Vue({
       template: `<div>count: {{ data }}</div>`,
-      setup  () {
+      setup () {
         return useSWRV('dynamic-1', () => count++, {
           refreshInterval: 200,
           dedupingInterval: 0
@@ -914,7 +949,7 @@ describe('useSWRV - refresh', () => {
 
     const vm = new Vue({
       template: `<div>count: {{ data }}</div>`,
-      setup  () {
+      setup () {
         return useSWRV('dynamic-2', loadData, {
           refreshInterval: 200,
           dedupingInterval: 300
@@ -961,7 +996,7 @@ describe('useSWRV - refresh', () => {
     let count = -1
     const vm = new Vue({
       template: `<div v-if="user">User-{{user.id}} votes: {{ votes }}</div>`,
-      setup  () {
+      setup () {
         const { data: user } = useSWRV<User>('/users', () => {
           return new Promise((res) => {
             setTimeout(() => res({ id: '1' }), 200)
@@ -1006,7 +1041,7 @@ describe('useSWRV - error', () => {
         <div v-if="data">hello, {{ data }}</div>
         <div v-if="error">{{error.message}}</div>
       </div>`,
-      setup  () {
+      setup () {
         return useSWRV(() => 'error-1', () => new Promise((_, reject) => {
           reject(new Error('error!'))
         }))
@@ -1026,7 +1061,7 @@ describe('useSWRV - error', () => {
       template: `<div>
         <div>hello, {{ data }}</div>
       </div>`,
-      setup  () {
+      setup () {
         const { data, error } = useSWRV(() => 'error-2', () => new Promise((_, rej) =>
           setTimeout(() => rej(new Error('error!')), 200)
         ))
@@ -1057,7 +1092,7 @@ describe('useSWRV - error', () => {
 
     const vm = new Vue({
       template: `<div>count: {{ data }} {{ error }}</div>`,
-      setup  () {
+      setup () {
         return useSWRV('error-3', loadData, {
           refreshInterval: 200,
           dedupingInterval: 0
@@ -1238,10 +1273,10 @@ describe('useSWRV - error', () => {
   })
 
   it('should display friendly error message when swrv is not top level in setup', async done => {
-    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => { })
     const vm = new Vue({
       template: '<button v-on:click="dontDoThis">bad idea</button>',
-      setup  () {
+      setup () {
         function dontDoThis () {
           useSWRV(() => 'error-top-level', () => 'hello')
         }
@@ -1282,7 +1317,7 @@ describe('useSWRV - window events', () => {
 
     const vm = new Vue({
       template: `<div>count: {{ data }}</div>`,
-      setup  () {
+      setup () {
         return useSWRV('dynamic-5', () => count++, {
           refreshInterval: 200,
           dedupingInterval: 0
@@ -1387,7 +1422,7 @@ describe('useSWRV - window events', () => {
 
     const vm = new Vue({
       template: `<div>count: {{ data }}</div>`,
-      setup  () {
+      setup () {
         return useSWRV('dynamic-6', () => count++, {
           refreshInterval: 200,
           dedupingInterval: 0
@@ -1420,7 +1455,7 @@ describe('useSWRV - window events', () => {
 
     const vm = new Vue({
       template: `<div>{{ data }}</div>`,
-      setup  () {
+      setup () {
         const { data, error } = useSWRV(
           'fetches-data-even-when-document-is-not-visible',
           () => new Promise(res => setTimeout(() => res('first'), 100))
