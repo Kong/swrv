@@ -127,7 +127,7 @@ describe('useSWRV', () => {
 
     expect(vm.$el.textContent).toBe('refs:0')
     vm.$el.click()
-    await tick(1)
+    await tick(2)
     expect(vm.$el.textContent).toBe('refs:1')
 
     const vm2 = new Vue({
