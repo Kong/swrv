@@ -146,12 +146,12 @@ function useSWRV<Data = any, Error = any>(
 ): IResponse<Data, Error>
 function useSWRV<Data = any, Error = any>(
   key: IKey,
-  fn?: fetcherFn<Data>,
+  fn?: fetcherFn<Data> | null,
   config?: IConfig
 ): IResponse<Data, Error>
 function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
   let key: IKey
-  let fn: fetcherFn<Data> | undefined
+  let fn: fetcherFn<Data> | undefined | null
   let config: IConfig = { ...defaultConfig }
   let unmounted = false
   let isHydrated = false
@@ -221,7 +221,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
   /**
    * Revalidate the cache, mutate data
    */
-  const revalidate = async (data?: fetcherFn<Data>, opts?: revalidateOptions) => {
+  const revalidate = async (data?: fetcherFn<Data> | null, opts?: revalidateOptions) => {
     const isFirstFetch = stateRef.data === undefined
     const keyVal = keyRef.value
     if (!keyVal) { return }
@@ -235,7 +235,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       stateRef.error = newData.error
     }
 
-    const fetcher = data || fn
+    const fetcher = typeof data === 'undefined' ? fn : data
     if (
       !fetcher ||
       (!config.isDocumentVisible() && !isFirstFetch) ||

@@ -18,7 +18,7 @@ export interface IConfig<
   shouldRetryOnError?: boolean
   errorRetryInterval?: number
   errorRetryCount?: number
-  fetcher?: Fn,
+  fetcher?: Fn | null,
   isOnline?: () => boolean
   isDocumentVisible?: () => boolean
 }
@@ -27,7 +27,7 @@ export interface IResponse<Data = any, Error = any> {
   data: Ref<Data | undefined>
   error: Ref<Error | undefined>
   isValidating: Ref<boolean>
-  mutate: (data?: fetcherFn<Data>, opts?: revalidateOptions) => Promise<void>
+  mutate: (data?: fetcherFn<Data> | null, opts?: revalidateOptions) => Promise<void>
 }
 
 export type keyType = string | any[] | null | undefined
