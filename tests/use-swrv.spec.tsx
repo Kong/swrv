@@ -691,14 +691,14 @@ describe('useSWRV - loading', () => {
 
   // #195
   it('should return loading state isValidating with nullish key', async done => {
-    const vm = new Vue(defineComponent({
+    const wrapper = mount(defineComponent({
       template: `<div>{{ error }}:{{this.isValidating ? 'loading' : 'ready'}}</div>`,
       setup () {
         return useSWRV(() => null)
       }
-    })).$mount()
+    }))
 
-    expect(vm.$el.textContent).toBe(':ready')
+    expect(wrapper.text()).toBe(':ready')
     done()
   })
 })
@@ -1219,9 +1219,9 @@ describe('useSWRV - error', () => {
     done()
   })
 
-  it('should display friendly error message when swrv is not top level in setup', async done => {
+  it('should display friendly error message when swrv is not top level in setup', done => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-    const vm = new Vue({
+    const wrapper = mount(defineComponent({
       template: '<button v-on:click="dontDoThis">bad idea</button>',
       setup  () {
         function dontDoThis () {
@@ -1232,9 +1232,9 @@ describe('useSWRV - error', () => {
           dontDoThis
         }
       }
-    }).$mount()
+    }))
 
-    vm.$el.click()
+    wrapper.find('button').trigger('click')
 
     expect(spy).toHaveBeenCalledWith(expect.stringContaining('Could not get current instance, check to make sure that `useSwrv` is declared in the top level of the setup function.'))
 
