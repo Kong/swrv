@@ -159,7 +159,8 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
   const instance = getCurrentInstance() as any
   const vm = instance?.proxy || instance // https://github.com/vuejs/composition-api/pull/520
   if (!vm) {
-    throw new Error('Could not get current instance, check to make sure that `useSwrv` is declared in the top level of the setup function.')
+    console.error('Could not get current instance, check to make sure that `useSwrv` is declared in the top level of the setup function.')
+    return null
   }
 
   const IS_SERVER = vm.$isServer
