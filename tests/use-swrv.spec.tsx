@@ -35,7 +35,7 @@ jest.mock('../src/cache', () => {
 jest.useFakeTimers()
 
 const mockFetch = (res?) => {
-  global['fetch'] = () => Promise.resolve()
+  global['fetch'] = () => Promise.resolve(null)
   const mockFetch = body => Promise.resolve({ json: () => Promise.resolve(body) } as any)
   jest.spyOn(window, 'fetch').mockImplementation(body => mockFetch(res || body))
 }
@@ -849,7 +849,7 @@ describe('useSWRV - listeners', () => {
 
     await vm.$nextTick()
 
-    app.unmount(container)
+    app.unmount()
 
     expect(f1).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
     expect(f2).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
@@ -1117,7 +1117,7 @@ describe('useSWRV - error', () => {
     timeout(300)
     await tick(1)
     // stale data sticks around even when error exists
-    expect(wrapper.text()).toBe('count: 2 "Error: uh oh!"')
+    expect(wrapper.text()).toMatch(/count: 2.*Error: uh oh\!/)
     done()
   })
 
@@ -1148,7 +1148,7 @@ describe('useSWRV - error', () => {
     timeout(100)
     await tick(3)
     // stale data sticks around even when error exists
-    expect(wrapper.text()).toBe('count: 1 "Error: uh oh!"')
+    expect(wrapper.text()).toMatch(/count: 1.*Error: uh oh\!/)
 
     revalidate()
     timeout(100)
@@ -1183,19 +1183,19 @@ describe('useSWRV - error', () => {
 
     timeout(100)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toBe('count: , "Error: 1"')
+    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 1/)
 
     timeout(600)
     await tick(2)
-    expect(vm.$el.textContent).toBe('count: , "Error: 2"')
+    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 2/)
 
     timeout(900)
     await tick(2)
-    expect(vm.$el.textContent).toBe('count: , "Error: 2"')
+    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 2/)
 
     timeout(200)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toBe('count: 3,')
+    expect(vm.$el.textContent.trim()).toMatch(/count: 3,/)
     done()
   })
 
@@ -1225,23 +1225,23 @@ describe('useSWRV - error', () => {
 
     timeout(100)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toBe('count: , "Error: 1"')
+    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 1/)
 
     timeout(600)
     await tick(2)
-    expect(vm.$el.textContent).toBe('count: , "Error: 2"')
+    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 2/)
 
     timeout(1100)
     await tick(2)
-    expect(vm.$el.textContent).toBe('count: , "Error: 3"')
+    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 3/)
 
     timeout(1600)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toBe('count: , "Error: 4"')
+    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 4/)
 
     timeout(2100)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toBe('count: , "Error: 4"') // Does not exceed retry count
+    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 4/) // Does not exceed retry count
 
     done()
   })
@@ -1272,11 +1272,11 @@ describe('useSWRV - error', () => {
 
     timeout(100)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toBe('count: , "Error: 1"')
+    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 1/)
 
     timeout(600)
     await tick(2)
-    expect(vm.$el.textContent).toBe('count: , "Error: 1"')
+    expect(vm.$el.textContent).toMatch(/count: ,.*Error: 1/)
 
     done()
   })
@@ -1352,7 +1352,7 @@ describe('useSWRV - window events', () => {
     // should not rerender because document is hidden e.g. switched tabs
     expect(vm.$el.textContent).toBe('count: 1')
 
-    app.unmount(container)
+    app.unmount()
   })
 
   it('should get last known state when document is not visible', async () => {
