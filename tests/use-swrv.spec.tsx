@@ -64,7 +64,7 @@ describe('useSWRV', () => {
       }
     }))
 
-    expect(wrapper.vm.data).toBe(undefined)
+    expect(wrapper.vm['data']).toBe(undefined)
     done()
   })
 
@@ -413,14 +413,14 @@ describe('useSWRV', () => {
     // initially page is empty, but fetcher has fired with page=1
     expect(wrapper.text()).toBe('Page:')
     await tick(2)
-    expect(vm.page).toBe('1')
+    expect(vm['page']).toBe('1')
     expect(wrapper.text()).toBe('Page:')
 
     // page has now updated to page=2, fetcher1 has not yet resolved, fetcher
     // for page=2 has now fired
     timeout(500)
     await tick(2)
-    expect(vm.page).toBe('2')
+    expect(vm['page']).toBe('2')
     expect(wrapper.text()).toBe('Page:')
 
     // fetcher for page=1 has resolved, but the cache key is not equal to the
@@ -428,14 +428,14 @@ describe('useSWRV', () => {
     // now fired
     timeout(500)
     await tick(2)
-    expect(vm.page).toBe('3')
+    expect(vm['page']).toBe('3')
     expect(wrapper.text()).toBe('Page:')
 
     // cache key is no longer updating and the fetcher for page=3 has resolved
     // so the data ref now updates.
     timeout(1000)
     await tick(2)
-    expect(vm.page).toBe('3')
+    expect(vm['page']).toBe('3')
     expect(wrapper.text()).toBe('Page: 3')
 
     done()
@@ -811,17 +811,16 @@ describe('useSWRV - mutate', () => {
         }
       }
     }))
-    const vm = wrapper.vm
 
-    expect(vm.$el.textContent).toBe('hello, ')
+    expect(wrapper.text().trim()).toBe('hello,')
 
     timeout(100)
     await tick(2)
-    expect(vm.$el.textContent).toBe('hello, 1')
+    expect(wrapper.text().trim()).toBe('hello, 1')
 
     timeout(200)
     await tick(4)
-    expect(vm.$el.textContent).toBe('hello, 2')
+    expect(wrapper.text().trim()).toBe('hello, 2')
 
     done()
   })
@@ -1177,25 +1176,24 @@ describe('useSWRV - error', () => {
         return { data, error }
       }
     }))
-    const vm = wrapper.vm
 
-    expect(vm.$el.textContent.trim()).toBe('count: ,')
+    expect(wrapper.text().trim()).toBe('count: ,')
 
     timeout(100)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 1/)
+    expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 1/)
 
     timeout(600)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 2/)
+    expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 2/)
 
     timeout(900)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 2/)
+    expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 2/)
 
     timeout(200)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toMatch(/count: 3,/)
+    expect(wrapper.text().trim()).toMatch(/count: 3,/)
     done()
   })
 
@@ -1219,29 +1217,27 @@ describe('useSWRV - error', () => {
         return { data, error }
       }
     }))
-    const vm = wrapper.vm
-
-    expect(vm.$el.textContent.trim()).toBe('count: ,')
+    expect(wrapper.text().trim()).toBe('count: ,')
 
     timeout(100)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 1/)
+    expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 1/)
 
     timeout(600)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 2/)
+    expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 2/)
 
     timeout(1100)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 3/)
+    expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 3/)
 
     timeout(1600)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 4/)
+    expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 4/)
 
     timeout(2100)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 4/) // Does not exceed retry count
+    expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 4/) // Does not exceed retry count
 
     done()
   })
@@ -1266,17 +1262,16 @@ describe('useSWRV - error', () => {
         return { data, error }
       }
     }))
-    const vm = wrapper.vm
 
-    expect(vm.$el.textContent.trim()).toBe('count: ,')
+    expect(wrapper.text().trim()).toBe('count: ,')
 
     timeout(100)
     await tick(2)
-    expect(vm.$el.textContent.trim()).toMatch(/count: ,.*Error: 1/)
+    expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 1/)
 
     timeout(600)
     await tick(2)
-    expect(vm.$el.textContent).toMatch(/count: ,.*Error: 1/)
+    expect(wrapper.text()).toMatch(/count: ,.*Error: 1/)
 
     done()
   })
