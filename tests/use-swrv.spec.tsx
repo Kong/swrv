@@ -1,4 +1,4 @@
-import { createApp, watch, defineComponent, ref, h } from 'vue'
+import { createApp, watch, defineComponent, ref, h, computed } from 'vue'
 import { mount } from '@vue/test-utils'
 import useSWRV, { mutate } from '../src/use-swrv'
 import tick from './utils/tick'
@@ -144,6 +144,20 @@ describe('useSWRV', () => {
 
     // ref is good for another swrv instance (i.e. object reference works)
     expect(wrapper2.text()).toBe('refs:1')
+  })
+
+  it('should allow read-only computed key and reuse the cache', async done => {
+    const vm = createApp({
+      template: `<div>hello, {{ data }}</div>`,
+      setup () {
+        const computedKey = computed(() => 'cache-key-read-only-computed')
+        return useSWRV(computedKey, () => 'SWR')
+      }
+    }).mount(container)
+
+    // immediately available via cache without waiting for $nextTick
+    expect(vm.$el.textContent).toBe('hello, SWR')
+    done()
   })
 
   it('should accept object args', async () => {
