@@ -27,7 +27,8 @@ import {
   // isRef,
   onMounted,
   onUnmounted,
-  getCurrentInstance
+  getCurrentInstance,
+  isReadonly
 } from 'vue'
 import webPreset from './lib/web-preset'
 import SWRVCache from './cache'
@@ -391,7 +392,9 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
    */
   try {
     watch(keyRef, (val) => {
-      keyRef.value = val
+      if (!isReadonly(keyRef)) {
+        keyRef.value = val
+      }
       stateRef.key = val
       stateRef.isValidating = Boolean(val)
       setRefCache(keyRef.value, stateRef, ttl)
