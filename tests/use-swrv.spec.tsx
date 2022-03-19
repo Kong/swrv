@@ -401,6 +401,50 @@ describe('useSWRV', () => {
     done()
   })
 
+  it('should use separate configs for each invocation on the same key', async () => {
+    const key = 'cache-key-separate-configs'
+    let stableFetches = 0
+    let refreshingFetches = 0
+    const wrapper = mount(defineComponent({
+      template: `<div>stable data: {{ stableData }}, refreshing data: {{ refreshingData }}</div>`,
+      setup () {
+        const { data: stableData } = useSWRV(key, () => {
+          return ++stableFetches
+        }, {
+          dedupingInterval: 0,
+          revalidateOnFocus: false
+        })
+
+        const { data: refreshingData } = useSWRV(key, () => {
+          return ++refreshingFetches
+        }, {
+          dedupingInterval: 0,
+          revalidateOnFocus: true
+        })
+
+        return { refreshingData, stableData }
+      }
+    }))
+
+    await tick(2)
+    expect(stableFetches).toBe(1) // stable defined first => fetch
+    expect(refreshingFetches).toBe(0) // refreshing: promise is read from cache => no fetch
+    expect(wrapper.text()).toBe('stable data: 1, refreshing data: 1')
+
+    const evt = new Event('visibilitychange')
+    document.dispatchEvent(evt)
+    await tick(2)
+    expect(stableFetches).toBe(1) // stable not revalidating
+    expect(refreshingFetches).toBe(1) // refreshing is revalidating
+    expect(wrapper.text()).toBe('stable data: 1, refreshing data: 1')
+
+    document.dispatchEvent(evt)
+    await tick(2)
+    expect(stableFetches).toBe(1) // stable not revalidating
+    expect(refreshingFetches).toBe(2) // refreshing is revalidating
+    expect(wrapper.text()).toBe('stable data: 2, refreshing data: 2')
+  })
+
   // From #24
   it('should only update refs of current cache key', async done => {
     const fetcher = (key) => new Promise(res => setTimeout(() => res(key), 1000))
