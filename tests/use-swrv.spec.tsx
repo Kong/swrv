@@ -821,6 +821,77 @@ describe('useSWRV - loading', () => {
     expect(wrapper.text()).toBe(':ready')
     done()
   })
+
+  it('should indicate cached data from another key with isLoading false', async () => {
+    const key = ref(1)
+    const wrapper = mount(defineComponent({
+      template: `<div>data: {{ String(data) }}, isValidating: {{ isValidating }}, isLoading: {{ isLoading }}</div>
+        <button id="inc" v-on:click="inc"/><button id="dec" v-on:click="dec"/>`,
+      setup () {
+        const { data, isValidating, isLoading } = useSWRV(() => 'key-' + key.value, async () => {
+          await loadData()
+          return 'data-' + key.value
+        }, { dedupingInterval: 0 })
+
+        const inc = () => {
+          key.value++
+        }
+        const dec = () => {
+          key.value--
+        }
+
+        return { inc, dec, data, isValidating, isLoading }
+      }
+    }))
+
+    // key 1
+    // first load ever, cache empty, no data => isLoading true
+    expect(wrapper.text()).toBe('data: undefined, isValidating: true, isLoading: true')
+    timeout(100)
+    await tick(2)
+    // key-1 data loaded
+    expect(wrapper.text()).toBe('data: data-1, isValidating: false, isLoading: false')
+
+    // key: 1 -> 2
+    // first load for a key, key cache empty, data from previous key => isLoading true
+    wrapper.find('#inc').trigger('click')
+    await tick(2)
+    expect(wrapper.text()).toBe('data: data-1, isValidating: true, isLoading: true')
+    timeout(100)
+    await tick(2)
+    // data loaded
+    expect(wrapper.text()).toBe('data: data-2, isValidating: false, isLoading: false')
+
+    // key: 2 -> 1
+    // next load for a key, data from key cache => isLoading false
+    wrapper.find('#dec').trigger('click')
+    await tick(2)
+    expect(wrapper.text()).toBe('data: data-1, isValidating: true, isLoading: false')
+    timeout(100)
+    await tick(2)
+    // data loaded
+    expect(wrapper.text()).toBe('data: data-1, isValidating: false, isLoading: false')
+
+    // key: 1 -> 2
+    // next load for a key, data from key cache => isLoading false
+    wrapper.find('#inc').trigger('click')
+    await tick(2)
+    expect(wrapper.text()).toBe('data: data-2, isValidating: true, isLoading: false')
+    timeout(100)
+    await tick(2)
+    // data loaded
+    expect(wrapper.text()).toBe('data: data-2, isValidating: false, isLoading: false')
+
+    // key: 2 -> 3
+    // first load for a key, key cache empty, data from previous key => isLoading true
+    wrapper.find('#inc').trigger('click')
+    await tick(2)
+    expect(wrapper.text()).toBe('data: data-2, isValidating: true, isLoading: true')
+    timeout(100)
+    await tick(2)
+    // data loaded
+    expect(wrapper.text()).toBe('data: data-3, isValidating: false, isLoading: false')
+  })
 })
 
 describe('useSWRV - mutate', () => {
