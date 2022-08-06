@@ -1,4 +1,4 @@
-import { createApp, watch, defineComponent, ref, h, computed } from 'vue'
+import Vue, { watch, defineComponent, ref, h, computed } from 'vue'
 import { mount } from '@vue/test-utils'
 import useSWRV, { mutate } from '../src/use-swrv'
 import tick from './utils/tick'
@@ -69,45 +69,45 @@ describe('useSWRV', () => {
   })
 
   it('should return data after hydration', async done => {
-    const vm = createApp({
+    const wrapper = mount(defineComponent({
       template: `<div>hello, {{ data }}</div>`,
       setup () {
         return useSWRV('cache-key-2', () => 'SWR')
       }
-    }).mount(container)
+    }))
 
     await tick(4)
 
-    expect(vm.$el.textContent).toBe('hello, SWR')
+    expect(wrapper.text()).toBe('hello, SWR')
     done()
   })
 
   it('should return data from a promise', async done => {
-    const vm = createApp({
+    const wrapper = mount(defineComponent({
       template: `<div>hello, {{ data }}</div>`,
       setup () {
         return useSWRV('cache-key-promise', () => new Promise(resolve => resolve('SWR')))
       }
-    }).mount(container)
+    }))
 
-    expect(vm.$el.textContent).toBe('hello, ')
+    expect(wrapper.text()).toBe('hello,')
 
     await tick(2)
 
-    expect(vm.$el.textContent).toEqual('hello, SWR')
+    expect(wrapper.text()).toBe('hello, SWR')
     done()
   })
 
   it('should allow functions as key and reuse the cache', async done => {
-    const vm = createApp({
+    const wrapper = mount(defineComponent({
       template: `<div>hello, {{ data }}</div>`,
       setup () {
         return useSWRV(() => 'cache-key-2', () => 'SWR')
       }
-    }).mount(container)
+    }))
 
     // immediately available via cache without waiting for $nextTick
-    expect(vm.$el.textContent).toBe('hello, SWR')
+    expect(wrapper.text()).toBe('hello, SWR')
     done()
   })
 
@@ -147,16 +147,16 @@ describe('useSWRV', () => {
   })
 
   it('should allow read-only computed key and reuse the cache', async done => {
-    const vm = createApp({
+    const wrapper = mount(defineComponent({
       template: `<div>hello, {{ data }}</div>`,
       setup () {
         const computedKey = computed(() => 'cache-key-read-only-computed')
         return useSWRV(computedKey, () => 'SWR')
       }
-    }).mount(container)
+    }))
 
     // immediately available via cache without waiting for $nextTick
-    expect(vm.$el.textContent).toBe('hello, SWR')
+    expect(wrapper.text()).toBe('hello, SWR')
     done()
   })
 
@@ -164,7 +164,7 @@ describe('useSWRV', () => {
     const obj = { v: 'hello' }
     const arr = ['world']
 
-    const vm = createApp({
+    const wrapper = mount(defineComponent({
       template: `<div>{{v1}}, {{v2}}, {{v3}}</div>`,
       setup () {
         const { data: v1 } = useSWRV(['args-1', obj, arr], (a, b, c) => {
@@ -181,27 +181,27 @@ describe('useSWRV', () => {
 
         return { v1, v2, v3 }
       }
-    }).mount(container)
+    }))
 
-    expect(vm.$el.textContent).toBe(`args-1helloworld, args-1helloworld, args-2helloworld`)
+    expect(wrapper.text()).toBe(`args-1helloworld, args-1helloworld, args-2helloworld`)
   })
 
   it('should allow async fetcher functions', async done => {
-    const vm = createApp({
+    const wrapper = mount(defineComponent({
       template: `<div>hello, {{ data }}</div>`,
       setup () {
         return useSWRV('cache-key-3', () =>
           new Promise(res => setTimeout(() => res('SWR'), 200))
         )
       }
-    }).mount(container)
+    }))
 
-    expect(vm.$el.textContent).toBe('hello, ')
+    expect(wrapper.text()).toBe('hello,')
 
     timeout(200)
     await tick(2)
 
-    expect(vm.$el.textContent).toBe('hello, SWR')
+    expect(wrapper.text()).toBe('hello, SWR')
     done()
   })
 
@@ -212,20 +212,20 @@ describe('useSWRV', () => {
       return new Promise(res => setTimeout(() => res('SWR'), 200))
     }
 
-    const vm = createApp({
+    const wrapper = mount(defineComponent({
       template: `<div>{{v1}}, {{v2}}, {{ validating1 ? 'yes' : 'no' }} {{ validating2 ? 'yes' : 'no' }}</div>`,
       setup () {
         const { data: v1, isValidating: validating1 } = useSWRV('cache-key-4', fetch)
         const { data: v2, isValidating: validating2 } = useSWRV('cache-key-4', fetch)
         return { v1, v2, validating1, validating2 }
       }
-    }).mount(container)
+    }))
 
-    expect(vm.$el.textContent).toBe(', , yes yes')
+    expect(wrapper.text()).toBe(', , yes yes')
 
     timeout(200)
     await tick(2)
-    expect(vm.$el.textContent).toBe('SWR, SWR, no no')
+    expect(wrapper.text()).toBe('SWR, SWR, no no')
 
     // only fetches once
     expect(count).toEqual(1)
@@ -239,7 +239,7 @@ describe('useSWRV', () => {
       return new Promise(res => setTimeout(() => res('SWR'), 200))
     }
 
-    const vm = createApp({
+    const wrapper = mount(defineComponent({
       template: `<div>{{v1}}, {{v2}}, {{ validating1 ? 'yes' : 'no' }} {{ validating2 ? 'yes' : 'no' }}</div>`,
       setup () {
         const { data: v1, isValidating: validating1 } = useSWRV('cache-key-4a', fetch)
@@ -248,21 +248,21 @@ describe('useSWRV', () => {
         })
         return { v1, v2, validating1, validating2 }
       }
-    }).mount(container)
+    }))
 
-    expect(vm.$el.textContent).toBe(', , yes yes')
+    expect(wrapper.text()).toBe(', , yes yes')
 
     timeout(200)
     await tick(2)
-    expect(vm.$el.textContent).toBe('SWR, SWR, no no')
+    expect(wrapper.text()).toBe('SWR, SWR, no no')
 
     timeout(100)
     await tick(2)
-    expect(vm.$el.textContent).toBe('SWR, SWR, no no')
+    expect(wrapper.text()).toBe('SWR, SWR, no no')
 
     timeout(100)
     await tick(4)
-    expect(vm.$el.textContent).toBe('SWR, SWR, no no')
+    expect(wrapper.text()).toBe('SWR, SWR, no no')
 
     expect(count).toEqual(1)
     done()
@@ -905,17 +905,17 @@ describe('useSWRV - listeners', () => {
     jest.spyOn(window, 'addEventListener').mockImplementationOnce(f3)
     jest.spyOn(window, 'removeEventListener').mockImplementationOnce(f4)
 
-    const app = createApp({
+    const app = new Vue({
       template: `<div>hello, {{ data }}</div>`,
       setup () {
         return useSWRV('cache-key-1', () => 'SWR')
       }
     })
-    const vm = app.mount(container)
+    const vm = app.$mount(container)
 
     await vm.$nextTick()
 
-    app.unmount()
+    app.$destroy()
 
     expect(f1).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
     expect(f2).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
@@ -984,7 +984,7 @@ describe('useSWRV - refresh', () => {
   it('should rerender automatically on interval', async done => {
     let count = 0
 
-    const vm = createApp({
+    const wrapper = mount(defineComponent({
       template: `<div>count: {{ data }}</div>`,
       setup () {
         return useSWRV('dynamic-1', () => count++, {
@@ -992,19 +992,19 @@ describe('useSWRV - refresh', () => {
           dedupingInterval: 0
         })
       }
-    }).mount(container)
+    }))
 
     await tick(2)
-    expect(vm.$el.textContent).toEqual('count: 0')
+    expect(wrapper.text()).toEqual('count: 0')
     timeout(210)
     await tick(2)
-    expect(vm.$el.textContent).toEqual('count: 1')
+    expect(wrapper.text()).toEqual('count: 1')
     timeout(50)
     await tick(2)
-    expect(vm.$el.textContent).toEqual('count: 1')
+    expect(wrapper.text()).toEqual('count: 1')
     timeout(150)
     await tick(2)
-    expect(vm.$el.textContent).toEqual('count: 2')
+    expect(wrapper.text()).toEqual('count: 2')
     done()
   })
 
@@ -1019,7 +1019,7 @@ describe('useSWRV - refresh', () => {
       res(++count)
     }, 100)) // Resolves quickly, but gets de-duplicated during refresh intervals
 
-    const vm = createApp({
+    const wrapper = mount(defineComponent({
       template: `<div>count: {{ data }}</div>`,
       setup () {
         return useSWRV('dynamic-2', loadData, {
@@ -1027,13 +1027,13 @@ describe('useSWRV - refresh', () => {
           dedupingInterval: 300
         })
       }
-    }).mount(container)
+    }))
 
-    expect(vm.$el.textContent).toBe('count: ')
+    expect(wrapper.text()).toBe('count:')
     advanceBy(100)
     timeout(100)
     await tick(2)
-    expect(vm.$el.textContent).toBe('count: 1') // first resolve
+    expect(wrapper.text()).toBe('count: 1') // first resolve
     /**
      * check inside promises cache within deduping interval so even though
      * promise resolves quickly, it will grab the promise out of the cache
@@ -1042,22 +1042,22 @@ describe('useSWRV - refresh', () => {
     advanceBy(100)
     timeout(100) // first fetcher fire
     await tick(1)
-    expect(vm.$el.textContent).toBe('count: 1')
+    expect(wrapper.text()).toBe('count: 1')
 
     advanceBy(100)
     timeout(100) // deduped
     await tick(2)
-    expect(vm.$el.textContent).toBe('count: 1')
+    expect(wrapper.text()).toBe('count: 1')
 
     advanceBy(100)
     timeout(100) // second fetcher fire
     await tick(2)
-    expect(vm.$el.textContent).toBe('count: 1')
+    expect(wrapper.text()).toBe('count: 1')
 
     advanceBy(200)
     timeout(200)
     await tick(2)
-    expect(vm.$el.textContent).toBe('count: 2')
+    expect(wrapper.text()).toBe('count: 2')
 
     clear()
     done()
@@ -1108,7 +1108,7 @@ describe('useSWRV - refresh', () => {
 
 describe('useSWRV - error', () => {
   it('should handle errors', async done => {
-    const vm = createApp({
+    const wrapper = mount(defineComponent({
       template: `<div>
         <div v-if="data">hello, {{ data }}</div>
         <div v-if="error">{{error.message}}</div>
@@ -1118,18 +1118,18 @@ describe('useSWRV - error', () => {
           reject(new Error('error!'))
         }))
       }
-    }).mount(container)
+    }))
 
     await tick(2)
 
-    expect(vm.$el.textContent.trim()).toBe('error!')
+    expect(wrapper.text().trim()).toBe('error!')
     done()
   })
 
   it('should be able to watch errors - similar to onError callback', async done => {
     let erroredSWR = null
 
-    const vm = createApp({
+    const wrapper = mount(defineComponent({
       template: `<div>
         <div>hello, {{ data }}</div>
       </div>`,
@@ -1146,9 +1146,9 @@ describe('useSWRV - error', () => {
           data, error
         }
       }
-    }).mount(container)
+    }))
 
-    expect(vm.$el.textContent).toBe('hello, ')
+    expect(wrapper.text()).toBe('hello,')
     timeout(200)
     await tick(2)
     expect(erroredSWR).toEqual('error!')
@@ -1386,7 +1386,7 @@ describe('useSWRV - window events', () => {
   it('should not rerender when document is not visible', async () => {
     let count = 0
 
-    const app = createApp({
+    const wrapper = mount(defineComponent({
       template: `<div>count: {{ data }}</div>`,
       setup () {
         return useSWRV('dynamic-5', () => count++, {
@@ -1394,17 +1394,16 @@ describe('useSWRV - window events', () => {
           dedupingInterval: 0
         })
       }
-    })
-    const vm = app.mount(container)
+    }))
 
     await tick(1)
-    expect(vm.$el.textContent).toBe('count: 0')
+    expect(wrapper.text()).toBe('count: 0')
 
     toggleVisibility(undefined)
     timeout(200)
     await tick(1)
     // should still update even though visibilityState is undefined
-    expect(vm.$el.textContent).toBe('count: 1')
+    expect(wrapper.text()).toBe('count: 1')
 
     toggleVisibility('hidden')
 
@@ -1412,9 +1411,9 @@ describe('useSWRV - window events', () => {
     await tick(1)
 
     // should not rerender because document is hidden e.g. switched tabs
-    expect(vm.$el.textContent).toBe('count: 1')
+    expect(wrapper.text()).toBe('count: 1')
 
-    app.unmount()
+    wrapper.destroy()
   })
 
   it('should get last known state when document is not visible', async () => {
@@ -1493,7 +1492,7 @@ describe('useSWRV - window events', () => {
     expect(wrapper.text()).toBe('count: 4')
     expect(count).toBe(4)
 
-    wrapper.unmount()
+    wrapper.destroy()
   })
 
   it('should not rerender when offline', async () => {
@@ -1576,7 +1575,7 @@ describe('useSWRV - ref cache management', () => {
       }
     }))
     expect(mockRefCache.get(key).data).toHaveLength(1)
-    vm.unmount()
+    vm.destroy()
     expect(mockRefCache.get(key).data).toHaveLength(0)
   })
 
@@ -1601,7 +1600,7 @@ describe('useSWRV - ref cache management', () => {
     }))
 
     expect(mockRefCache.get(key).data).toHaveLength(2)
-    originalVm.unmount()
+    originalVm.destroy()
     expect(mockRefCache.get(key).data).toHaveLength(1)
   })
 })
