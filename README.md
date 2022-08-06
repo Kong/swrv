@@ -30,7 +30,6 @@ Features:
 - Customizable cache implementation
 - Error Retry
 - SSR support
-- Vue 3 Support
 
 With `swrv`, components will get a stream of data updates constantly and
 automatically. Thus, the UI will be always fast and reactive.
