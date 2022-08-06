@@ -1,6 +1,6 @@
 {
   "name": "swrv",
-  "version": "1.0.0-beta.8",
+  "version": "0.10.0",
   "main": "./dist/index.js",
   "module": "./esm/index.js",
   "repository": "github:Kong/swrv",
@@ -22,7 +22,7 @@
     "src/**"
   ],
   "peerDependencies": {
-    "vue": "^2.7.8"
+    "vue": "^2.7.0"
   },
   "devDependencies": {
     "@types/jest": "^24.0.19",
@@ -38,11 +38,11 @@
     "all-contributors-cli": "^6.13.0",
     "babel-loader": "^8.1.0",
     "eslint": "^5.16.0",
-    "eslint-plugin-vue": "^5.0.0",
+    "eslint-plugin-vue": "^8.7.1",
     "file-loader": "^5.0.2",
     "jest-date-mock": "^1.0.8",
     "typescript": "~4.3.5",
-    "vue": "^2.7.8",
-    "vue-template-compiler": "^2.7.8"
+    "vue": "2.7.0",
+    "vue-template-compiler": "2.7.0"
   }
 }
