@@ -2,6 +2,14 @@
 # yarn lockfile v1
 
 
-"swrv@link:../../dist":
-  version "0.0.0"
-  uid ""
+swrv@^1.0.0-beta.8:
+  version "1.0.0-beta.8"
+  resolved "https://registry.yarnpkg.com/swrv/-/swrv-1.0.0-beta.8.tgz#745723f5ca8a7a7e290e911cf7da34cecaf356d3"
+  integrity sha512-MsjaMOvZODfM0cess/HhbSrNbAotYinv4vzipLckKYBo/QmrvjNUPGZSRSqByXy/9AjrMRFWo0YanaVPbqADPQ==
+
+swrv@latest:
+  version "0.9.6"
+  resolved "https://registry.yarnpkg.com/swrv/-/swrv-0.9.6.tgz#27fd005577d40b5b9b827a8d75c316e9510f177b"
+  integrity sha512-5C5f4BhzLzfDWt/XM9XS1W3yBuv5wbrrrgynkF7oXSugw2fk6K73jKpnUVYN3e/fmKccAt52Pab02OdQZjUxSA==
+  dependencies:
+    swrv "^1.0.0-beta.8"
