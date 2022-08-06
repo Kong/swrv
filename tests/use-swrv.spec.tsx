@@ -1,4 +1,4 @@
-import Vue, { watch, defineComponent, ref, h, computed } from 'vue'
+import { watch, defineComponent, ref, h, computed } from 'vue'
 import { mount } from '@vue/test-utils'
 import useSWRV, { mutate } from '../src/use-swrv'
 import tick from './utils/tick'
@@ -40,9 +40,8 @@ const mockFetch = (res?) => {
   jest.spyOn(window, 'fetch').mockImplementation(body => mockFetch(res || body))
 }
 
-const container = document.createElement('div')
 describe('useSWRV', () => {
-  it('should return data on hydration when fetch is not a promise', async done => {
+  it('should return data on hydration when fetch is not a promise', () => {
     const fetch = () => 'SWR'
     const wrapper = mount(defineComponent({
       template: `<div>hello, {{ data }}</div>`,
@@ -52,10 +51,9 @@ describe('useSWRV', () => {
     }))
 
     expect(wrapper.text()).toBe('hello, SWR')
-    done()
   })
 
-  it('should return `undefined` on hydration', done => {
+  it('should return `undefined` on hydration', () => {
     const fetch = () => new Promise(res => setTimeout(() => res('SWR'), 1))
     const wrapper = mount(defineComponent({
       template: `<div>hello, {{ data }}</div>`,
@@ -65,10 +63,9 @@ describe('useSWRV', () => {
     }))
 
     expect(wrapper.vm['data']).toBe(undefined)
-    done()
   })
 
-  it('should return data after hydration', async done => {
+  it('should return data after hydration', async () => {
     const wrapper = mount(defineComponent({
       template: `<div>hello, {{ data }}</div>`,
       setup () {
@@ -79,10 +76,9 @@ describe('useSWRV', () => {
     await tick(4)
 
     expect(wrapper.text()).toBe('hello, SWR')
-    done()
   })
 
-  it('should return data from a promise', async done => {
+  it('should return data from a promise', async () => {
     const wrapper = mount(defineComponent({
       template: `<div>hello, {{ data }}</div>`,
       setup () {
@@ -95,10 +91,9 @@ describe('useSWRV', () => {
     await tick(2)
 
     expect(wrapper.text()).toBe('hello, SWR')
-    done()
   })
 
-  it('should allow functions as key and reuse the cache', async done => {
+  it('should allow functions as key and reuse the cache', async () => {
     const wrapper = mount(defineComponent({
       template: `<div>hello, {{ data }}</div>`,
       setup () {
@@ -108,7 +103,6 @@ describe('useSWRV', () => {
 
     // immediately available via cache without waiting for $nextTick
     expect(wrapper.text()).toBe('hello, SWR')
-    done()
   })
 
   it('should allow refs (reactive / WatchSource) as key', async () => {
@@ -146,7 +140,7 @@ describe('useSWRV', () => {
     expect(wrapper2.text()).toBe('refs:1')
   })
 
-  it('should allow read-only computed key and reuse the cache', async done => {
+  it('should allow read-only computed key and reuse the cache', async () => {
     const wrapper = mount(defineComponent({
       template: `<div>hello, {{ data }}</div>`,
       setup () {
@@ -157,7 +151,6 @@ describe('useSWRV', () => {
 
     // immediately available via cache without waiting for $nextTick
     expect(wrapper.text()).toBe('hello, SWR')
-    done()
   })
 
   it('should accept object args', async () => {
@@ -186,7 +179,7 @@ describe('useSWRV', () => {
     expect(wrapper.text()).toBe(`args-1helloworld, args-1helloworld, args-2helloworld`)
   })
 
-  it('should allow async fetcher functions', async done => {
+  it('should allow async fetcher functions', async () => {
     const wrapper = mount(defineComponent({
       template: `<div>hello, {{ data }}</div>`,
       setup () {
@@ -202,10 +195,9 @@ describe('useSWRV', () => {
     await tick(2)
 
     expect(wrapper.text()).toBe('hello, SWR')
-    done()
   })
 
-  it('should dedupe requests by default - in flight promises', async done => {
+  it('should dedupe requests by default - in flight promises', async () => {
     let count = 0
     const fetch = () => {
       count++
@@ -229,10 +221,9 @@ describe('useSWRV', () => {
 
     // only fetches once
     expect(count).toEqual(1)
-    done()
   })
 
-  it('should dedupe requests by default outside of in flight promises', async done => {
+  it('should dedupe requests by default outside of in flight promises', async () => {
     let count = 0
     const fetch = () => {
       count++
@@ -265,10 +256,9 @@ describe('useSWRV', () => {
     expect(wrapper.text()).toBe('SWR, SWR, no no')
 
     expect(count).toEqual(1)
-    done()
   })
 
-  it('should fetch dependently', async done => {
+  it('should fetch dependently', async () => {
     let count = 0
     const loadUser = (): Promise<{ id: number }> => {
       return new Promise(res => setTimeout(() => {
@@ -313,10 +303,9 @@ describe('useSWRV', () => {
     await tick(2)
     expect(wrapper.text()).toBe('d1:123 d2:123')
     expect(count).toEqual(2)
-    done()
   })
 
-  it('should not fetch if key is falsy', async done => {
+  it('should not fetch if key is falsy', async () => {
     let count = 0
     const fetch = key => {
       count++
@@ -349,10 +338,9 @@ describe('useSWRV', () => {
     timeout(100)
     await tick(3)
     expect(wrapper.text()).toBe('d1,d2,d3')
-    done()
   })
 
-  it('should not revalidate if key is falsy', async done => {
+  it('should not revalidate if key is falsy', async () => {
     let count = 0
     const fetch = key => {
       count++
@@ -398,7 +386,6 @@ describe('useSWRV', () => {
     expect(count).toBe(0)
     expect(wrapper.text()).toBe('')
 
-    done()
   })
 
   it('should use separate configs for each invocation on the same key', async () => {
@@ -446,7 +433,7 @@ describe('useSWRV', () => {
   })
 
   // From #24
-  it('should only update refs of current cache key', async done => {
+  it('should only update refs of current cache key', async () => {
     const fetcher = (key) => new Promise(res => setTimeout(() => res(key), 1000))
 
     const wrapper = mount(defineComponent({
@@ -496,10 +483,9 @@ describe('useSWRV', () => {
     expect(vm['page']).toBe('3')
     expect(wrapper.text()).toBe('Page: 3')
 
-    done()
   })
 
-  it('should return cache when no fetcher provided', async done => {
+  it('should return cache when no fetcher provided', async () => {
     let invoked = 0
     const wrapper = mount(defineComponent({
       template: `<div>d:{{ data }} cache:{{ dataFromCache }}</div>`,
@@ -524,10 +510,9 @@ describe('useSWRV', () => {
 
     expect(wrapper.text()).toBe('d:SWR cache:SWR')
     expect(invoked).toBe(1) // empty fetcher is OK
-    done()
   })
 
-  it('should return cache when no fetcher provided, across components', async done => {
+  it('should return cache when no fetcher provided, across components', async () => {
     let invoked = 0
 
     const Hello = (cacheKey: string) => {
@@ -564,10 +549,9 @@ describe('useSWRV', () => {
     timeout(200)
     expect(wrapper.text()).toBe('data:SWR hello SWR')
     expect(invoked).toBe(1) // empty fetcher is OK
-    done()
   })
 
-  it('should return data even when cache ttl expires during request', async done => {
+  it('should return data even when cache ttl expires during request', async () => {
     const loadData = () => new Promise(res => setTimeout(() => res('data'), 100))
     let mutate
     const wrapper = mount(defineComponent({
@@ -606,11 +590,10 @@ describe('useSWRV', () => {
     timeout(100)
     await tick(2)
     expect(wrapper.text()).toBe('hello, data, ready')
-    done()
   })
 
   // from #54
-  it('does not invalidate cache when ttl is 0', async done => {
+  it('does not invalidate cache when ttl is 0', async () => {
     advanceTo(new Date())
     const ttl = 0
     let count = 0
@@ -670,11 +653,10 @@ describe('useSWRV', () => {
 
     clear()
 
-    done()
   })
 
   // from #54
-  it('does invalidate cache when ttl is NOT 0', async done => {
+  it('does invalidate cache when ttl is NOT 0', async () => {
     advanceTo(new Date())
     const ttl = 100
     let count = 0
@@ -734,7 +716,6 @@ describe('useSWRV', () => {
 
     clear()
 
-    done()
   })
 
   it('should use fetch api as default fetcher', async () => {
@@ -766,7 +747,7 @@ describe('useSWRV', () => {
         const { data } = useSWRV('cache-key-5', fetcher)
         const { data: dataFromCache } = useSWRV('cache-key-5')
 
-  it('should return loading state via undefined data', async done => {
+  it('should return loading state via undefined data', async () => {
     let renderCount = 0
     const wrapper = mount(defineComponent({
       setup () {
@@ -786,10 +767,9 @@ describe('useSWRV', () => {
 
     expect(wrapper.text()).toBe('hello, data')
     expect(renderCount).toEqual(2)
-    done()
   })
 
-  it('should return loading state via isValidating', async done => {
+  it('should return loading state via isValidating', async () => {
     // Prime the cache
     const wrapper = mount(defineComponent({
       setup () {
@@ -815,11 +795,10 @@ describe('useSWRV', () => {
     timeout(100)
     await tick(2)
     expect(wrapper.text()).toBe('hello, data, ready')
-    done()
   })
 
   // #195
-  it('should return loading state isValidating with nullish key', async done => {
+  it('should return loading state isValidating with nullish key', async () => {
     const wrapper = mount(defineComponent({
       template: `<div>{{ error }}:{{this.isValidating ? 'loading' : 'ready'}}</div>`,
       setup () {
@@ -828,12 +807,11 @@ describe('useSWRV', () => {
     }))
 
     expect(wrapper.text()).toBe(':ready')
-    done()
   })
 })
 
 describe('useSWRV - mutate', () => {
-  it('prefetches via mutate', done => {
+  it('prefetches via mutate', () => {
     // Prime the cache
     const loadData = key => new Promise(res => setTimeout(() => res(key), 100))
     mutate('is-prefetched-1', loadData('is-prefetched-1')).then(() => {
@@ -850,13 +828,13 @@ describe('useSWRV - mutate', () => {
       }))
 
       expect(wrapper.text()).toBe('hello, is-prefetched-1 and loading')
-      done()
+
     })
 
     timeout(100)
   })
 
-  it('mutate triggers revalidations', async done => {
+  it('mutate triggers revalidations', async () => {
     let count = 0
     const loadData = () => new Promise(res => {
       setTimeout(() => {
@@ -889,12 +867,11 @@ describe('useSWRV - mutate', () => {
     await tick(4)
     expect(wrapper.text().trim()).toBe('hello, 2')
 
-    done()
   })
 })
 
 describe('useSWRV - listeners', () => {
-  it('tears down listeners', async done => {
+  it('tears down listeners', async () => {
     const f1 = jest.fn()
     const f2 = jest.fn()
     const f3 = jest.fn()
@@ -905,17 +882,16 @@ describe('useSWRV - listeners', () => {
     jest.spyOn(window, 'addEventListener').mockImplementationOnce(f3)
     jest.spyOn(window, 'removeEventListener').mockImplementationOnce(f4)
 
-    const app = new Vue({
+    const wrapper = mount(defineComponent({
       template: `<div>hello, {{ data }}</div>`,
       setup () {
         return useSWRV('cache-key-1', () => 'SWR')
       }
-    })
-    const vm = app.$mount(container)
+    }))
 
-    await vm.$nextTick()
+    await tick()
 
-    app.$destroy()
+    wrapper.destroy()
 
     expect(f1).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
     expect(f2).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
@@ -926,7 +902,6 @@ describe('useSWRV - listeners', () => {
     expect(f2).toHaveBeenCalledTimes(1)
     expect(f3).toHaveBeenCalledTimes(1)
     expect(f4).toHaveBeenCalledTimes(1)
-    done()
   })
 
   it('events trigger revalidate - switching windows/tabs', async () => {
@@ -981,7 +956,7 @@ describe('useSWRV - listeners', () => {
 })
 
 describe('useSWRV - refresh', () => {
-  it('should rerender automatically on interval', async done => {
+  it('should rerender automatically on interval', async () => {
     let count = 0
 
     const wrapper = mount(defineComponent({
@@ -1005,10 +980,9 @@ describe('useSWRV - refresh', () => {
     timeout(150)
     await tick(2)
     expect(wrapper.text()).toEqual('count: 2')
-    done()
   })
 
-  it('should dedupe requests combined with intervals - promises', async done => {
+  it('should dedupe requests combined with intervals - promises', async () => {
     advanceTo(new Date())
     /**
      * TODO: right now, only promises get deduped, so if the fetcherFn is a
@@ -1060,10 +1034,9 @@ describe('useSWRV - refresh', () => {
     expect(wrapper.text()).toBe('count: 2')
 
     clear()
-    done()
   })
 
-  it('should refresh on interval using dependent watchers', async done => {
+  it('should refresh on interval using dependent watchers', async () => {
     type User = { id: string }
     let count = -1
     const wrapper = mount(defineComponent({
@@ -1102,12 +1075,11 @@ describe('useSWRV - refresh', () => {
     timeout(200)
     await tick(2)
     expect(wrapper.text()).toEqual('User-1 votes: 2')
-    done()
   })
 })
 
 describe('useSWRV - error', () => {
-  it('should handle errors', async done => {
+  it('should handle errors', async () => {
     const wrapper = mount(defineComponent({
       template: `<div>
         <div v-if="data">hello, {{ data }}</div>
@@ -1123,10 +1095,9 @@ describe('useSWRV - error', () => {
     await tick(2)
 
     expect(wrapper.text().trim()).toBe('error!')
-    done()
   })
 
-  it('should be able to watch errors - similar to onError callback', async done => {
+  it('should be able to watch errors - similar to onError callback', async () => {
     let erroredSWR = null
 
     const wrapper = mount(defineComponent({
@@ -1152,10 +1123,9 @@ describe('useSWRV - error', () => {
     timeout(200)
     await tick(2)
     expect(erroredSWR).toEqual('error!')
-    done()
   })
 
-  it('should serve stale-if-error', async done => {
+  it('should serve stale-if-error', async () => {
     let count = 0
     const loadData = () => new Promise((resolve, reject) => setTimeout(() => {
       count++
@@ -1183,11 +1153,10 @@ describe('useSWRV - error', () => {
     timeout(300)
     await tick(1)
     // stale data sticks around even when error exists
-    expect(wrapper.text()).toMatch(/count: 2.*Error: uh oh\!/)
-    done()
+    expect(wrapper.text()).toMatch(/count: 2.*Error: uh oh!/)
   })
 
-  it('should reset error if fetching succeeds', async done => {
+  it('should reset error if fetching succeeds', async () => {
     let count = 0
     let revalidate
 
@@ -1221,10 +1190,9 @@ describe('useSWRV - error', () => {
     await tick(3)
     // error must be reset if fetching succeeds
     expect(wrapper.text()).toBe('count: 3')
-    done()
   })
 
-  it('should trigger error retry', async done => {
+  it('should trigger error retry', async () => {
     let count = 0
 
     const wrapper = mount(defineComponent({
@@ -1261,10 +1229,9 @@ describe('useSWRV - error', () => {
     timeout(200)
     await tick(2)
     expect(wrapper.text().trim()).toMatch(/count: 3,/)
-    done()
   })
 
-  it('should trigger error retry and stop at count max', async done => {
+  it('should trigger error retry and stop at count max', async () => {
     let count = 0
 
     const wrapper = mount(defineComponent({
@@ -1306,10 +1273,9 @@ describe('useSWRV - error', () => {
     await tick(2)
     expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 4/) // Does not exceed retry count
 
-    done()
   })
 
-  it('should respect disabled error retry', async done => {
+  it('should respect disabled error retry', async () => {
     let count = 0
 
     const wrapper = mount(defineComponent({
@@ -1340,10 +1306,9 @@ describe('useSWRV - error', () => {
     await tick(2)
     expect(wrapper.text()).toMatch(/count: ,.*Error: 1/)
 
-    done()
   })
 
-  it('should display friendly error message when swrv is not top level in setup', done => {
+  it('should display friendly error message when swrv is not top level in setup', () => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
     const wrapper = mount(defineComponent({
       template: '<button v-on:click="dontDoThis">bad idea</button>',
@@ -1363,7 +1328,6 @@ describe('useSWRV - error', () => {
     expect(spy).toHaveBeenCalledWith(expect.stringContaining('Could not get current instance, check to make sure that `useSwrv` is declared in the top level of the setup function.'))
 
     spy.mockRestore()
-    done()
   })
 })
 
