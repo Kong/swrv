@@ -24,12 +24,12 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api'
+import { defineComponent } from 'vue'
 import useTodos from '../useTodos'
 
 export default defineComponent({
-  setup (props, { root, emit }) {
-    const { data: todos, error } = useTodos(root, `/todos`)
+  setup (props, { emit }) {
+    const { data: todos, error } = useTodos('/todos')
 
     function viewTodo (id) {
       emit('view', id)
