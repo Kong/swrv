@@ -50,6 +50,10 @@
   "peerDependencies": {
     "vue": "^2.7.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kong/swrv.git"
+  },
   "license": "Apache-2.0",
   "types": "./dist/index.d.ts",
   "volta": {
