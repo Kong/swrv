@@ -48,7 +48,7 @@
     "vue-template-compiler": "^2.7.8"
   },
   "peerDependencies": {
-    "vue": "^2.7.0"
+    "vue": ">= 2.7.0 < 3"
   },
   "repository": {
     "type": "git",
