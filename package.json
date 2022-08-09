@@ -44,8 +44,8 @@
     "jest-date-mock": "^1.0.8",
     "ts-jest": "^27.0.4",
     "typescript": "~4.5.5",
-    "vue": "2.7.8",
-    "vue-template-compiler": "2.7.8"
+    "vue": "^2.7.8",
+    "vue-template-compiler": "^2.7.8"
   },
   "peerDependencies": {
     "vue": "^2.7.0"
