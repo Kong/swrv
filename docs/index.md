@@ -14,13 +14,12 @@ features:
     the Vue composition api. Supports both Vue 3 and @vue/composition-api
 - title: Stale-while-revalidate
   details: Uses cache to serve pages fast, while revalidating data sources producing an eventually consistent UI.
-footer: Copyright © 2020-present Kong
 ---
 
 `swrv` (pronounced _"swerve"_) is a library for for data fetching. It is largely a port of [swr](https://github.com/vercel/swr).
 
 The name “SWR” is derived from stale-while-revalidate, a cache invalidation
-strategy popularized by HTTP RFC 5861. SWR first returns the data from cache 
+strategy popularized by HTTP RFC 5861. SWR first returns the data from cache
 (stale), then sends the fetch request (revalidate), and finally comes with the
 up-to-date data again.
 
@@ -52,6 +51,9 @@ export default {
 </script>
 ```
 
-:sparkles: [Read the blogpost](https://guuu.io/2020/data-fetching-vue-composition-api/) 
+:sparkles: [Read the blogpost](https://guuu.io/2020/data-fetching-vue-composition-api/)
 introducing swrv
 
+::: slot footer
+Copyright © 2020-present [Kong](https://konghq.com)
+:::

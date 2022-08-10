@@ -9,7 +9,9 @@
     "build:esm": "tsc --module ES6 --outDir esm -p tsconfig.build.json",
     "test": "vue-cli-service test:unit",
     "test-compat": "./tests/test-compat-all.sh",
-    "types:check": "tsc --noEmit"
+    "types:check": "tsc --noEmit",
+    "docs:dev": "vuepress dev docs",
+    "docs:build": "vuepress build docs"
   },
   "main": "./dist/index.js",
   "module": "./esm/index.js",
@@ -45,7 +47,8 @@
     "ts-jest": "^27.0.4",
     "typescript": "~4.5.5",
     "vue": "^2.7.8",
-    "vue-template-compiler": "^2.7.8"
+    "vue-template-compiler": "^2.7.8",
+    "vuepress": "^1.9.7"
   },
   "peerDependencies": {
     "vue": ">= 2.7.0 < 3"
