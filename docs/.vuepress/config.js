@@ -13,7 +13,33 @@ module.exports = {
       { text: 'Getting Started', link: '/guide/getting-started' },
       { text: 'API Reference', link: '/configuration' }
     ],
-    sidebar: {
+    sidebar: [
+      {
+        title: 'Guide',
+        collapsable: false,
+        children: [
+          {
+            title: 'Getting Started',
+            path: '/guide/getting-started'
+          }
+        ]
+      },
+      {
+        title: 'APIs',
+        collapsable: false,
+        children: [
+          {
+              title: 'Configuration',
+              path: '/configuration'
+            },
+            {
+              title: 'Features',
+              path: '/features'
+            }
+        ]
+      }
+    ],
+    sidebarOld: {
       '/': [
         {
           text: 'Guide',

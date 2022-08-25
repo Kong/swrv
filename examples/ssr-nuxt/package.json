@@ -1,4 +1,5 @@
 {
+  "name": "swrv-ssr-nuxt-example",
   "scripts": {
     "dev": "nuxt --universal",
     "build": "nuxt build",

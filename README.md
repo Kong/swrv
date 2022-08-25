@@ -1,4 +1,4 @@
-<p align="center">  
+<p align="center">
   <img src="logo.png" width="100px" />
 </p>
 <h1 align="center">swrv</h1>
@@ -6,38 +6,35 @@
 ![build](https://github.com/Kong/swrv/workflows/build/badge.svg)
 [![](https://img.shields.io/npm/v/swrv.svg)](https://www.npmjs.com/package/swrv)
 
-`swrv` (pronounced "swerve") is a library using the
-[@vue/composition-api](https://github.com/vuejs/composition-api) for remote data
-fetching. It is largely a port of [swr](https://github.com/zeit/swr).
+`swrv` (pronounced "swerve") is a library using the [Vue Composition API](https://vuejs.org/guide/extras/composition-api-faq.html) for remote data fetching. It is largely a port of [swr](https://github.com/zeit/swr).
 
 - [Documentation](https://docs-swrv.netlify.app/)
 
-The name “SWR” is derived from stale-while-revalidate, a cache invalidation
-strategy popularized by HTTP [RFC 5861](https://tools.ietf.org/html/rfc5861).
-SWR first returns the data from cache (stale), then sends the fetch request
-(revalidate), and finally comes with the up-to-date data again.
+The name “SWR” is derived from stale-while-revalidate, a cache invalidation strategy popularized by HTTP [RFC 5861](https://tools.ietf.org/html/rfc5861). SWR first returns the data from cache (stale), then sends the fetch request (revalidate), and finally comes with the up-to-date data again.
 
 Features:
 
 - Transport and protocol agnostic data fetching
 - Fast page navigation
-- Revalidation on focus
 - Interval polling
+- ~~SSR support~~ (removed as of version `0.10.0` - [read more](https://github.com/Kong/swrv/pull/304))
+- Vue 3 Support
+- Revalidation on focus
 - Request deduplication
 - TypeScript ready
 - Minimal API
-- stale-if-error
+- Stale-if-error
 - Customizable cache implementation
 - Error Retry
-- SSR support
-- Vue 3 Support
 
-With `swrv`, components will get a stream of data updates constantly and
-automatically. Thus, the UI will be always fast and reactive.
+With `swrv`, components will get a stream of data updates constantly and automatically. Thus, the UI will be always fast and reactive.
 
 ## Table of Contents<!-- omit in toc -->
 
 - [Installation](#installation)
+  - [Vue 2.7](#vue-27)
+  - [Vue 2.6 and below](#vue-26-and-below)
+  - [Vue 3 (beta)](#vue-3-beta)
 - [Getting Started](#getting-started)
 - [Api](#api)
   - [Parameters](#parameters)
@@ -55,39 +52,38 @@ automatically. Thus, the UI will be always fast and reactive.
 - [Error Handling](#error-handling)
 - [FAQ](#faq)
   - [How is swrv different from the swr react library](#how-is-swrv-different-from-the-swr-react-library)
-    - [Vue and Reactivity](#vue-and-reactivity)
-    - [Features](#features)
   - [Why does swrv make so many requests](#why-does-swrv-make-so-many-requests)
   - [How can I refetch swrv data to update it](#how-can-i-refetch-swrv-data-to-update-it)
 - [Contributors ✨](#contributors-)
 
 ## Installation
 
+The version of `swrv` you install depends on the Vue dependency in your project.
+
+### Vue 2.7
+
+This version removes the dependency of the external `@vue/composition-api` plugin and adds `vue` to the `peerDependencies`, requiring a version that matches the following pattern: `>= 2.7.0 < 3`
+
 ```sh
-# npm
-npm install swrv
-
-# yarn
+# Install the latest version
 yarn add swrv
-
-# pnpm 
-pnpm add swrv
-
 ```
 
-If you want to try out Vue 3 support (beta), install the beta release and
-check out the [Vite example](https://github.com/Kong/swrv/tree/next/examples/vite).
-`swrv` code for Vue 3.0 exists on `next` branch.
+### Vue 2.6 and below
 
-```sh
-# npm
-npm install swrv@beta
+If you're installing for Vue `2.6.x` and below, you may want to check out a [previous version of the README](https://github.com/Kong/swrv/blob/b621aac02b7780a4143c5743682070223e793b10/README.md) to view how to initialize `swrv` utilizing the external `@vue/composition-api` plugin.
 
-# yarn
+```shell
+# Install the 0.9.x version
+yarn add swrv@legacy
+```
+
+### Vue 3 (beta)
+
+If you want to try out Vue 3 support, install the beta release and check out the [Vite example](https://github.com/Kong/swrv/tree/next/examples/vite). `swrv` code for Vue 3.0 exists on `next` branch.
+
+```shell
 yarn add swrv@beta
-
-# pnpm 
-pnpm add swrv@beta
 ```
 
 ## Getting Started
@@ -119,20 +115,11 @@ export default {
 </script>
 ```
 
-In this example, `useSWRV` accepts a `key` and a `fetcher` function. `key` is a
-unique identifier of the request, normally the URL of the API. And the fetcher
-accepts key as its parameter and returns the data asynchronously.
+In this example, the Vue Hook `useSWRV` accepts a `key` and a `fetcher` function. `key` is a unique identifier of the request, normally the URL of the API. And the fetcher accepts key as its parameter and returns the data asynchronously.
 
-`useSWRV` also returns 2 values: `data` and `error`. When the request (fetcher)
-is not yet finished, data will be `undefined`. And when we get a response, it
-sets `data` and `error` based on the result of fetcher and rerenders the
-component. This is because `data` and `error` are Vue
-[Refs](https://vue-composition-api-rfc.netlify.com/#detailed-design), and their
-values will be set by the fetcher response.
+`useSWRV` also returns 2 values: `data` and `error`. When the request (fetcher) is not yet finished, data will be `undefined`. And when we get a response, it sets `data` and `error` based on the result of fetcher and rerenders the component. This is because `data` and `error` are Vue [Refs](https://vuejs.org/api/reactivity-core.html#ref), and their values will be set by the fetcher response.
 
-Note that fetcher can be any asynchronous function, so you can use your favorite
-data-fetching library to handle that part. If ommitted, swrv uses the 
-[Fetch api](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
+Note that fetcher can be any asynchronous function, so you can use your favorite data-fetching library to handle that part. When omitted, swrv falls back to the  browser [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
 
 ## Api
 
@@ -179,9 +166,7 @@ See [Config Defaults](https://github.com/Kong/swrv/blob/1587416e59dad12f9261e289
 
 ## Prefetching
 
-Prefetching can be useful for when you anticipate user actions, like hovering
-over a link. SWRV exposes the `mutate` function so that results can be stored in
-the SWRV cache at a predetermined time.
+Prefetching can be useful for when you anticipate user actions, like hovering over a link. SWRV exposes the `mutate` function so that results can be stored in the SWRV cache at a predetermined time.
 
 ```ts
 import { mutate } from 'swrv'
@@ -198,9 +183,7 @@ function prefetch() {
 
 ## Dependent Fetching
 
-swrv also allows you to fetch data that depends on other data. It ensures the
-maximum possible parallelism (avoiding waterfalls), as well as serial fetching
-when a piece of dynamic data is required for the next data fetch to happen.
+swrv also allows you to fetch data that depends on other data. It ensures the maximum possible parallelism (avoiding waterfalls), as well as serial fetching when a piece of dynamic data is required for the next data fetch to happen.
 
 ```vue
 <template>
@@ -209,7 +192,7 @@ when a piece of dynamic data is required for the next data fetch to happen.
 </template>
 
 <script>
-import { ref } from '@vue/composition-api'
+import { ref } from 'vue'
 import useSWRV from 'swrv'
 
 export default {
@@ -234,10 +217,7 @@ export default {
 
 ## Stale-if-error
 
-One of the benefits of a stale content caching strategy is that the cache can be
-served when requests fail.`swrv` uses a
-[stale-if-error](https://tools.ietf.org/html/rfc5861#section-4) strategy and
-will maintain `data` in the cache even if a `useSWRV` fetch returns an `error`.
+One of the benefits of a stale content caching strategy is that the cache can be served when requests fail.`swrv` uses a [stale-if-error](https://tools.ietf.org/html/rfc5861#section-4) strategy and will maintain `data` in the cache even if a `useSWRV` fetch returns an `error`.
 
 ```vue
 <template>
@@ -250,7 +230,7 @@ will maintain `data` in the cache even if a `useSWRV` fetch returns an `error`.
 </template>
 
 <script>
-import { ref } from '@vue/composition-api'
+import { ref } from 'vue'
 import useSWRV from 'swrv'
 
 export default {
@@ -274,13 +254,10 @@ export default {
 
 ### useSwrvState
 
-Sometimes you might want to know the exact state where swrv is during
-stale-while-revalidate lifecyle. This is helpful when representing the UI as a
-function of state. Here is one way to detect state using a user-land composable
-`useSwrvState` function:
+Sometimes you might want to know the exact state where swrv is during stale-while-revalidate lifecyle. This is helpful when representing the UI as a function of state. Here is one way to detect state using a user-land composable `useSwrvState` function:
 
 ```js
-import { ref, watchEffect } from '@vue/composition-api'
+import { ref, watchEffect } from 'vue'
 
 const STATES = {
   VALIDATING: 'VALIDATING',
@@ -347,7 +324,7 @@ And then in your template you can use it like so:
 </template>
 
 <script>
-import { computed } from '@vue/composition-api'
+import { computed } from 'vue'
 import useSwrvState from '@/composables/useSwrvState'
 import useSWRV from 'swrv'
 
@@ -376,13 +353,7 @@ export default {
 
 ### Vuex
 
-Most of the features of swrv handle the complex logic / ceremony that you'd have
-to implement yourself inside a vuex store. All swrv instances use the same
-global cache, so if you are using swrv alongside vuex, you can use global
-watchers on resolved swrv returned refs. It is encouraged to wrap useSWRV in a
-custom composable function so that you can do application level side effects if
-desired (e.g. dispatch a vuex action when data changes to log events or perform
-some logic).
+Most of the features of swrv handle the complex logic / ceremony that you'd have to implement yourself inside a vuex store. All swrv instances use the same global cache, so if you are using swrv alongside vuex, you can use global watchers on resolved swrv returned refs. It is encouraged to wrap useSWRV in a custom composable function so that you can do application level side effects if desired (e.g. dispatch a vuex action when data changes to log events or perform some logic).
 
 Vue 3 example:
 
@@ -423,14 +394,11 @@ export default defineComponent({
 
 ## Cache
 
-By default, a custom cache implementation is used to store fetcher response
-data cache, in-flight promise cache, and ref cache. Response data cache can be 
-customized via the `config.cache` property. Built in cache adapters:
+By default, a custom cache implementation is used to store fetcher response data cache, in-flight promise cache, and ref cache. Response data cache can be customized via the `config.cache` property. Built in cache adapters:
 
 ### localStorage
 
-A common usage case to have a better _offline_ experience is to read from
-`localStorage`. Checkout the [PWA example](/examples/pwa/) for more inspiration.
+A common usage case to have a better _offline_ experience is to read from `localStorage`. Checkout the [PWA example](https://github.com/Kong/swrv/tree/master/examples/pwa) for more inspiration.
 
 ```ts
 import useSWRV from 'swrv'
@@ -438,7 +406,7 @@ import LocalStorageCache from 'swrv/dist/cache/adapters/localStorage'
 
 function useTodos () {
   const { data, error } = useSWRV('/todos', undefined, {
-    cache: new LocalStorageCache(),
+    cache: new LocalStorageCache('swrv'),
     shouldRetryOnError: false
   })
 
@@ -451,11 +419,7 @@ function useTodos () {
 
 ### Serve from cache only
 
-To only retrieve a swrv cache response without revalidating, you can set the fetcher function to `null` from the useSWRV
-call. This can be useful when there is some higher level swrv composable that is always sending data to other instances,
-so you can assume that composables with a `null` fetcher will have data available. This 
-[isn't very intuitive](https://github.com/Kong/swrv/issues/148), so will be looking for ways to improve this api in the
-future.
+To only retrieve a swrv cache response without revalidating, you can set the fetcher function to `null` from the useSWRV call. This can be useful when there is some higher level swrv composable that is always sending data to other instances, so you can assume that composables with a `null` fetcher will have data available. This [isn't very intuitive](https://github.com/Kong/swrv/issues/148), so will be looking for ways to improve this api in the future.
 
 ```ts
 // Component A
@@ -467,9 +431,7 @@ const { data } = useSWRV('/api/config', null)
 
 ## Error Handling
 
-Since `error` is returned as a Vue Ref, you can use watchers to handle any
-onError callback functionality. Check out
-[the test](https://github.com/Kong/swrv/blob/a063c4aa142a5a13dbd39496cefab7aef54e610c/tests/use-swrv.spec.tsx#L481).
+Since `error` is returned as a Vue Ref, you can use watchers to handle any onError callback functionality. Check out [the test](https://github.com/Kong/swrv/blob/a063c4aa142a5a13dbd39496cefab7aef54e610c/tests/use-swrv.spec.tsx#L481).
 
 ```ts
 export default {
@@ -496,38 +458,23 @@ export default {
 
 #### Vue and Reactivity
 
-The `swrv` library is meant to be used with the @vue/composition-api (and
-eventually Vue 3) library so it utilizes Vue's reactivity system to track
-dependencies and returns vue `Ref`'s as it's return values. This allows you to
-watch `data` or build your own computed props. For example, the key function is
-implemented as Vue `watch`er, so any changes to the dependencies in this
-function will trigger a revalidation in `swrv`.
+The `swrv` library is meant to be used with the Vue Composition API (and eventually Vue 3) so it utilizes Vue's reactivity system to track dependencies and returns vue `Ref`'s as it's return values. This allows you to watch `data` or build your own computed props. For example, the key function is implemented as Vue `watch`er, so any changes to the dependencies in this function will trigger a revalidation in `swrv`.
 
 #### Features
 
-Features were built as needed for `swrv`, and while the initial development of
-`swrv` was mostly a port of swr, the feature sets are not 1-1, and are subject
-to diverge as they already have.
+Features were built as needed for `swrv`, and while the initial development of `swrv` was mostly a port of swr, the feature sets are not 1-1, and are subject to diverge as they already have.
 
 ### Why does swrv make so many requests
 
-The idea behind stale-while-revalidate is that you always get fresh data
-eventually. You can disable some of the eager fetching such as
-`config.revalidateOnFocus`, but it is preferred to serve a fast response from
-cache while also revalidating so users are always getting the most up to date
-data.
+The idea behind stale-while-revalidate is that you always get fresh data eventually. You can disable some of the eager fetching such as `config.revalidateOnFocus`, but it is preferred to serve a fast response from cache while also revalidating so users are always getting the most up to date data.
 
 ### How can I refetch swrv data to update it
 
-Swrv fetcher functions can be triggered on-demand by using the `mutate`
-[return value](https://github.com/Kong/swrv/#return-values). This is useful when
-there is some event that needs to trigger a revalidation such a PATCH request that
-updates the initial GET request response data.
+Swrv fetcher functions can be triggered on-demand by using the `mutate` [return value](https://github.com/Kong/swrv/#return-values). This is useful when there is some event that needs to trigger a revalidation such a PATCH request that updates the initial GET request response data.
 
 ## Contributors ✨
 
-Thanks goes to these wonderful people
-([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
@@ -538,8 +485,7 @@ Thanks goes to these wonderful people
     <td align="center"><a href="https://atinux.com"><img src="https://avatars2.githubusercontent.com/u/904724?v=4" width="100px;" alt=""/><br /><sub><b>Sébastien Chopin</b></sub></a><br /><a href="https://github.com/Kong/swrv/commits?author=Atinux" title="Code">💻</a> <a href="#ideas-Atinux" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://github.com/chuca"><img src="https://avatars0.githubusercontent.com/u/864496?v=4" width="100px;" alt=""/><br /><sub><b>Fernando Machuca</b></sub></a><br /><a href="#design-chuca" title="Design">🎨</a></td>
     <td align="center"><a href="https://zeit.co"><img src="https://avatars0.githubusercontent.com/u/14985020?v=4" width="100px;" alt=""/><br /><sub><b>ZEIT</b></sub></a><br /><a href="#ideas-zeit" title="Ideas, Planning, & Feedback">🤔</a></td>
-    <td align="center"><a href="https://github.com/NeoLSN"><img src="https://avatars1.githubusercontent.com/u/5782106?v=4" width="100px;" alt=""/><br /><sub><b>Jason Yang/楊朝傑</b></sub></a><br /><a href="https://github.com/Kong/swrv/issues?q=author%3ANeoLSN" title="Bug reports">🐛</a> <a href="https://github.com/Kong/swrv/commits?author=NeoLSN" title="Code">💻</a></td>
-    <td align="center"><a href="http://axelhzf.com"><img src="https://avatars1.githubusercontent.com/u/175627?v=4" width="100px;" alt=""/><br /><sub><b>Axel Hernández Ferrera</b></sub></a><br /><a href="https://github.com/Kong/swrv/issues?q=author%3Aaxelhzf" title="Bug reports">🐛</a> <a href="https://github.com/Kong/swrv/commits?author=axelhzf" title="Code">💻</a> <a href="#example-axelhzf" title="Examples">💡</a></td>
+    <td align="center"><a href="https://www.adamdehaven.com"><img src="https://avatars.githubusercontent.com/u/2229946?v=4" width="100px;" alt=""/><br /><sub><b>Adam DeHaven</b></sub></a><br /><a href="https://github.com/Kong/swrv/commits?author=adamdehaven" title="Code">💻</a> <a href="https://github.com/Kong/swrv/commits?author=adamdehaven" title="Documentation">📖</a> <a href="#maintenance-adamdehaven" title="Maintenance">🚧</a></td>
   </tr>
 </table>
 
@@ -547,6 +493,4 @@ Thanks goes to these wonderful people
 <!-- prettier-ignore-end -->
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-This project follows the
-[all-contributors](https://github.com/all-contributors/all-contributors)
-specification. Contributions of any kind welcome!
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!

@@ -1,58 +1,67 @@
 {
   "name": "swrv",
-  "version": "0.9.6",
-  "main": "./dist/index.js",
-  "module": "./esm/index.js",
-  "repository": "github:Kong/swrv",
+  "version": "0.10.0",
   "scripts": {
     "build": "yarn build:esm && yarn build:cjs",
+    "lint": "vue-cli-service lint",
+    "ac": "all-contributors",
     "build:cjs": "tsc --module CommonJs -p tsconfig.build.json",
     "build:esm": "tsc --module ES6 --outDir esm -p tsconfig.build.json",
     "test": "vue-cli-service test:unit",
     "test-compat": "./tests/test-compat-all.sh",
     "types:check": "tsc --noEmit",
-    "lint": "vue-cli-service lint",
-    "ac": "all-contributors",
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:serve": "vitepress serve docs"
+    "docs:dev": "vuepress dev docs",
+    "docs:build": "vuepress build docs"
   },
-  "license": "Apache-2.0",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./esm/index.js",
   "files": [
     "dist/**",
     "esm/**",
     "src/**"
   ],
-  "peerDependencies": {
-    "@vue/composition-api": "^0.5.0 || ^1.0.0-beta.17 || ^1.0.0-rc.5"
-  },
   "devDependencies": {
     "@types/jest": "^24.0.19",
-    "@vue/cli-plugin-babel": "^4.4.4",
-    "@vue/cli-plugin-eslint": "^4.4.4",
-    "@vue/cli-plugin-typescript": "^4.4.4",
-    "@vue/cli-plugin-unit-jest": "^4.4.4",
-    "@vue/cli-service": "^4.4.4",
-    "@vue/composition-api": "1.0.0-rc.5",
-    "@vue/eslint-config-standard": "^4.0.0",
-    "@vue/eslint-config-typescript": "^4.0.0",
-    "@vue/test-utils": "1.0.3",
-    "all-contributors-cli": "^6.13.0",
-    "babel-loader": "^8.1.0",
-    "babel-preset-vca-jsx": "^0.3.5",
-    "eslint": "^5.16.0",
-    "eslint-plugin-vue": "^5.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.35.1",
+    "@typescript-eslint/parser": "^5.35.1",
+    "@vue/cli-plugin-babel": "~5.0.8",
+    "@vue/cli-plugin-eslint": "~5.0.8",
+    "@vue/cli-plugin-typescript": "~5.0.8",
+    "@vue/cli-plugin-unit-jest": "~5.0.8",
+    "@vue/cli-service": "~5.0.8",
+    "@vue/compiler-sfc": "^2.7.10",
+    "@vue/eslint-config-standard": "^6.1.0",
+    "@vue/eslint-config-typescript": "^9.1.0",
+    "@vue/test-utils": "^1.3.0",
+    "@vue/vue2-jest": "^27.0.0-alpha.3",
+    "all-contributors-cli": "^6.20.0",
+    "babel-loader": "^8.2.5",
+    "eslint": "^7.32.0",
+    "eslint-plugin-import": "^2.25.3",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "eslint-plugin-vue": "^8.7.1",
     "file-loader": "^5.0.2",
+    "jest": "^27.1.0",
     "jest-date-mock": "^1.0.8",
-    "typescript": "~3.9.5",
-    "vitepress": "^0.12.2",
-    "vue": "^2.6.11",
-    "vue-server-renderer": "^2.6.11",
-    "vue-template-compiler": "^2.6.10",
-    "webpack": "^4.41.6"
+    "ts-jest": "^27.0.4",
+    "typescript": "~4.5.5",
+    "vue": "^2.7.10",
+    "vue-server-renderer": "^2.7.10",
+    "vue-template-compiler": "^2.7.10",
+    "vuepress": "^1.9.7",
+    "webpack": "~4.0.0"
   },
-  "dependencies": {
-    "swrv": "^1.0.0-beta.8"
+  "peerDependencies": {
+    "vue": ">= 2.7.0 < 3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kong/swrv.git"
+  },
+  "license": "Apache-2.0",
+  "types": "./dist/index.d.ts",
+  "volta": {
+    "node": "16.16.0"
   }
 }

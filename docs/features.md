@@ -7,9 +7,7 @@ lang: en-US
 
 ## Prefetching
 
-Prefetching can be useful for when you anticipate user actions, like hovering
-over a link. SWRV exposes the `mutate` function so that results can be stored in
-the SWRV cache at a predetermined time.
+Prefetching can be useful for when you anticipate user actions, like hovering over a link. SWRV exposes the `mutate` function so that results can be stored in the SWRV cache at a predetermined time.
 
 ```ts
 import { mutate } from 'swrv'
@@ -26,9 +24,7 @@ function prefetch() {
 
 ## Dependent Fetching
 
-swrv also allows you to fetch data that depends on other data. It ensures the
-maximum possible parallelism (avoiding waterfalls), as well as serial fetching
-when a piece of dynamic data is required for the next data fetch to happen.
+swrv also allows you to fetch data that depends on other data. It ensures the maximum possible parallelism (avoiding waterfalls), as well as serial fetching when a piece of dynamic data is required for the next data fetch to happen.
 
 ```vue
 <template>
@@ -37,7 +33,7 @@ when a piece of dynamic data is required for the next data fetch to happen.
 </template>
 
 <script>
-import { ref } from '@vue/composition-api'
+import { ref } from 'vue'
 import useSWRV from 'swrv'
 
 export default {
@@ -62,10 +58,7 @@ export default {
 
 ## Stale-if-error
 
-One of the benefits of a stale content caching strategy is that the cache can be
-served when requests fail.`swrv` uses a
-[stale-if-error](https://tools.ietf.org/html/rfc5861#section-4) strategy and
-will maintain `data` in the cache even if a `useSWRV` fetch returns an `error`.
+One of the benefits of a stale content caching strategy is that the cache can be served when requests fail.`swrv` uses a [stale-if-error](https://tools.ietf.org/html/rfc5861#section-4) strategy and will maintain `data` in the cache even if a `useSWRV` fetch returns an `error`.
 
 ```vue
 <template>
@@ -78,7 +71,7 @@ will maintain `data` in the cache even if a `useSWRV` fetch returns an `error`.
 </template>
 
 <script>
-import { ref } from '@vue/composition-api'
+import { ref } from 'vue'
 import useSWRV from 'swrv'
 
 export default {
@@ -102,13 +95,10 @@ export default {
 
 ### useSwrvState
 
-Sometimes you might want to know the exact state where swrv is during
-stale-while-revalidate lifecyle. This is helpful when representing the UI as a
-function of state. Here is one way to detect state using a user-land composable
-`useSwrvState` function:
+Sometimes you might want to know the exact state where swrv is during stale-while-revalidate lifecyle. This is helpful when representing the UI as a function of state. Here is one way to detect state using a user-land composable `useSwrvState` function:
 
 ```js
-import { ref, watchEffect } from '@vue/composition-api'
+import { ref, watchEffect } from 'vue'
 
 const STATES = {
   VALIDATING: 'VALIDATING',
@@ -169,7 +159,7 @@ And then in your template you can use it like so:
 </template>
 
 <script>
-import { computed } from '@vue/composition-api'
+import { computed } from 'vue'
 import useSwrvState from '@/composables/useSwrvState'
 import useSWRV from 'swrv'
 
@@ -198,13 +188,7 @@ export default {
 
 ### Vuex
 
-Most of the features of swrv handle the complex logic / ceremony that you'd have
-to implement yourself inside a vuex store. All swrv instances use the same
-global cache, so if you are using swrv alongside vuex, you can use global
-watchers on resolved swrv returned refs. It is encouraged to wrap useSWRV in a
-custom composable function so that you can do application level side effects if
-desired (e.g. dispatch a vuex action when data changes to log events or perform
-some logic).
+Most of the features of swrv handle the complex logic / ceremony that you'd have to implement yourself inside a vuex store. All swrv instances use the same global cache, so if you are using swrv alongside vuex, you can use global watchers on resolved swrv returned refs. It is encouraged to wrap useSWRV in a custom composable function so that you can do application level side effects if desired (e.g. dispatch a vuex action when data changes to log events or perform some logic).
 
 Vue 3 example
 
@@ -245,9 +229,7 @@ export default defineComponent({
 
 ## Error Handling
 
-Since `error` is returned as a Vue Ref, you can use watchers to handle any
-onError callback functionality. Check out
-[the test](https://github.com/Kong/swrv/blob/a063c4aa142a5a13dbd39496cefab7aef54e610c/tests/use-swrv.spec.tsx#L481).
+Since `error` is returned as a Vue Ref, you can use watchers to handle any onError callback functionality. Check out [the test](https://github.com/Kong/swrv/blob/a063c4aa142a5a13dbd39496cefab7aef54e610c/tests/use-swrv.spec.tsx#L481).
 
 ```ts
 export default {
@@ -270,14 +252,11 @@ export default {
 
 ## Cache
 
-By default, a custom cache implementation is used to store fetcher response
-data cache, in-flight promise cache, and ref cache. Response data cache can be 
-customized via the `config.cache` property. Built in cache adapters:
+By default, a custom cache implementation is used to store fetcher response data cache, in-flight promise cache, and ref cache. Response data cache can be customized via the `config.cache` property. Built in cache adapters:
 
 ### localStorage
 
-A common usage case to have a better _offline_ experience is to read from
-`localStorage`. Checkout the [PWA example](/examples/pwa/) for more inspiration.
+A common usage case to have a better _offline_ experience is to read from `localStorage`. Checkout the [PWA example](https://github.com/Kong/swrv/tree/master/examples/pwa) for more inspiration.
 
 ```ts
 import useSWRV from 'swrv'
@@ -285,7 +264,7 @@ import LocalStorageCache from 'swrv/dist/cache/adapters/localStorage'
 
 function useTodos () {
   const { data, error } = useSWRV('/todos', undefined, {
-    cache: new LocalStorageCache(),
+    cache: new LocalStorageCache('swrv'),
     shouldRetryOnError: false
   })
 
@@ -298,11 +277,7 @@ function useTodos () {
 
 ### Serve from cache only
 
-To only retrieve a swrv cache response without revalidating, you can set the fetcher function to `null` from the useSWRV
-call. This can be useful when there is some higher level swrv composable that is always sending data to other instances,
-so you can assume that composables with a `null` fetcher will have data available. This 
-[isn't very intuitive](https://github.com/Kong/swrv/issues/148), so will be looking for ways to improve this api in the
-future.
+To only retrieve a swrv cache response without revalidating, you can set the fetcher function to `null` from the useSWRV call. This can be useful when there is some higher level swrv composable that is always sending data to other instances, so you can assume that composables with a `null` fetcher will have data available. This [isn't very intuitive](https://github.com/Kong/swrv/issues/148), so will be looking for ways to improve this api in the future.
 
 ```ts
 // Component A

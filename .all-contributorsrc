@@ -49,24 +49,14 @@
       ]
     },
     {
-      "login": "NeoLSN",
-      "name": "Jason Yang/楊朝傑",
-      "avatar_url": "https://avatars1.githubusercontent.com/u/5782106?v=4",
-      "profile": "https://github.com/NeoLSN",
+      "login": "adamdehaven",
+      "name": "Adam DeHaven",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2229946?v=4",
+      "profile": "https://www.adamdehaven.com",
       "contributions": [
-        "bug",
-        "code"
-      ]
-    },
-    {
-      "login": "axelhzf",
-      "name": "Axel Hernández Ferrera",
-      "avatar_url": "https://avatars1.githubusercontent.com/u/175627?v=4",
-      "profile": "http://axelhzf.com",
-      "contributions": [
-        "bug",
         "code",
-        "example"
+        "doc",
+        "maintenance"
       ]
     }
   ],
