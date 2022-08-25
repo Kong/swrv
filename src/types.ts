@@ -1,4 +1,4 @@
-import { Ref, WatchSource } from '@vue/composition-api'
+import { Ref, WatchSource } from 'vue'
 import SWRVCache from './cache'
 import LocalStorageCache from './cache/adapters/localStorage'
 
@@ -23,6 +23,12 @@ export interface IConfig<
   isDocumentVisible?: () => boolean
 }
 
+export interface revalidateOptions {
+  shouldRetryOnError?: boolean,
+  errorRetryCount?: number,
+  forceRevalidate?: boolean,
+}
+
 export interface IResponse<Data = any, Error = any> {
   data: Ref<Data | undefined>
   error: Ref<Error | undefined>
@@ -31,12 +37,5 @@ export interface IResponse<Data = any, Error = any> {
 }
 
 export type keyType = string | any[] | null | undefined
-type keyFunction = () => keyType
 
-export type IKey = keyType | keyFunction | WatchSource<keyType>
-
-export interface revalidateOptions {
-  shouldRetryOnError?: boolean,
-  errorRetryCount?: number,
-  forceRevalidate?: boolean,
-}
+export type IKey = keyType | WatchSource<keyType>
