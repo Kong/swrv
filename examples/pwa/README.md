@@ -1,4 +1,4 @@
-# swrv example - pwa
+# PWA Example
 
 Install dependencies
 
