@@ -13462,6 +13462,20 @@ vue-server-renderer@^2.6.10:
     serialize-javascript "^6.0.0"
     source-map "0.5.6"
 
+vue-server-renderer@^2.7.10:
+  version "2.7.10"
+  resolved "https://registry.yarnpkg.com/vue-server-renderer/-/vue-server-renderer-2.7.10.tgz#e73241c879fcc81de91882ceff135a40f756377c"
+  integrity sha512-hvlnyTZmDmnI7IpQE5YwIwexPi6yJq8eeNTUgLycPX3uhuEobygAQklHoeVREvwNKcET/MnVOtjF4c7t7mw6CQ==
+  dependencies:
+    chalk "^4.1.2"
+    hash-sum "^2.0.0"
+    he "^1.2.0"
+    lodash.template "^4.5.0"
+    lodash.uniq "^4.5.0"
+    resolve "^1.22.0"
+    serialize-javascript "^6.0.0"
+    source-map "0.5.6"
+
 vue-style-loader@^4.1.0, vue-style-loader@^4.1.3:
   version "4.1.3"
   resolved "https://registry.yarnpkg.com/vue-style-loader/-/vue-style-loader-4.1.3.tgz#6d55863a51fa757ab24e89d9371465072aa7bc35"
