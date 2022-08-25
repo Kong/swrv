@@ -1,0 +1,17 @@
+{
+  "name": "swrv-vite-example",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "swrv": "beta",
+    "vue": "^3.2.37"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^2.3.3",
+    "@vue/compiler-sfc": "^3.2.27",
+    "vite": "^2.9.14"
+  }
+}
