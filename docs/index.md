@@ -10,8 +10,7 @@ features:
   details: Transport and protocol agnostic data fetching, revalidation on focus,
     polling, in-flight de-duplication.
 - title: Vue Composition API
-  details: Start developing with power of Vue 3, using the reactivity system of
-    the Vue Composition API.
+  details: Start developing with power of Vue 3, using the reactivity system of the Vue Composition API.
 - title: Stale-while-revalidate
   details: Uses cache to serve pages fast, while revalidating data sources producing an eventually consistent UI.
 ---

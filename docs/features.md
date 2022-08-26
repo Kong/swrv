@@ -256,7 +256,7 @@ By default, a custom cache implementation is used to store fetcher response data
 
 ### localStorage
 
-A common usage case to have a better _offline_ experience is to read from `localStorage`. Checkout the [PWA example](/examples/pwa/) for more inspiration.
+A common usage case to have a better _offline_ experience is to read from `localStorage`. Checkout the [PWA example](https://github.com/Kong/swrv/tree/master/examples/pwa) for more inspiration.
 
 ```ts
 import useSWRV from 'swrv'
@@ -264,7 +264,7 @@ import LocalStorageCache from 'swrv/dist/cache/adapters/localStorage'
 
 function useTodos () {
   const { data, error } = useSWRV('/todos', undefined, {
-    cache: new LocalStorageCache(),
+    cache: new LocalStorageCache('swrv'),
     shouldRetryOnError: false
   })
 

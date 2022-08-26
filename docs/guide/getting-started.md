@@ -20,7 +20,7 @@ The name “SWR” is derived from stale-while-revalidate, a cache invalidation 
 - 📡 Transport and protocol agnostic data fetching
 - ⚡️ Fast page navigation
 - ⏲ Interval polling
-- 🖥 SSR support
+- ~~🖥 SSR support~~ (removed as of version `0.10.0` - [read more](https://github.com/Kong/swrv/pull/304))
 - 🖖 Vue 3 Support
 - Revalidation on focus
 - Request deduplication
