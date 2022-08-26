@@ -34,9 +34,25 @@ With `swrv`, components will get a stream of data updates constantly and automat
 
 ## Installation
 
+The version of `swrv` you install depends on the Vue dependency in your project.
+
+### Vue 2.7
+
+This version removes the dependency of the external `@vue/composition-api` plugin and adds `vue` to the `peerDependencies`, requiring a version that matches the following pattern: `>= 2.7.0 < 3`
+
 ```shell
+# Install the latest version
 yarn add swrv
 ```
+
+### Vue 2.6 and below
+
+```shell
+# Install the 0.9.x version
+yarn add swrv@legacy
+```
+
+### Vue 3 (beta)
 
 If you want to try out Vue 3 support, install the beta release and check out the [Vite example](https://github.com/Kong/swrv/tree/next/examples/vite). `swrv` code for Vue 3.0 exists on `next` branch.
 
