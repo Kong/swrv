@@ -33,7 +33,7 @@ swrv also allows you to fetch data that depends on other data. It ensures the ma
 </template>
 
 <script>
-import { ref } from '@vue/composition-api'
+import { ref } from 'vue'
 import useSWRV from 'swrv'
 
 export default {
@@ -71,7 +71,7 @@ One of the benefits of a stale content caching strategy is that the cache can be
 </template>
 
 <script>
-import { ref } from '@vue/composition-api'
+import { ref } from 'vue'
 import useSWRV from 'swrv'
 
 export default {
@@ -98,7 +98,7 @@ export default {
 Sometimes you might want to know the exact state where swrv is during stale-while-revalidate lifecyle. This is helpful when representing the UI as a function of state. Here is one way to detect state using a user-land composable `useSwrvState` function:
 
 ```js
-import { ref, watchEffect } from '@vue/composition-api'
+import { ref, watchEffect } from 'vue'
 
 const STATES = {
   VALIDATING: 'VALIDATING',
@@ -159,7 +159,7 @@ And then in your template you can use it like so:
 </template>
 
 <script>
-import { computed } from '@vue/composition-api'
+import { computed } from 'vue'
 import useSwrvState from '@/composables/useSwrvState'
 import useSWRV from 'swrv'
 

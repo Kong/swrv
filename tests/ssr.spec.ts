@@ -1,10 +1,8 @@
 // import Vue from 'vue/dist/vue.runtime.common.js'
 // import path from 'path'
-// import VueCompositionApi from '@vue/composition-api'
 // import { createBundleRenderer } from 'vue-server-renderer'
 // import { compileWithWebpack } from './utils/compile-with-webpack'
 
-// Vue.use(VueCompositionApi)
 // Vue.config.devtools = false
 // Vue.config.productionTip = false
 

@@ -16,21 +16,25 @@ Features:
 
 - Transport and protocol agnostic data fetching
 - Fast page navigation
-- Revalidation on focus
 - Interval polling
+- ~~SSR support~~ (removed as of version `0.10.0` - [read more](https://github.com/Kong/swrv/pull/304))
+- Vue 3 Support
+- Revalidation on focus
 - Request deduplication
 - TypeScript ready
 - Minimal API
-- stale-if-error
+- Stale-if-error
 - Customizable cache implementation
 - Error Retry
-- SSR support
 
 With `swrv`, components will get a stream of data updates constantly and automatically. Thus, the UI will be always fast and reactive.
 
 ## Table of Contents<!-- omit in toc -->
 
 - [Installation](#installation)
+  - [Vue 2.7](#vue-27)
+  - [Vue 2.6 and below](#vue-26-and-below)
+  - [Vue 3 (beta)](#vue-3-beta)
 - [Getting Started](#getting-started)
 - [Api](#api)
   - [Parameters](#parameters)
@@ -54,29 +58,32 @@ With `swrv`, components will get a stream of data updates constantly and automat
 
 ## Installation
 
+The version of `swrv` you install depends on the Vue dependency in your project.
+
+### Vue 2.7
+
+This version removes the dependency of the external `@vue/composition-api` plugin and adds `vue` to the `peerDependencies`, requiring a version that matches the following pattern: `>= 2.7.0 < 3`
+
 ```sh
-# npm
-npm install swrv
-
-# yarn
+# Install the latest version
 yarn add swrv
-
-# pnpm
-pnpm add swrv
-
 ```
 
-If you want to try out Vue 3 support (beta), install the beta release and check out the [Vite example](https://github.com/Kong/swrv/tree/next/examples/vite). `swrv` code for Vue 3.0 exists on `next` branch.
+### Vue 2.6 and below
 
-```sh
-# npm
-npm install swrv@beta
+If you're installing for Vue `2.6.x` and below, you may want to check out a [previous version of the README](https://github.com/Kong/swrv/blob/b621aac02b7780a4143c5743682070223e793b10/README.md) to view how to initialize `swrv` utilizing the external `@vue/composition-api` plugin.
 
-# yarn
+```shell
+# Install the 0.9.x version
+yarn add swrv@legacy
+```
+
+### Vue 3 (beta)
+
+If you want to try out Vue 3 support, install the beta release and check out the [Vite example](https://github.com/Kong/swrv/tree/next/examples/vite). `swrv` code for Vue 3.0 exists on `next` branch.
+
+```shell
 yarn add swrv@beta
-
-# pnpm
-pnpm add swrv@beta
 ```
 
 ## Getting Started
@@ -108,11 +115,11 @@ export default {
 </script>
 ```
 
-In this example, `useSWRV` accepts a `key` and a `fetcher` function. `key` is a unique identifier of the request, normally the URL of the API. And the fetcher accepts key as its parameter and returns the data asynchronously.
+In this example, the Vue Hook `useSWRV` accepts a `key` and a `fetcher` function. `key` is a unique identifier of the request, normally the URL of the API. And the fetcher accepts key as its parameter and returns the data asynchronously.
 
-`useSWRV` also returns 2 values: `data` and `error`. When the request (fetcher) is not yet finished, data will be `undefined`. And when we get a response, it sets `data` and `error` based on the result of fetcher and rerenders the component. This is because `data` and `error` are Vue [Refs](https://vuejs.org/guide/extras/composition-api-faq.html), and their values will be set by the fetcher response.
+`useSWRV` also returns 2 values: `data` and `error`. When the request (fetcher) is not yet finished, data will be `undefined`. And when we get a response, it sets `data` and `error` based on the result of fetcher and rerenders the component. This is because `data` and `error` are Vue [Refs](https://vuejs.org/api/reactivity-core.html#ref), and their values will be set by the fetcher response.
 
-Note that fetcher can be any asynchronous function, so you can use your favorite data-fetching library to handle that part. If ommitted, swrv uses the [Fetch api](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
+Note that fetcher can be any asynchronous function, so you can use your favorite data-fetching library to handle that part. When omitted, swrv falls back to the  browser [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
 
 ## Api
 

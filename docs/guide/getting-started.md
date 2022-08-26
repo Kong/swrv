@@ -47,6 +47,8 @@ yarn add swrv
 
 ### Vue 2.6 and below
 
+If you're installing for Vue `2.6.x` and below, you may want to check out a [previous version of the README](https://github.com/Kong/swrv/blob/b621aac02b7780a4143c5743682070223e793b10/README.md) to view how to initialize `swrv` utilizing the external `@vue/composition-api` plugin.
+
 ```shell
 # Install the 0.9.x version
 yarn add swrv@legacy
