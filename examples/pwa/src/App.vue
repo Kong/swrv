@@ -1,22 +1,22 @@
 <template>
   <div id="app">
     <h1>Todos</h1>
-    <Todos v-if="!todo" @view="id => todo = id" />
+    <TodosList v-if="!todo" @view="id => todo = id" />
     <button v-if="todo" @click="todo = null">back</button>
-    <Todo v-if="todo" :id="todo"/>
+    <TodoItem v-if="todo" :id="todo"/>
   </div>
 </template>
 
 <script>
-import { ref } from '@vue/composition-api'
-import Todos from './components/Todos.vue'
-import Todo from './components/Todo.vue'
+import { ref } from 'vue'
+import TodosList from './components/TodosList.vue'
+import TodoItem from './components/TodoItem.vue'
 
 export default {
   name: 'App',
   components: {
-    Todos,
-    Todo
+    TodosList,
+    TodoItem
   },
   setup () {
     const todo = ref(null)

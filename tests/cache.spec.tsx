@@ -1,13 +1,11 @@
-import Vue from 'vue/dist/vue.common.js'
-import VueCompositionApi from '@vue/composition-api'
+import { defineComponent } from 'vue'
+import { mount } from '@vue/test-utils'
 import timeout from './utils/jest-timeout'
 import useSWRV from '../src/use-swrv'
 import LocalStorageAdapter from '../src/cache/adapters/localStorage'
 import { ICacheItem } from '../src/cache'
 import tick from './utils/tick'
 import { advanceBy, advanceTo } from 'jest-date-mock'
-
-Vue.use(VueCompositionApi)
 
 jest.useFakeTimers()
 
@@ -22,14 +20,14 @@ describe('cache - adapters', () => {
     })
 
     it('saves data cache', async () => {
-      new Vue({
-        template: `<div>hello, {{ data }}</div>`,
+      mount(defineComponent({
+        template: '<div>hello, {{ data }}</div>',
         setup () {
           return useSWRV('/api/users', fetch, {
             cache: new LocalStorageAdapter()
           })
         }
-      }).$mount()
+      }))
 
       expect(localStorage.getItem('swrv')).toBeNull()
 
@@ -46,8 +44,8 @@ describe('cache - adapters', () => {
 
     it('updates data cache', async () => {
       let count = 0
-      new Vue({
-        template: `<div>hello, {{ data }}</div>`,
+      mount(defineComponent({
+        template: '<div>hello, {{ data }}</div>',
         setup () {
           return useSWRV('/api/consumers', () => ++count, {
             cache: new LocalStorageAdapter(),
@@ -55,7 +53,7 @@ describe('cache - adapters', () => {
             dedupingInterval: 0
           })
         }
-      }).$mount()
+      }))
 
       expect(localStorage.getItem('swrv')).toBeDefined()
       const checkStorage = (key): Record<string, ICacheItem<any>> => {
@@ -77,14 +75,14 @@ describe('cache - adapters', () => {
 
     it('deletes cache item after expiry', async () => {
       advanceTo(new Date())
-      new Vue({
-        template: `<div>hello, {{ data }}</div>`,
+      mount(defineComponent({
+        template: '<div>hello, {{ data }}</div>',
         setup () {
           return useSWRV('/api/services', fetch, {
             cache: new LocalStorageAdapter('swrv', 200)
           })
         }
-      }).$mount()
+      }))
 
       expect(localStorage.getItem('swrv')).toBeDefined()
       const checkStorage = (key): Record<string, ICacheItem<any>> => {
@@ -108,14 +106,14 @@ describe('cache - adapters', () => {
     })
 
     it('accepts custom localStorage key', async () => {
-      new Vue({
-        template: `<div>hello, {{ data }}</div>`,
+      mount(defineComponent({
+        template: '<div>hello, {{ data }}</div>',
         setup () {
           return useSWRV('/api/some-data', fetch, {
             cache: new LocalStorageAdapter('myAppData')
           })
         }
-      }).$mount()
+      }))
 
       expect(localStorage.getItem('myAppData')).toBeNull()
       expect(localStorage.getItem('swrv')).toBeNull()

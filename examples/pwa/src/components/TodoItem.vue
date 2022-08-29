@@ -7,7 +7,7 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api'
+import { defineComponent } from 'vue'
 import useTodos from '../useTodos'
 
 export default defineComponent({
@@ -17,8 +17,8 @@ export default defineComponent({
       required: true
     }
   },
-  setup ({ id }, { root }) {
-    const { data, error } = useTodos(root, `/todos/${id}`)
+  setup (props) {
+    const { data, error } = useTodos(`/todos/${props.id}`)
 
     return {
       todo: data,
