@@ -1,6 +1,6 @@
 {
   "name": "swrv",
-  "version": "0.10.0-alpha.0",
+  "version": "0.10.0",
   "scripts": {
     "build": "yarn build:esm && yarn build:cjs",
     "lint": "vue-cli-service lint",
