@@ -164,7 +164,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     return null
   }
 
-  const IS_SERVER = vm.$isServer
+  const IS_SERVER = vm?.$isServer || false
 
   // #region ssr
   /**
