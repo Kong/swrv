@@ -4,7 +4,7 @@ layout: home
 hero:
   name: swrv
   text: A Vue library for data fetching
-  tagline: Data fetching for Vue via the Composition API
+  tagline: With swrv, components will get a stream of data updates constantly and automatically. The UI will always be fast and reactive.
   image:
     src: /logo_45.png
     alt: swrv logo
