@@ -6,7 +6,7 @@ title: Getting Started
 
 |   Version   |  Downloads | Build |
 | --------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [![](https://img.shields.io/npm/v/swrv.svg)](https://www.npmjs.com/package/swrv) | [![npm](https://img.shields.io/npm/dm/swrv)](https://www.npmjs.com/package/swrv) | ![build](https://github.com/Kong/swrv/workflows/build/badge.svg) |
+| [![](https://img.shields.io/npm/v/swrv.svg)](https://www.npmjs.com/package/swrv) | [![npm](https://img.shields.io/npm/dm/swrv)](https://www.npmjs.com/package/swrv) | [![build](https://github.com/Kong/swrv/workflows/build/badge.svg)](https://github.com/Kong/swrv) |
 
 [[toc]]
 
