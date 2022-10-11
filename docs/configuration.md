@@ -1,4 +1,8 @@
-# Configuration
+---
+title: Configuration
+---
+
+# {{ $frontmatter.title }}
 
 ```ts
 const { data, error, isValidating, mutate } = useSWRV(key, fetcher, options)

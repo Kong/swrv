@@ -1,10 +1,8 @@
-import useSWRV from '../../../esm'
+import useSWRV from 'swrv'
 import LocalStorageCache from '../../../esm/cache/adapters/localStorage'
-import { getCurrentInstance } from 'vue'
 
 export default function useTodos (path) {
-  const instance = getCurrentInstance()
-  const { data, error } = useSWRV(path, path => instance?.proxy?.$root.$api(`${path}`), {
+  const { data, error } = useSWRV(path, path => fetch(`https://jsonplaceholder.typicode.com${path}`).then(res => res.json()), {
     cache: new LocalStorageCache('swrv'),
     shouldRetryOnError: false
   })

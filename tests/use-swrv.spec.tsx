@@ -880,7 +880,7 @@ describe('useSWRV - listeners', () => {
 
     await tick()
 
-    wrapper.destroy()
+    wrapper.unmount()
 
     expect(f1).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
     expect(f2).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
@@ -1366,7 +1366,7 @@ describe('useSWRV - window events', () => {
     // should not rerender because document is hidden e.g. switched tabs
     expect(wrapper.text()).toBe('count: 1')
 
-    wrapper.destroy()
+    wrapper.unmount()
   })
 
   it('should get last known state when document is not visible', async () => {
@@ -1445,7 +1445,7 @@ describe('useSWRV - window events', () => {
     expect(wrapper.text()).toBe('count: 4')
     expect(count).toBe(4)
 
-    wrapper.destroy()
+    wrapper.unmount()
   })
 
   it('should not rerender when offline', async () => {
@@ -1528,7 +1528,7 @@ describe('useSWRV - ref cache management', () => {
       }
     }))
     expect(mockRefCache.get(key).data).toHaveLength(1)
-    vm.destroy()
+    vm.unmount()
     expect(mockRefCache.get(key).data).toHaveLength(0)
   })
 
@@ -1553,7 +1553,7 @@ describe('useSWRV - ref cache management', () => {
     }))
 
     expect(mockRefCache.get(key).data).toHaveLength(2)
-    originalVm.destroy()
+    originalVm.unmount()
     expect(mockRefCache.get(key).data).toHaveLength(1)
   })
 })

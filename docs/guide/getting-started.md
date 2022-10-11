@@ -1,13 +1,12 @@
 ---
 title: Getting Started
-lang: en-US
 ---
 
 # {{ $frontmatter.title }}
 
-![build](https://github.com/Kong/swrv/workflows/build/badge.svg) [![](https://img.shields.io/npm/v/swrv.svg)](https://www.npmjs.com/package/swrv)
-
-[[toc]]
+|   Version   |  Downloads | Build |
+| --------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [![](https://img.shields.io/npm/v/swrv.svg)](https://www.npmjs.com/package/swrv) | [![npm](https://img.shields.io/npm/dm/swrv)](https://www.npmjs.com/package/swrv) | [![build](https://github.com/Kong/swrv/workflows/build/badge.svg)](https://github.com/Kong/swrv) |
 
 ## Overview
 
@@ -22,6 +21,8 @@ The name “SWR” is derived from stale-while-revalidate, a cache invalidation 
 - ⏲ Interval polling
 - ~~🖥 SSR support~~ (removed as of version `0.10.0` - [read more](https://github.com/Kong/swrv/pull/304))
 - 🖖 Vue 3 Support
+- 🖖 Vue 2.7.x Support (under the `v2-latest` tag on npm)
+- 🖖 Vue <= 2.6.x Support (under the `legacy` tag on npm)
 - Revalidation on focus
 - Request deduplication
 - TypeScript ready
@@ -36,13 +37,20 @@ With `swrv`, components will get a stream of data updates constantly and automat
 
 The version of `swrv` you install depends on the Vue dependency in your project.
 
+### Vue 3
+
+```shell
+# Install the latest version
+yarn add swrv
+```
+
 ### Vue 2.7
 
 This version removes the dependency of the external `@vue/composition-api` plugin and adds `vue` to the `peerDependencies`, requiring a version that matches the following pattern: `>= 2.7.0 < 3`
 
 ```shell
-# Install the latest version
-yarn add swrv
+# Install the 0.10.x version for Vue 2.7
+yarn add swrv@v2-latest
 ```
 
 ### Vue 2.6 and below
@@ -50,16 +58,8 @@ yarn add swrv
 If you're installing for Vue `2.6.x` and below, you may want to check out a [previous version of the README](https://github.com/Kong/swrv/blob/b621aac02b7780a4143c5743682070223e793b10/README.md) to view how to initialize `swrv` utilizing the external `@vue/composition-api` plugin.
 
 ```shell
-# Install the 0.9.x version
+# Install the 0.9.x version for Vue < 2.7
 yarn add swrv@legacy
-```
-
-### Vue 3 (beta)
-
-If you want to try out Vue 3 support, install the beta release and check out the [Vite example](https://github.com/Kong/swrv/tree/next/examples/vite). `swrv` code for Vue 3.0 exists on `next` branch.
-
-```shell
-yarn add swrv@beta
 ```
 
 ## Usage

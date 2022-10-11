@@ -12,24 +12,25 @@ on:
 
 jobs:
   test:
+    name: Build and Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.x]
+        node-version: [16.x]
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
-        node-version: ${{ matrix.node-version }} 
+        node-version: ${{ matrix.node-version }}
     - name: install, lint
       run: |
-        yarn install
+        yarn install --frozen-lockfile
         yarn lint --no-fix
     - name: tsc
       run: |
         yarn types:check
-    
+
     - name: test
       run: |
         yarn test-compat

@@ -1,11 +1,7 @@
-import Vue from 'vue'
+import { createApp } from 'vue'
 import App from './App.vue'
 import './registerServiceWorker'
 
-Vue.config.productionTip = false
+const app = createApp(App)
 
-Vue.prototype.$api = path => fetch(`https://jsonplaceholder.typicode.com${path}`).then(res => res.json())
-
-new Vue({
-  render: h => h(App)
-}).$mount('#app')
+app.mount('#app')

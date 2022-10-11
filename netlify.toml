@@ -1,5 +1,5 @@
 [build]
   base = "/"
   command = "yarn docs:build"
-  publish = "docs/.vuepress/dist"
+  publish = "docs/.vitepress/dist"
   environment = { NODE_VERSION = "16.16.0", YARN_FLAGS="--frozen-lockfile --ignore-optional" }
