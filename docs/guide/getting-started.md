@@ -4,7 +4,9 @@ title: Getting Started
 
 # {{ $frontmatter.title }}
 
-![build](https://github.com/Kong/swrv/workflows/build/badge.svg) [![npm version](https://img.shields.io/npm/v/swrv.svg)](https://www.npmjs.com/package/swrv)
+|   Version   |  Downloads | Build |
+| --------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [![](https://img.shields.io/npm/v/swrv.svg)](https://www.npmjs.com/package/swrv) | [![npm](https://img.shields.io/npm/dm/swrv)](https://www.npmjs.com/package/swrv) | ![build](https://github.com/Kong/swrv/workflows/build/badge.svg) |
 
 [[toc]]
 
