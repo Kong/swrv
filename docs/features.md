@@ -1,6 +1,5 @@
 ---
 title: Features
-lang: en-US
 ---
 
 # {{ $frontmatter.title }}

@@ -1,11 +1,10 @@
 ---
 title: Getting Started
-lang: en-US
 ---
 
 # {{ $frontmatter.title }}
 
-![build](https://github.com/Kong/swrv/workflows/build/badge.svg) [![](https://img.shields.io/npm/v/swrv.svg)](https://www.npmjs.com/package/swrv)
+![build](https://github.com/Kong/swrv/workflows/build/badge.svg) [![npm version](https://img.shields.io/npm/v/swrv.svg)](https://www.npmjs.com/package/swrv)
 
 [[toc]]
 
