@@ -24,7 +24,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: install, lint
       run: |
-        yarn install
+        yarn install --frozen-lockfile
         yarn lint --no-fix
     - name: tsc
       run: |
