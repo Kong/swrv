@@ -1,4 +1,4 @@
-import useSWRV from '../../../esm'
+import useSWRV from 'swrv'
 import LocalStorageCache from '../../../esm/cache/adapters/localStorage'
 
 export default function useTodos (path) {
