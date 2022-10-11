@@ -11,7 +11,7 @@ Service worker:
 ```sh
 yarn build
 cd dist # service static content from here
-http-server -p 8007
+npx serve --cors -p 8007
 ```
 
 Run app:
