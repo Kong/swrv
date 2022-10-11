@@ -1,12 +1,14 @@
 <template>
-  <h1>Hello Vite + Vue 3!</h1>
-  <p>Edit ./App.vue to test hot module replacement (HMR).</p>
-  <HelloWorld :count="count" />
-  <p>
-    <span>Count is: {{ count }}</span>
-  </p>
-  <button @click="count++">increment</button>
-  <button @click="count--">decrement</button>
+  <div>
+    <h1>Hello Vite + Vue 3!</h1>
+    <p>Edit ./App.vue to test hot module replacement (HMR).</p>
+    <HelloWorld :count="count" />
+    <p>
+      <span>Count is: {{ count }}</span>
+    </p>
+    <button @click="count++">increment</button>
+    <button :disabled="count <= 1" @click="count > 1 ? count-- : null">decrement</button>
+  </div>
 </template>
 
 <script>
