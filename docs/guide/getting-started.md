@@ -8,8 +8,6 @@ title: Getting Started
 | --------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [![](https://img.shields.io/npm/v/swrv.svg)](https://www.npmjs.com/package/swrv) | [![npm](https://img.shields.io/npm/dm/swrv)](https://www.npmjs.com/package/swrv) | [![build](https://github.com/Kong/swrv/workflows/build/badge.svg)](https://github.com/Kong/swrv) |
 
-[[toc]]
-
 ## Overview
 
 `swrv` (pronounced "swerve") is a library using [Vue Composition API](https://vuejs.org/guide/extras/composition-api-faq.html) hooks for remote data fetching. It is largely a port of [swr](https://github.com/zeit/swr).

@@ -6,6 +6,7 @@ export default defineConfig({
   head: [['link', { rel: 'icon', type: 'image/png', href: 'https://2tjosk2rxzc21medji3nfn1g-wpengine.netdna-ssl.com/wp-content/uploads/2018/08/kong-logomark-color-64px.png' }]],
   lastUpdated: true,
   themeConfig: {
+    outline: [2, 3],
     socialLinks: [
       { icon: 'github', link: 'https://github.com/Kong/swrv'}
     ],
