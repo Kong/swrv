@@ -257,6 +257,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       (opts?.forceRevalidate !== undefined && !opts?.forceRevalidate)
     ) {
       stateRef.isValidating = false
+      stateRef.isLoading = false
       return
     }
 
@@ -268,6 +269,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
 
       if (!shouldRevalidate) {
         stateRef.isValidating = false
+        stateRef.isLoading = false
         return
       }
     }
@@ -283,6 +285,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
         await mutate(keyVal, promiseFromCache.data, config.cache, ttl)
       }
       stateRef.isValidating = false
+      stateRef.isLoading = false
       PROMISES_CACHE.delete(keyVal)
       if (stateRef.error !== undefined) {
         const shouldRetryOnError = config.shouldRetryOnError && (opts ? opts.shouldRetryOnError : true)
