@@ -280,7 +280,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       stateRef.isValidating = false
       PROMISES_CACHE.delete(keyVal)
       if (stateRef.error !== undefined) {
-        const shouldRetryOnError = config.shouldRetryOnError && (opts ? opts.shouldRetryOnError : true)
+        const shouldRetryOnError = !unmounted && config.shouldRetryOnError && (opts ? opts.shouldRetryOnError : true)
         if (shouldRetryOnError) {
           onErrorRetry(revalidate, opts ? opts.errorRetryCount : 1, config)
         }
