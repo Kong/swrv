@@ -51,7 +51,7 @@ export default defineConfig({
     algolia: {
       appId: 'PN54XPFSKF',
       apiKey: '4dc7f3773a76d6375d2a286f647d02dc',
-      indexName: 'docs-swrv'
+      indexName: 'swrv'
     },
   },
 })
