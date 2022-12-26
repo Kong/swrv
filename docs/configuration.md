@@ -8,7 +8,7 @@ title: Configuration
 const { data, error, isValidating, mutate } = useSWRV(key, fetcher, options)
 ```
 
-### Parameters
+## Parameters
 
 | Param     | Required | Description                                                                                                                                                                                                                                  |
 | --------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -16,8 +16,7 @@ const { data, error, isValidating, mutate } = useSWRV(key, fetcher, options)
 | `fetcher` |          | a Promise returning function to fetch your data. If `null`, swrv will fetch from cache only and not revalidate. If omitted (i.e. `undefined`) then the [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) api will be used. |
 | `options` |          | an object of configuration options                                                                                                                                                                                                           |
 
-
-### Return Values
+## Return Values
 
 - `data`: data for the given key resolved by fetcher (or undefined if not
   loaded)
@@ -25,23 +24,68 @@ const { data, error, isValidating, mutate } = useSWRV(key, fetcher, options)
 - `isValidating`: if there's a request or revalidation loading
 - `mutate`: function to trigger the validation manually
 
-### Config options
+## Config options
 
 See [Config Defaults](https://github.com/Kong/swrv/blob/1587416e59dad12f9261e289b8cf63da81aa2dd4/src/use-swrv.ts#L43)
 
-- `refreshInterval = 0` - polling interval in milliseconds. 0 means this is
-  disabled.
-- `dedupingInterval = 2000` - dedupe requests with the same key in this time
-  span
-- `ttl = 0` - time to live of response data in cache. 0 mean it stays around
-  forever.
-- `shouldRetryOnError = true` - retry when fetcher has an error
-- `errorRetryInterval = 5000` - error retry interval
-- `errorRetryCount: 5` - max error retry count
-- `revalidateOnFocus = true` - auto revalidate when window gets focused
-- `revalidateDebounce = 0` - debounce in milliseconds for revalidation. Useful
-  for when a component is serving from the cache immediately, but then un-mounts
-  soon thereafter (e.g. a user clicking "next" in pagination quickly) to avoid
-  unnecessary fetches.
-- `cache` - caching instance to store response data in. See
-  [src/lib/cache](src/lib/cache.ts), and the [Cache](/features#cache) section.
+### `refreshInterval`
+
+- **Type**: `number`
+- **Default**: `0`
+
+Polling interval in milliseconds. `0` means this is disabled.
+
+### `dedupingInterval`
+
+- **Type**: `number`
+- **Default**: `2000`
+
+Dedupe requests with the same key in this time span.
+
+### `ttl`
+
+- **Type**: `number`
+- **Default**: `0`
+
+Time to live of response data in cache. `0` means it stays around forever.
+
+### `shouldRetryOnError`
+
+- **Type**: `boolean`
+- **Default**: `true`
+
+Retry when fetcher has an error.
+
+### `errorRetryInterval`
+
+- **Type**: `number`
+- **Default**: `5000`
+
+Error retry interval.
+
+### `errorRetryCount`
+
+- **Type**: `number`
+- **Default**: `5`
+
+Max error retry count.
+
+### `revalidateOnFocus`
+
+- **Type**: `boolean`
+- **Default**: `true`
+
+Auto-revalidate when window gets focused.
+
+### `revalidateDebounce`
+
+- **Type**: `number`
+- **Default**: `0`
+
+Debounce in milliseconds for revalidation.
+
+Useful for when a component is serving from the cache immediately, but then un-mounts soon thereafter (e.g. a user clicking "next" in pagination quickly) to avoid unnecessary fetches.
+
+### `cache`
+
+Caching instance to store response data in. See [src/lib/cache](src/lib/cache.ts), and the [Cache](/features#cache) section.

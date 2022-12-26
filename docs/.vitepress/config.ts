@@ -21,7 +21,8 @@ export default defineConfig({
     },
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Getting Started', link: '/guide/getting-started' },
+      { text: 'Guide', link: '/guide' },
+      { text: 'Features', link: '/features' },
       { text: 'API Reference', link: '/configuration' }
     ],
     sidebar: [
@@ -30,7 +31,11 @@ export default defineConfig({
         items: [
           {
             text: 'Getting Started',
-            link: '/guide/getting-started'
+            link: '/guide'
+          },
+          {
+            text: 'Features',
+            link: '/features'
           }
         ]
       },
@@ -38,13 +43,9 @@ export default defineConfig({
         text: 'APIs',
         items: [
           {
-              text: 'Configuration',
-              link: '/configuration'
-            },
-            {
-              text: 'Features',
-              link: '/features'
-            }
+            text: 'Configuration',
+            link: '/configuration'
+          }
         ]
       }
     ],
