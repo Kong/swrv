@@ -288,7 +288,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     }
 
     if (newData && config.revalidateDebounce) {
-      await setTimeout(async () => {
+      setTimeout(async () => {
         if (!unmounted) {
           await trigger()
         }
