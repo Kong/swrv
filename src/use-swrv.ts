@@ -248,7 +248,8 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     const fetcher = data || fn
     if (
       !fetcher ||
-      (!config.isDocumentVisible() && !isFirstFetch) ||
+      (!config.isDocumentVisible() && !isFirstFetch &&
+      config.revalidateOnFocus) ||
       (opts?.forceRevalidate !== undefined && !opts?.forceRevalidate)
     ) {
       stateRef.isValidating = false
