@@ -24,11 +24,12 @@ import {
   watch,
   ref,
   toRefs,
-  // isRef,
+  isRef,
   onMounted,
   onUnmounted,
   getCurrentInstance,
-  isReadonly
+  isReadonly,
+  computed
 } from 'vue'
 import webPreset from './lib/web-preset'
 import SWRVCache from './cache'
@@ -156,6 +157,12 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
   let config: IConfig = { ...defaultConfig }
   let unmounted = false
   let isHydrated = false
+
+  const refreshInterval = computed(() =>
+    isRef(config.refreshInterval)
+      ? config.refreshInterval.value
+      : config.refreshInterval
+  )
 
   const instance = getCurrentInstance() as any
   const vm = instance?.proxy || instance // https://github.com/vuejs/composition-api/pull/520
@@ -300,32 +307,46 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
 
   const revalidateCall = async () => revalidate(null, { shouldRetryOnError: false })
   let timer = null
+
+  const clearTimer = () => {
+    timer && clearTimeout(timer)
+  }
+
+  const tick = async () => {
+    // component might un-mount during revalidate, so do not set a new timeout
+    // if this is the case, but continue to revalidate since promises can't
+    // be cancelled and new hook instances might rely on promise/data cache or
+    // from pre-fetch
+    if (!stateRef.error && config.isOnline()) {
+      // if API request errored, we stop polling in this round
+      // and let the error retry function handle it
+      await revalidate()
+    } else {
+      if (timer) {
+        clearTimeout(timer)
+      }
+    }
+
+    if (refreshInterval.value && !unmounted) {
+      timer = setTimeout(tick, refreshInterval.value)
+    }
+  }
+
+  watch(refreshInterval, (val, oldVal) => {
+    if (val === oldVal) { return }
+
+    clearTimer()
+    if (val) {
+      timer = setTimeout(tick, val)
+    }
+  })
+
   /**
    * Setup polling
    */
   onMounted(() => {
-    const tick = async () => {
-      // component might un-mount during revalidate, so do not set a new timeout
-      // if this is the case, but continue to revalidate since promises can't
-      // be cancelled and new hook instances might rely on promise/data cache or
-      // from pre-fetch
-      if (!stateRef.error && config.isOnline()) {
-        // if API request errored, we stop polling in this round
-        // and let the error retry function handle it
-        await revalidate()
-      } else {
-        if (timer) {
-          clearTimeout(timer)
-        }
-      }
-
-      if (config.refreshInterval && !unmounted) {
-        timer = setTimeout(tick, config.refreshInterval)
-      }
-    }
-
-    if (config.refreshInterval) {
-      timer = setTimeout(tick, config.refreshInterval)
+    if (refreshInterval.value) {
+      timer = setTimeout(tick, refreshInterval.value)
     }
     if (config.revalidateOnFocus) {
       document.addEventListener('visibilitychange', revalidateCall, false)
@@ -338,9 +359,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
    */
   onUnmounted(() => {
     unmounted = true
-    if (timer) {
-      clearTimeout(timer)
-    }
+    clearTimer()
     if (config.revalidateOnFocus) {
       document.removeEventListener('visibilitychange', revalidateCall, false)
       window.removeEventListener('focus', revalidateCall, false)

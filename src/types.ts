@@ -4,11 +4,13 @@ import LocalStorageCache from './cache/adapters/localStorage'
 
 export type fetcherFn<Data> = (...args: any) => Data | Promise<Data>
 
+type MaybeRef<T> = T | Ref<T>
+
 export interface IConfig<
   Data = any,
   Fn extends fetcherFn<Data> = fetcherFn<Data>
 > {
-  refreshInterval?: number
+  refreshInterval?: MaybeRef<number>
   cache?: LocalStorageCache | SWRVCache<any>
   dedupingInterval?: number
   ttl?: number
