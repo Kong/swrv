@@ -108,7 +108,11 @@ const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA
 
   const newData = { data, error, isValidating }
   if (typeof data !== 'undefined') {
-    cache.set(key, newData, ttl)
+    try {
+      cache.set(key, newData, ttl)
+    } catch (e) {
+      console.error(e, '[useSWRV] failed to set cache')
+    }
   }
 
   /**
