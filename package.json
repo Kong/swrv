@@ -1,6 +1,6 @@
 {
   "name": "swrv",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "scripts": {
     "build": "yarn build:esm && yarn build:cjs",
     "lint": "vue-cli-service lint",
@@ -29,7 +29,7 @@
     "@vue/cli-plugin-typescript": "~5.0.8",
     "@vue/cli-plugin-unit-jest": "~5.0.8",
     "@vue/cli-service": "~5.0.8",
-    "@vue/compiler-sfc": "^3.2.47",
+    "@vue/compiler-sfc": "^3.3.4",
     "@vue/eslint-config-standard": "^6.1.0",
     "@vue/eslint-config-typescript": "^9.1.0",
     "@vue/test-utils": "^2.1.0",
@@ -47,7 +47,7 @@
     "ts-jest": "^27.0.4",
     "typescript": "~4.5.5",
     "vitepress": "^1.0.0-alpha.61",
-    "vue": "^3.2.47",
+    "vue": "^3.3.4",
     "vue-template-compiler": "^2.7.14",
     "webpack": "~4.0.0"
   },
