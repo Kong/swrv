@@ -63,6 +63,8 @@ The version of `swrv` you install depends on the Vue dependency in your project.
 
 ```shell
 # Install the latest version
+npm install swrv
+or
 yarn add swrv
 ```
 
@@ -72,6 +74,8 @@ This version removes the dependency of the external `@vue/composition-api` plugi
 
 ```shell
 # Install the 0.10.x version for Vue 2.7
+npm install swrv@v2-latest
+or
 yarn add swrv@v2-latest
 ```
 
@@ -81,6 +85,8 @@ If you're installing for Vue `2.6.x` and below, you may want to check out a [pre
 
 ```shell
 # Install the 0.9.x version for Vue < 2.7
+npm install swrv@legacy
+or
 yarn add swrv@legacy
 ```
 
