@@ -1,6 +1,7 @@
 :root {
   --c-brand: #0089eb;
   --c-brand-light: #0798ff;
+  overflow-y: scroll;
 }
 
 .nav-bar .logo {
@@ -10,4 +11,8 @@
 
 .custom-block.tip {
   border-color: var(--c-brand-light);
+}
+
+.vp-doc div[class*='language-'] {
+  color-scheme: dark;
 }
