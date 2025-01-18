@@ -29,9 +29,9 @@ type IKey =
 A unique identifier for the request. This can be:
 
 - A string
-- An array (e.g., [query, page]), which gets hashed internally to produce a unique key
+- An array (e.g., `[query, page]`), which gets hashed internally to produce a unique key
 - `null` or `undefined`, which disables fetching
-- A reactive reference or getter function returning one of the above types (string, array, null, or undefined)
+- A reactive reference or getter function returning one of the above types (string, array, `null`, or `undefined`)
 
 ### `fetcher`
 
