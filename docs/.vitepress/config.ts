@@ -28,7 +28,7 @@ export default defineConfig({
       { text: 'Home', link: '/' },
       { text: 'Guide', link: '/guide' },
       { text: 'Features', link: '/features' },
-      { text: 'API Reference', link: '/configuration' }
+      { text: 'API Reference', link: '/use-swrv' }
     ],
     sidebar: [
       {
@@ -48,8 +48,8 @@ export default defineConfig({
         text: 'APIs',
         items: [
           {
-            text: 'Configuration',
-            link: '/configuration'
+            text: 'useSWRV',
+            link: '/use-swrv'
           }
         ]
       }
