@@ -34,7 +34,9 @@ import webPreset from './lib/web-preset'
 import SWRVCache from './cache'
 import { IConfig, IKey, IResponse, fetcherFn, revalidateOptions } from './types'
 
-type StateRef<Data, Error> = { data: Data, error: Error, isValidating: boolean, revalidate: Function, key: any };
+type StateRef<Data, Error> = {
+  data: Data, error: Error, isValidating: boolean, isLoading: boolean, revalidate: Function, key: any
+};
 
 const DATA_CACHE = new SWRVCache<Omit<IResponse, 'mutate'>>()
 const REF_CACHE = new SWRVCache<StateRef<any, any>[]>()
@@ -131,6 +133,7 @@ const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA
       }
       r.error = newData.error
       r.isValidating = newData.isValidating
+      r.isLoading = newData.isValidating
 
       const isLast = idx === refs.length - 1
       if (!isLast) {
@@ -228,6 +231,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       data: undefined,
       error: undefined,
       isValidating: true,
+      isLoading: true,
       key: null
     }) as StateRef<Data, Error>
   }
@@ -244,6 +248,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     const newData = cacheItem && cacheItem.data
 
     stateRef.isValidating = true
+    stateRef.isLoading = !newData
     if (newData) {
       stateRef.data = newData.data
       stateRef.error = newData.error
@@ -256,6 +261,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       (opts?.forceRevalidate !== undefined && !opts?.forceRevalidate)
     ) {
       stateRef.isValidating = false
+      stateRef.isLoading = false
       return
     }
 
@@ -267,6 +273,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
 
       if (!shouldRevalidate) {
         stateRef.isValidating = false
+        stateRef.isLoading = false
         return
       }
     }
@@ -282,6 +289,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
         await mutate(keyVal, promiseFromCache.data, config.cache, ttl)
       }
       stateRef.isValidating = false
+      stateRef.isLoading = false
       PROMISES_CACHE.delete(keyVal)
       if (stateRef.error !== undefined) {
         const shouldRetryOnError = !unmounted && config.shouldRetryOnError && (opts ? opts.shouldRetryOnError : true)
