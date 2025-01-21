@@ -3,7 +3,12 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'swrv',
   description: 'swrv',
-  head: [['link', { rel: 'icon', type: 'image/png', href: 'https://2tjosk2rxzc21medji3nfn1g-wpengine.netdna-ssl.com/wp-content/uploads/2018/08/kong-logomark-color-64px.png' }]],
+  head: [
+    ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' }],
+    ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' }],
+    ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' }],
+    ['link', { rel: 'mask-icon', href: '/safari-pinned-tab.svg', color: '#5bbad5' }],
+  ],
   lastUpdated: true,
   themeConfig: {
     outline: [2, 3],
@@ -21,8 +26,9 @@ export default defineConfig({
     },
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Getting Started', link: '/guide/getting-started' },
-      { text: 'API Reference', link: '/configuration' }
+      { text: 'Guide', link: '/guide' },
+      { text: 'Features', link: '/features' },
+      { text: 'API Reference', link: '/use-swrv' }
     ],
     sidebar: [
       {
@@ -30,7 +36,11 @@ export default defineConfig({
         items: [
           {
             text: 'Getting Started',
-            link: '/guide/getting-started'
+            link: '/guide'
+          },
+          {
+            text: 'Features',
+            link: '/features'
           }
         ]
       },
@@ -38,15 +48,16 @@ export default defineConfig({
         text: 'APIs',
         items: [
           {
-              text: 'Configuration',
-              link: '/configuration'
-            },
-            {
-              text: 'Features',
-              link: '/features'
-            }
+            text: 'useSWRV',
+            link: '/use-swrv'
+          }
         ]
       }
-    ]
-  }
+    ],
+    algolia: {
+      appId: 'PN54XPFSKF',
+      apiKey: '4dc7f3773a76d6375d2a286f647d02dc',
+      indexName: 'swrv'
+    },
+  },
 })

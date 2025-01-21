@@ -110,7 +110,11 @@ const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA
 
   const newData = { data, error, isValidating }
   if (typeof data !== 'undefined') {
-    cache.set(key, newData, ttl)
+    try {
+      cache.set(key, newData, ttl)
+    } catch (err) {
+      console.error('swrv(mutate): failed to set cache', err)
+    }
   }
 
   /**
@@ -288,7 +292,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       stateRef.isLoading = false
       PROMISES_CACHE.delete(keyVal)
       if (stateRef.error !== undefined) {
-        const shouldRetryOnError = config.shouldRetryOnError && (opts ? opts.shouldRetryOnError : true)
+        const shouldRetryOnError = !unmounted && config.shouldRetryOnError && (opts ? opts.shouldRetryOnError : true)
         if (shouldRetryOnError) {
           onErrorRetry(revalidate, opts ? opts.errorRetryCount : 1, config)
         }
@@ -296,7 +300,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     }
 
     if (newData && config.revalidateDebounce) {
-      await setTimeout(async () => {
+      setTimeout(async () => {
         if (!unmounted) {
           await trigger()
         }
