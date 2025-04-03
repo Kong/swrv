@@ -41,6 +41,7 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^5.1.0",
     "eslint-plugin-vue": "^8.7.1",
+    "fake-indexeddb": "4.0.2",
     "file-loader": "^5.0.2",
     "jest": "^27.1.0",
     "jest-date-mock": "^1.0.8",
@@ -62,5 +63,8 @@
   "types": "./dist/index.d.ts",
   "volta": {
     "node": "16.16.0"
+  },
+  "dependencies": {
+    "idb-keyval": "^6.2.1"
   }
 }
