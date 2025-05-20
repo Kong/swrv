@@ -1628,3 +1628,468 @@ describe('useSWRV - ref cache management', () => {
     expect(mockRefCache.get(key).data).toHaveLength(1)
   })
 })
+
+/**
+ * Test Suite: useSWRV - compare option
+ *
+ * Tests for the custom data comparison feature which allows controlling when components re-render
+ * based on data changes, along with the default dequal deep equality comparison.
+ *
+ * Table of Contents:
+ *
+ * 1. Default dequal comparison
+ *    - should not update when objects have identical content
+ *    - should update when objects have different content
+ *    - should handle array comparison correctly
+ *    - should handle special values like NaN and null correctly
+ *
+ * 2. Custom compare function
+ *    - should not update when custom compare returns true
+ *    - should update when custom compare returns false
+ *    - should handle partial data updates correctly
+ *
+ * 3. Edge cases
+ *    - should handle undefined and null transitions
+ *    - should handle circular references gracefully
+ */
+describe('useSWRV - compare option', () => {
+  // First group: Default dequal behavior
+  describe('default dequal comparison', () => {
+    it('should not update when objects have identical content', async () => {
+      const fetcherSpy = jest.fn()
+
+      // Structurally identical objects but different references
+      const initialData = { id: 1, name: 'Test', nested: { value: 10 } }
+      const updatedData = { id: 1, name: 'Test', nested: { value: 10 } }
+
+      fetcherSpy.mockResolvedValueOnce(initialData)
+      fetcherSpy.mockResolvedValueOnce(updatedData)
+
+      const wrapper = mount(defineComponent({
+        template: '<div>{{ data && data.id }}</div>',
+        setup () {
+          const { data, mutate } = useSWRV('compare-default-test', fetcherSpy)
+          return { data, mutate }
+        }
+      }))
+
+      await tick(2)
+      expect(fetcherSpy).toHaveBeenCalledTimes(1)
+      expect(wrapper.text()).toBe('1')
+
+      // Store reference to verify it doesn't change when content is equal
+      const initialDataRef = wrapper.vm.data
+
+      // Trigger revalidation
+      await wrapper.vm.mutate()
+      await tick(4)
+
+      // Reference should NOT change when dequal determines objects are equal
+      expect(wrapper.vm.data).toBe(initialDataRef)
+    })
+
+    it('should update when objects have different content', async () => {
+      const fetcherSpy = jest.fn()
+
+      // Objects with different values
+      const initialData = { id: 1, name: 'Test', value: 10 }
+      const updatedData = { id: 1, name: 'Test', value: 20 }
+
+      fetcherSpy.mockResolvedValueOnce(initialData)
+      fetcherSpy.mockResolvedValueOnce(updatedData)
+
+      const wrapper = mount(defineComponent({
+        template: '<div>{{ data && data.value }}</div>',
+        setup () {
+          const { data, mutate } = useSWRV('compare-default-update-test', fetcherSpy)
+          return { data, mutate }
+        }
+      }))
+
+      await tick(2)
+      expect(wrapper.text()).toBe('10')
+
+      const initialDataRef = wrapper.vm.data
+
+      // Trigger revalidation
+      await wrapper.vm.mutate()
+      await tick(4)
+
+      // Reference SHOULD change when objects are different
+      expect(wrapper.vm.data).not.toBe(initialDataRef)
+      expect(wrapper.text()).toBe('20')
+    })
+
+    it('should handle array comparison correctly', async () => {
+      const fetcherSpy = jest.fn()
+
+      // Arrays with same content but different references
+      const initialData = { id: 1, items: [1, 2, 3] }
+      const sameOrderData = { id: 1, items: [1, 2, 3] }
+      const differentOrderData = { id: 1, items: [3, 2, 1] }
+
+      fetcherSpy.mockResolvedValueOnce(initialData)
+      fetcherSpy.mockResolvedValueOnce(sameOrderData)
+
+      const wrapper = mount(defineComponent({
+        template: '<div>{{ data && data.id }}-{{ data && data.items.join(",") }}</div>',
+        setup () {
+          const { data, mutate } = useSWRV('compare-array-test', fetcherSpy)
+          return { data, mutate }
+        }
+      }))
+
+      await tick(2)
+      expect(wrapper.text()).toBe('1-1,2,3')
+
+      const initialDataRef = wrapper.vm.data
+
+      // First update - same array content, should not update
+      await wrapper.vm.mutate()
+      await tick(4)
+
+      // Should not update with identical array content
+      expect(wrapper.vm.data).toBe(initialDataRef)
+
+      // Change fetcher to return array with different order
+      fetcherSpy.mockResolvedValueOnce(differentOrderData)
+
+      // Second update - different array order, should update
+      await wrapper.vm.mutate()
+      await tick(4)
+
+      // Should update with different array content/order
+      expect(wrapper.vm.data).not.toBe(initialDataRef)
+      expect(wrapper.text()).toBe('1-3,2,1')
+    })
+
+    it('should handle special values like NaN and null correctly', async () => {
+      const fetcherSpy = jest.fn()
+
+      // Objects with special values
+      const initialData = {
+        id: 1,
+        nullValue: null,
+        nanValue: NaN,
+        undefinedValue: undefined
+      }
+
+      const sameSpecialValues = {
+        id: 1,
+        nullValue: null,
+        nanValue: NaN,
+        undefinedValue: undefined
+      }
+
+      const differentSpecialValues = {
+        id: 1,
+        nullValue: undefined, // changed from null
+        nanValue: 0, // changed from NaN
+        undefinedValue: null // changed from undefined
+      }
+
+      fetcherSpy.mockResolvedValueOnce(initialData)
+      fetcherSpy.mockResolvedValueOnce(sameSpecialValues)
+
+      const wrapper = mount(defineComponent({
+        template: '<div>{{ data && data.id }}</div>',
+        setup () {
+          const { data, mutate } = useSWRV('compare-special-values', fetcherSpy)
+          return { data, mutate }
+        }
+      }))
+
+      await tick(2)
+
+      const initialDataRef = wrapper.vm.data
+
+      // First update - same special values
+      await wrapper.vm.mutate()
+      await tick(4)
+
+      // Should not update with identical special values
+      expect(wrapper.vm.data).toBe(initialDataRef)
+
+      // Change fetcher to return different special values
+      fetcherSpy.mockResolvedValueOnce(differentSpecialValues)
+
+      // Second update - different special values
+      await wrapper.vm.mutate()
+      await tick(4)
+
+      // Should update with different special values
+      expect(wrapper.vm.data).not.toBe(initialDataRef)
+    })
+  })
+
+  // Second group: Custom compare function
+  describe('custom compare function', () => {
+    it('should not update when custom compare returns true', async () => {
+      const fetcherSpy = jest.fn()
+
+      // Timestamp differs but custom compare ignores it
+      const initialData = { id: 1, name: 'Test', timestamp: '2023-01-01' }
+      const updatedData = { id: 1, name: 'Test', timestamp: '2023-01-02' }
+
+      fetcherSpy.mockResolvedValueOnce(initialData)
+      fetcherSpy.mockResolvedValueOnce(updatedData)
+
+      // Only considers id and name for equality (timestamp ignored)
+      const compareFunction = jest.fn((a, b) => {
+        if (!a || !b) return a === b
+        return a.id === b.id && a.name === b.name
+      })
+
+      const wrapper = mount(defineComponent({
+        template: '<div>{{ data && data.timestamp }}</div>',
+        setup () {
+          const { data, mutate } = useSWRV('compare-custom-test', fetcherSpy, {
+            compare: compareFunction
+          })
+          return { data, mutate }
+        }
+      }))
+
+      await tick(2)
+      expect(wrapper.text()).toBe('2023-01-01')
+
+      const initialDataRef = wrapper.vm.data
+
+      // Trigger revalidation
+      await wrapper.vm.mutate()
+      await tick(4)
+
+      // Custom compare should be called
+      expect(compareFunction).toHaveBeenCalled()
+      // Reference should NOT change when compare returns true
+      expect(wrapper.vm.data).toBe(initialDataRef)
+      expect(wrapper.text()).toBe('2023-01-01')
+    })
+
+    it('should update when custom compare returns false', async () => {
+      const fetcherSpy = jest.fn()
+
+      // Status field changes - compare will detect this
+      const initialData = { id: 1, status: 'pending' }
+      const updatedData = { id: 1, status: 'completed' }
+
+      fetcherSpy.mockResolvedValueOnce(initialData)
+      fetcherSpy.mockResolvedValueOnce(updatedData)
+
+      // Compare specifically checks the status field
+      const compareFunction = jest.fn((a, b) => {
+        if (!a || !b) return a === b
+        return a.status === b.status
+      })
+
+      const wrapper = mount(defineComponent({
+        template: '<div>{{ data && data.status }}</div>',
+        setup () {
+          const { data, mutate } = useSWRV('compare-update-test', fetcherSpy, {
+            compare: compareFunction
+          })
+          return { data, mutate }
+        }
+      }))
+
+      await tick(2)
+      expect(wrapper.text()).toBe('pending')
+
+      const initialDataRef = wrapper.vm.data
+
+      // Trigger revalidation
+      await wrapper.vm.mutate()
+      await tick(4)
+
+      // Compare should be called
+      expect(compareFunction).toHaveBeenCalled()
+      // Reference SHOULD change when compare returns false
+      expect(wrapper.vm.data).not.toBe(initialDataRef)
+      expect(wrapper.text()).toBe('completed')
+    })
+
+    it('should handle partial data updates correctly', async () => {
+      const fetcherSpy = jest.fn()
+
+      // Complex object with many fields
+      const initialData = {
+        id: 123,
+        user: {
+          name: 'John',
+          email: 'john@example.com',
+          preferences: {
+            theme: 'dark',
+            notifications: true
+          }
+        },
+        stats: {
+          visits: 10,
+          lastLogin: '2023-01-01'
+        }
+      }
+
+      // Only a nested field changed
+      const updatedData = {
+        id: 123,
+        user: {
+          name: 'John',
+          email: 'john@example.com',
+          preferences: {
+            theme: 'light', // Only this changed
+            notifications: true
+          }
+        },
+        stats: {
+          visits: 10,
+          lastLogin: '2023-01-01'
+        }
+      }
+
+      fetcherSpy.mockResolvedValueOnce(initialData)
+      fetcherSpy.mockResolvedValueOnce(updatedData)
+
+      // Custom compare that only cares about ID and top-level fields
+      const compareFunction = jest.fn((a, b) => {
+        if (!a || !b) return a === b
+        // Only compare top-level properties (ignores nested changes)
+        return a.id === b.id &&
+               a.user.name === b.user.name &&
+               a.user.email === b.user.email
+      })
+
+      const wrapper = mount(defineComponent({
+        template: '<div>{{ data && data.user.preferences.theme }}</div>',
+        setup () {
+          const { data, mutate } = useSWRV('compare-nested-change', fetcherSpy, {
+            compare: compareFunction
+          })
+          return { data, mutate }
+        }
+      }))
+
+      await tick(2)
+      expect(wrapper.text()).toBe('dark')
+
+      const initialDataRef = wrapper.vm.data
+
+      // Trigger revalidation
+      await wrapper.vm.mutate()
+      await tick(4)
+
+      // Compare should be called with the complex objects
+      expect(compareFunction).toHaveBeenCalled()
+
+      // Even though theme changed, our compare function only looks at top level fields
+      // So data reference should not change
+      expect(wrapper.vm.data).toBe(initialDataRef)
+      expect(wrapper.text()).toBe('dark')
+    })
+  })
+
+  // Third group: Edge cases
+  describe('edge cases', () => {
+    it('should handle undefined and null transitions', async () => {
+      const fetcherSpy = jest.fn()
+
+      // Test different transitions between undefined, null and defined values
+      fetcherSpy.mockResolvedValueOnce(undefined)
+      fetcherSpy.mockResolvedValueOnce(null)
+      fetcherSpy.mockResolvedValueOnce({ id: 1 })
+
+      // Handles special value transitions
+      const compareFunction = jest.fn((a, b) => {
+        if (a === undefined || b === undefined) return a === b
+        if (a === null || b === null) return a === b
+        return a.id === b.id
+      })
+
+      const wrapper = mount(defineComponent({
+        template: '<div>{{ data === undefined ? "undefined" : (data === null ? "null" : data.id) }}</div>',
+        setup () {
+          const { data, mutate } = useSWRV('compare-edge-test', fetcherSpy, {
+            compare: compareFunction
+          })
+          return { data, mutate }
+        }
+      }))
+
+      await tick(2)
+      expect(wrapper.text()).toBe('undefined')
+
+      // First update: undefined -> null
+      await wrapper.vm.mutate()
+      await tick(4)
+
+      // Should update from undefined to null
+      expect(compareFunction).toHaveBeenCalled()
+      expect(wrapper.text()).toBe('null')
+
+      // Second update: null -> object
+      await wrapper.vm.mutate()
+      await tick(4)
+
+      // Should update from null to object
+      expect(wrapper.text()).toBe('1')
+    })
+
+    it('should handle circular references gracefully', async () => {
+      const fetcherSpy = jest.fn()
+
+      // Create objects with circular references
+      const initialData: any = { id: 1, name: 'Test' }
+      initialData.self = initialData // circular reference
+
+      const updatedSameData: any = { id: 1, name: 'Test' }
+      updatedSameData.self = updatedSameData // circular reference
+
+      const updatedDifferentData: any = { id: 1, name: 'Changed' }
+      updatedDifferentData.self = updatedDifferentData // circular reference
+
+      fetcherSpy.mockResolvedValueOnce(initialData)
+      fetcherSpy.mockResolvedValueOnce(updatedSameData)
+
+      // Custom compare that handles circular references
+      const compareFunction = jest.fn((a, b) => {
+        if (!a || !b) return a === b
+        // Only compare non-circular properties
+        return a.id === b.id && a.name === b.name
+      })
+
+      const wrapper = mount(defineComponent({
+        template: '<div>{{ data && data.name }}</div>',
+        setup () {
+          const { data, mutate } = useSWRV('compare-circular-refs', fetcherSpy, {
+            compare: compareFunction
+          })
+          return { data, mutate }
+        }
+      }))
+
+      await tick(2)
+      expect(wrapper.text()).toBe('Test')
+
+      const initialDataRef = wrapper.vm.data
+
+      // First update - same core data but different object
+      await wrapper.vm.mutate()
+      await tick(4)
+
+      // Compare should handle circular references without error
+      expect(compareFunction).toHaveBeenCalled()
+      // Objects are semantically the same (id and name match)
+      expect(wrapper.vm.data).toBe(initialDataRef)
+
+      // Change fetcher to return object with different name
+      fetcherSpy.mockResolvedValueOnce(updatedDifferentData)
+
+      // Second update - different name
+      await wrapper.vm.mutate()
+      await tick(4)
+
+      // Should update since name is different
+      expect(wrapper.text()).toBe('Changed')
+    })
+
+    // Note: The error test has been removed since swrv doesn't have error handling for compare functions
+  })
+})
