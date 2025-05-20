@@ -41,6 +41,7 @@ With `swrv`, components will get a stream of data updates constantly and automat
   - [Config options](#config-options)
 - [Prefetching](#prefetching)
 - [Dependent Fetching](#dependent-fetching)
+- [Custom Data Comparison](#custom-data-comparison)
 - [Stale-if-error](#stale-if-error)
 - [State Management](#state-management)
   - [useSwrvState](#useswrvstate)
@@ -51,6 +52,8 @@ With `swrv`, components will get a stream of data updates constantly and automat
 - [Error Handling](#error-handling)
 - [FAQ](#faq)
   - [How is swrv different from the swr react library](#how-is-swrv-different-from-the-swr-react-library)
+    - [Vue and Reactivity](#vue-and-reactivity)
+    - [Features](#features)
   - [Why does swrv make so many requests](#why-does-swrv-make-so-many-requests)
   - [How can I refetch swrv data to update it](#how-can-i-refetch-swrv-data-to-update-it)
 - [Contributors ✨](#contributors-)
@@ -159,6 +162,9 @@ See [Config Defaults](https://github.com/Kong/swrv/blob/1587416e59dad12f9261e289
   for when a component is serving from the cache immediately, but then un-mounts
   soon thereafter (e.g. a user clicking "next" in pagination quickly) to avoid
   unnecessary fetches.
+- `compare` - function that compares previous and new data to determine if data has changed.
+  By default, uses deep equality comparison from [dequal/lite](https://github.com/lukeed/dequal) library.
+  You can provide a custom function: `(a, b) => boolean` where `true` means equal (don't update data).
 - `cache` - caching instance to store response data in. See
   [src/lib/cache](src/lib/cache.ts), and [Cache](#cache) below.
 
@@ -210,6 +216,47 @@ export default {
     }
   },
 }
+</script>
+```
+
+## Custom Data Comparison
+
+By default, `swrv` uses [dequal/lite](https://github.com/lukeed/dequal) for deep equality comparison when determining whether to update the cached data. This means that if the new data has the same structure and values as the current data, it won't trigger an update even if they are different object references.
+
+You can customize this behavior using the `compare` option:
+
+```vue
+<template>
+  <div>
+    <div v-if="error">failed to load</div>
+    <div v-if="!data">loading...</div>
+    <div v-else>hello {{ data.name }} (Updated: {{ data.timestamp }})</div>
+  </div>
+</template>
+
+<script>
+import useSWRV from "swrv";
+
+export default {
+  name: "Profile",
+
+  setup() {
+    // Only compare the id property, ignoring changes to other properties
+    const compareById = (a, b) => {
+      if (!a || !b) return a === b;
+      return a.id === b.id;
+    };
+
+    const { data, error } = useSWRV("/api/user", fetcher, {
+      compare: compareById,
+    });
+
+    return {
+      data,
+      error,
+    };
+  },
+};
 </script>
 ```
 

@@ -62,5 +62,8 @@
   "types": "./dist/index.d.ts",
   "volta": {
     "node": "16.16.0"
+  },
+  "dependencies": {
+    "dequal": "2.0.3"
   }
 }
