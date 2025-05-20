@@ -290,9 +290,9 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
         const fetcherArgs = Array.isArray(keyVal) ? keyVal : [keyVal]
         const newPromise = fetcher(...fetcherArgs)
         PROMISES_CACHE.set(keyVal, newPromise, config.dedupingInterval)
-        await mutate(keyVal, newPromise, config.cache, ttl)
+        await mutate(keyVal, newPromise, config.cache, ttl, config.compare)
       } else {
-        await mutate(keyVal, promiseFromCache.data, config.cache, ttl)
+        await mutate(keyVal, promiseFromCache.data, config.cache, ttl, config.compare)
       }
       stateRef.isValidating = false
       stateRef.isLoading = false
