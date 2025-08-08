@@ -92,14 +92,19 @@ function onErrorRetry (revalidate: (any, opts: revalidateOptions) => void, error
  * Evaluate shouldRetryOnError option
  */
 function resolveRetryFlag (
-  val: boolean | ((err: any) => boolean),
-  error: any
+  val: boolean | ((err: any) => boolean) | undefined,
+  error: any,
+  fallback = true
 ): boolean {
   if (typeof val === 'function') {
     return val(error)
   }
 
-  return val
+  if (typeof val === 'boolean') {
+    return val
+  }
+
+  return fallback
 }
 
 /**
