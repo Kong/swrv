@@ -15,7 +15,7 @@ export interface IConfig<
   serverTTL?: number
   revalidateOnFocus?: boolean
   revalidateDebounce?: number
-  shouldRetryOnError?: boolean
+  shouldRetryOnError?: boolean | ((err: any) => boolean)
   errorRetryInterval?: number
   errorRetryCount?: number
   fetcher?: Fn,

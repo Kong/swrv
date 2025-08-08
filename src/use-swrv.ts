@@ -89,6 +89,20 @@ function onErrorRetry (revalidate: (any, opts: revalidateOptions) => void, error
 }
 
 /**
+ * Evaluate shouldRetryOnError option
+ */
+function resolveRetryFlag (
+  val: boolean | ((err: any) => boolean),
+  error: any
+): boolean {
+  if (typeof val === 'function') {
+    return val(error)
+  }
+
+  return val
+}
+
+/**
  * Main mutation function for receiving data from promises to change state and
  * set data cache
  */
@@ -292,7 +306,10 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       stateRef.isLoading = false
       PROMISES_CACHE.delete(keyVal)
       if (stateRef.error !== undefined) {
-        const shouldRetryOnError = !unmounted && config.shouldRetryOnError && (opts ? opts.shouldRetryOnError : true)
+        const configAllows = resolveRetryFlag(config.shouldRetryOnError, stateRef.error)
+        const optsAllows = resolveRetryFlag(opts?.shouldRetryOnError, stateRef.error)
+
+        const shouldRetryOnError = !unmounted && configAllows && optsAllows
         if (shouldRetryOnError) {
           onErrorRetry(revalidate, opts ? opts.errorRetryCount : 1, config)
         }
