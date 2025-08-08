@@ -24,7 +24,7 @@ export interface IConfig<
 }
 
 export interface revalidateOptions {
-  shouldRetryOnError?: boolean,
+  shouldRetryOnError?: boolean | ((err: any) => boolean),
   errorRetryCount?: number,
   forceRevalidate?: boolean,
 }
