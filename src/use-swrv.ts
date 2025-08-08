@@ -91,20 +91,22 @@ function onErrorRetry (revalidate: (any, opts: revalidateOptions) => void, error
 /**
  * Evaluate shouldRetryOnError option
  */
-function resolveRetryFlag (
-  val: boolean | ((err: any) => boolean) | undefined,
-  error: any,
-  fallback = true
-): boolean {
-  if (typeof val === 'function') {
-    return val(error)
+function resolveRetryFlag ({
+  shouldRetry = undefined,
+  error
+}: {
+   shouldRetry?: boolean | ((err: any) => boolean),
+   error: any,
+ }): boolean {
+  if (typeof shouldRetry === 'function') {
+    return shouldRetry(error)
   }
 
-  if (typeof val === 'boolean') {
-    return val
+  if (typeof shouldRetry === 'boolean') {
+    return shouldRetry
   }
 
-  return fallback
+  return defaultConfig.shouldRetryOnError as boolean
 }
 
 /**
@@ -311,10 +313,10 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       stateRef.isLoading = false
       PROMISES_CACHE.delete(keyVal)
       if (stateRef.error !== undefined) {
-        const configAllows = resolveRetryFlag(config.shouldRetryOnError, stateRef.error)
-        const optsAllows = resolveRetryFlag(opts?.shouldRetryOnError, stateRef.error)
+        const configAllows = resolveRetryFlag({ shouldRetry: config.shouldRetryOnError, error: stateRef.error })
+        const optsAllows = resolveRetryFlag({ shouldRetry: opts?.shouldRetryOnError, error: stateRef.error })
 
-        const shouldRetryOnError = !unmounted && configAllows && optsAllows
+        const shouldRetryOnError: boolean = !unmounted && configAllows && optsAllows
         if (shouldRetryOnError) {
           onErrorRetry(revalidate, opts ? opts.errorRetryCount : 1, config)
         }
