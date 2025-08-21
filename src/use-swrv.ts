@@ -95,8 +95,8 @@ function resolveRetryFlag ({
   shouldRetry = undefined,
   error
 }: {
-   shouldRetry?: boolean | ((err: any) => boolean),
-   error: any,
+   shouldRetry?: boolean | ((err: Error) => boolean),
+   error: Error,
  }): boolean {
   if (typeof shouldRetry === 'function') {
     return shouldRetry(error)
@@ -178,7 +178,7 @@ function useSWRV<Data = any, Error = any>(
   fn: fetcherFn<Data> | undefined | null,
   config?: IConfig
 ): IResponse<Data, Error>
-function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
+function useSWRV<Data = any, E extends globalThis.Error = Error> (...args): IResponse<Data, E> {
   let key: IKey
   let fn: fetcherFn<Data> | undefined | null
   let config: IConfig = { ...defaultConfig }
@@ -226,7 +226,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     fn = config.fetcher
   }
 
-  let stateRef = null as StateRef<Data, Error>
+  let stateRef = null as StateRef<Data, E>
 
   // #region ssr
   // if (isSsrHydration) {
@@ -254,7 +254,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       isValidating: true,
       isLoading: true,
       key: null
-    }) as StateRef<Data, Error>
+    }) as StateRef<Data, E>
   }
 
   /**

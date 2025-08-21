@@ -118,7 +118,7 @@ Time to live of response data in cache. `0` means it stays around forever.
 
 ### `shouldRetryOnError`
 
-- **Type**: `boolean | (err: any) => boolean`
+- **Type**: `boolean | (err: Error) => boolean`
 - **Default**: `true`
 
 Retry when fetcher has an error.
