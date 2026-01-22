@@ -21,6 +21,7 @@ export interface IConfig<
   fetcher?: Fn,
   isOnline?: () => boolean
   isDocumentVisible?: () => boolean
+  compare?: (a: Data | undefined, b: Data | undefined) => boolean
 }
 
 export interface revalidateOptions {
