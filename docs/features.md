@@ -274,6 +274,32 @@ function useTodos () {
 }
 ```
 
+### indexedDB
+
+Here is another use case that supports `indexedDB`.
+
+* The storage capacity is much larger than that of local storage.
+* Support complex data structures.
+* asynchronous operation
+* Index and query capabilities
+
+```ts
+import useSWRV from 'swrv'
+import IndexedDBStoargeCache from 'swrv/dist/cache/adapters/indexedDBStoarge'
+
+function useTodos () {
+  const { data, error } = useSWRV('/todos', undefined, {
+    cache: new IndexedDBStoargeCache(),
+    shouldRetryOnError: false
+  })
+
+  return {
+    data,
+    error
+  }
+}
+```
+
 ### Serve from cache only
 
 To only retrieve a swrv cache response without revalidating, you can set the fetcher function to `null` from the useSWRV call. This can be useful when there is some higher level swrv composable that is always sending data to other instances, so you can assume that composables with a `null` fetcher will have data available. This [isn't very intuitive](https://github.com/Kong/swrv/issues/148), so will be looking for ways to improve this api in the future.

@@ -26,6 +26,13 @@ function serializeKeyDefault (key: IKey): string {
   return key
 }
 
+export interface ISWRVCache<Data = any> {
+  get: (key: string) => ICacheItem<Data> | Promise<ICacheItem<Data>>
+  set: (key: string, value: Data, ttl?: number) => void
+  delete: (key: string) => void
+  serializeKey?: (key: string) => string
+}
+
 export default class SWRVCache<CacheData> {
   protected ttl: number
   private items?: Map<string, ICacheItem<CacheData>>
@@ -45,6 +52,7 @@ export default class SWRVCache<CacheData> {
   }
 
   set (k: string, v: any, ttl: number) {
+    // console.info('set', this.items, v, k)
     const _key = this.serializeKey(k)
     const timeToLive = ttl || this.ttl
     const now = Date.now()
