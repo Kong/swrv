@@ -1042,6 +1042,70 @@ describe('useSWRV - refresh', () => {
     expect(wrapper.text()).toEqual('count: 2')
   })
 
+  it('should stop rerendering when interval is changed to zero', async () => {
+    let count = 0
+
+    const refreshInterval = ref(200)
+
+    const wrapper = mount(defineComponent({
+      template: '<div>count: {{ data }}</div>',
+      setup () {
+        return useSWRV('dynamic-1-1', () => count++, {
+          refreshInterval,
+          dedupingInterval: 0
+        })
+      }
+    }))
+
+    await tick(2)
+    expect(wrapper.text()).toEqual('count: 0')
+    timeout(210)
+    await tick(2)
+    expect(wrapper.text()).toEqual('count: 1')
+    refreshInterval.value = 0
+    timeout(210)
+    await tick(2)
+    expect(wrapper.text()).toEqual('count: 2')
+    timeout(210)
+    await tick(2)
+    expect(wrapper.text()).toEqual('count: 2')
+  })
+
+  it('should start rerendering when interval is changed from zero to non-zero', async () => {
+    let count = 0
+
+    const refreshInterval = ref(0)
+
+    const wrapper = mount(defineComponent({
+      template: '<div>count: {{ data }}</div>',
+      setup () {
+        return useSWRV('dynamic-1-2', () => count++, {
+          refreshInterval,
+          dedupingInterval: 0
+        })
+      }
+    }))
+
+    await tick(2)
+    expect(wrapper.text()).toEqual('count: 0')
+    timeout(200)
+    await tick(2)
+    expect(wrapper.text()).toEqual('count: 0')
+    refreshInterval.value = 200
+    timeout(200)
+    await tick(2)
+    expect(wrapper.text()).toEqual('count: 0')
+    timeout(210)
+    await tick(2)
+    expect(wrapper.text()).toEqual('count: 1')
+    timeout(210)
+    await tick(2)
+    expect(wrapper.text()).toEqual('count: 2')
+    timeout(210)
+    await tick(2)
+    expect(wrapper.text()).toEqual('count: 3')
+  })
+
   it('should dedupe requests combined with intervals - promises', async () => {
     advanceTo(new Date())
     /**
