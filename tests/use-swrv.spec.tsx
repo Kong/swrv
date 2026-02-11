@@ -1380,7 +1380,7 @@ describe('useSWRV - error', () => {
           {
             dedupingInterval: 0,
             errorRetryInterval: 500,
-            shouldRetryOnError: (err: any) => err?.message === `${count}`
+            shouldRetryOnError: (err: Error) => err?.message === `${count}`
           }
         )
         return { data, error }
@@ -1416,7 +1416,7 @@ describe('useSWRV - error', () => {
           {
             dedupingInterval: 0,
             errorRetryInterval: 500,
-            shouldRetryOnError: (err: any) => err?.message === `${count + 1}`
+            shouldRetryOnError: (err: Error) => err?.message === `${count + 1}`
           }
         )
         return { data, error }
