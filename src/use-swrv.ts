@@ -89,6 +89,27 @@ function onErrorRetry (revalidate: (any, opts: revalidateOptions) => void, error
 }
 
 /**
+ * Evaluate shouldRetryOnError option
+ */
+function resolveRetryFlag ({
+  shouldRetry = undefined,
+  error
+}: {
+   shouldRetry?: boolean | ((err: Error) => boolean),
+   error: unknown,
+ }): boolean {
+  if (typeof shouldRetry === 'function') {
+    return shouldRetry(error as Error)
+  }
+
+  if (typeof shouldRetry === 'boolean') {
+    return shouldRetry
+  }
+
+  return defaultConfig.shouldRetryOnError as boolean
+}
+
+/**
  * Main mutation function for receiving data from promises to change state and
  * set data cache
  */
@@ -157,7 +178,7 @@ function useSWRV<Data = any, Error = any>(
   fn: fetcherFn<Data> | undefined | null,
   config?: IConfig
 ): IResponse<Data, Error>
-function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
+function useSWRV<Data = any, E = any> (...args): IResponse<Data, E> {
   let key: IKey
   let fn: fetcherFn<Data> | undefined | null
   let config: IConfig = { ...defaultConfig }
@@ -205,7 +226,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     fn = config.fetcher
   }
 
-  let stateRef = null as StateRef<Data, Error>
+  let stateRef = null as StateRef<Data, E>
 
   // #region ssr
   // if (isSsrHydration) {
@@ -233,7 +254,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       isValidating: true,
       isLoading: true,
       key: null
-    }) as StateRef<Data, Error>
+    }) as StateRef<Data, E>
   }
 
   /**
@@ -292,7 +313,13 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       stateRef.isLoading = false
       PROMISES_CACHE.delete(keyVal)
       if (stateRef.error !== undefined) {
-        const shouldRetryOnError = !unmounted && config.shouldRetryOnError && (opts ? opts.shouldRetryOnError : true)
+        const configAllows = resolveRetryFlag({ shouldRetry: config.shouldRetryOnError, error: stateRef.error })
+        const optsAllows = resolveRetryFlag({
+          shouldRetry: opts ? opts.shouldRetryOnError : true,
+          error: stateRef.error
+        })
+
+        const shouldRetryOnError: boolean = !unmounted && configAllows && optsAllows
         if (shouldRetryOnError) {
           onErrorRetry(revalidate, opts ? opts.errorRetryCount : 1, config)
         }
