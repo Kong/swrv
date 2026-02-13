@@ -96,10 +96,10 @@ function resolveRetryFlag ({
   error
 }: {
    shouldRetry?: boolean | ((err: Error) => boolean),
-   error: Error,
+   error: unknown,
  }): boolean {
   if (typeof shouldRetry === 'function') {
-    return shouldRetry(error)
+    return shouldRetry(error as Error)
   }
 
   if (typeof shouldRetry === 'boolean') {
@@ -178,7 +178,7 @@ function useSWRV<Data = any, Error = any>(
   fn: fetcherFn<Data> | undefined | null,
   config?: IConfig
 ): IResponse<Data, Error>
-function useSWRV<Data = any, E extends globalThis.Error = Error> (...args): IResponse<Data, E> {
+function useSWRV<Data = any, E = any> (...args): IResponse<Data, E> {
   let key: IKey
   let fn: fetcherFn<Data> | undefined | null
   let config: IConfig = { ...defaultConfig }
@@ -314,7 +314,10 @@ function useSWRV<Data = any, E extends globalThis.Error = Error> (...args): IRes
       PROMISES_CACHE.delete(keyVal)
       if (stateRef.error !== undefined) {
         const configAllows = resolveRetryFlag({ shouldRetry: config.shouldRetryOnError, error: stateRef.error })
-        const optsAllows = resolveRetryFlag({ shouldRetry: opts?.shouldRetryOnError, error: stateRef.error })
+        const optsAllows = resolveRetryFlag({
+          shouldRetry: opts ? opts.shouldRetryOnError : true,
+          error: stateRef.error
+        })
 
         const shouldRetryOnError: boolean = !unmounted && configAllows && optsAllows
         if (shouldRetryOnError) {

@@ -125,7 +125,7 @@ Retry when fetcher has an error. When passed a function, it receives the error a
 
 ```ts
 const { data, error } = useSWRV('/api/data', fetcher, {
-  shouldRetryOnError: (err) => err.message !== 'Unauthorized'
+  shouldRetryOnError: (err: Error): boolean => err.message !== 'Unauthorized'
 })
 ```
 
