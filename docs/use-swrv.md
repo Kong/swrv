@@ -86,7 +86,7 @@ type Data =
   | any
 
 interface RevalidateOptions {
-  shouldRetryOnError?: boolean,
+  shouldRetryOnError?: boolean | ((err: Error) => boolean),
   errorRetryCount?: number
 }
 ```
