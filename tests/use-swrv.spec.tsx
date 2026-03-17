@@ -1,4 +1,4 @@
-import { watch, defineComponent, ref, h, computed } from 'vue'
+import { watch, defineComponent, ref, h, computed, effectScope } from 'vue'
 import { mount } from '@vue/test-utils'
 import useSWRV, { mutate } from '../src/use-swrv'
 import tick from './utils/tick'
@@ -1383,9 +1383,83 @@ describe('useSWRV - error', () => {
 
     wrapper.find('button').trigger('click')
 
-    expect(spy).toHaveBeenCalledWith(expect.stringContaining('Could not get current instance, check to make sure that `useSwrv` is declared in the top level of the setup function.'))
+    expect(spy).toHaveBeenCalledWith(expect.stringContaining('useSWRV must be called inside setup() or an active effectScope().'))
 
     spy.mockRestore()
+  })
+})
+
+describe('useSWRV - effect scopes', () => {
+  it('supports fetching data inside an active effect scope', async () => {
+    const scope = effectScope()
+    const refs = scope.run(() => useSWRV('effect-scope-1', () => new Promise(res => setTimeout(() => res('SWR'), 100))))!
+
+    expect(refs.data.value).toBe(undefined)
+    expect(refs.isValidating.value).toBe(true)
+
+    timeout(100)
+    await tick(2)
+
+    expect(refs.data.value).toBe('SWR')
+    expect(refs.isValidating.value).toBe(false)
+
+    scope.stop()
+  })
+
+  it('registers and tears down window listeners inside an active effect scope', () => {
+    const f1 = jest.fn()
+    const f2 = jest.fn()
+    const f3 = jest.fn()
+    const f4 = jest.fn()
+
+    const addDocumentListener = jest.spyOn(document, 'addEventListener').mockImplementationOnce(f1)
+    const removeDocumentListener = jest.spyOn(document, 'removeEventListener').mockImplementationOnce(f2)
+    const addWindowListener = jest.spyOn(window, 'addEventListener').mockImplementationOnce(f3)
+    const removeWindowListener = jest.spyOn(window, 'removeEventListener').mockImplementationOnce(f4)
+
+    const scope = effectScope()
+    scope.run(() => useSWRV('effect-scope-2', () => 'SWR'))
+    scope.stop()
+
+    expect(f1).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
+    expect(f2).toHaveBeenLastCalledWith('visibilitychange', expect.any(Function), false)
+    expect(f3).toHaveBeenLastCalledWith('focus', expect.any(Function), false)
+    expect(f4).toHaveBeenLastCalledWith('focus', expect.any(Function), false)
+
+    expect(f1).toHaveBeenCalledTimes(1)
+    expect(f2).toHaveBeenCalledTimes(1)
+    expect(f3).toHaveBeenCalledTimes(1)
+    expect(f4).toHaveBeenCalledTimes(1)
+
+    addDocumentListener.mockRestore()
+    removeDocumentListener.mockRestore()
+    addWindowListener.mockRestore()
+    removeWindowListener.mockRestore()
+  })
+
+  it('stops polling when the active effect scope is disposed', async () => {
+    let count = 0
+    const scope = effectScope()
+    const refs = scope.run(() => useSWRV('effect-scope-3', () => count++, {
+      refreshInterval: 200,
+      dedupingInterval: 0
+    }))!
+
+    await tick(2)
+    expect(refs.data.value).toBe(0)
+    expect(count).toBe(1)
+
+    timeout(210)
+    await tick(2)
+    expect(refs.data.value).toBe(1)
+    expect(count).toBe(2)
+
+    scope.stop()
+
+    timeout(250)
+    await tick(2)
+    expect(refs.data.value).toBe(1)
+    expect(count).toBe(2)
   })
 })
 
@@ -1601,6 +1675,44 @@ describe('useSWRV - ref cache management', () => {
     expect(mockRefCache.get(key).data).toHaveLength(1)
     vm.unmount()
     expect(mockRefCache.get(key).data).toHaveLength(0)
+  })
+
+  it('useSwrv should remove stateRef from ref cache when the effect scope is stopped', async () => {
+    const key = 'effect-scope-key'
+    const fetchedValue = 'SWR'
+    const fetch = () => fetchedValue
+    const scope = effectScope()
+
+    scope.run(() => useSWRV(key, fetch))
+
+    await tick()
+    expect(mockRefCache.get(key).data).toHaveLength(1)
+
+    scope.stop()
+    expect(mockRefCache.get(key).data).toHaveLength(0)
+  })
+
+  it('useSwrv should keep stateRefs from other effect scopes when one effect scope is stopped', async () => {
+    const key = 'effect-scope-shared-key'
+    const fetchedValue = 'SWR'
+    const fetch = () => fetchedValue
+    const originalScope = effectScope()
+
+    originalScope.run(() => useSWRV(key, fetch))
+
+    await tick()
+    expect(mockRefCache.get(key).data).toHaveLength(1)
+
+    const otherScope = effectScope()
+    otherScope.run(() => useSWRV(key, fetch))
+
+    await tick()
+    expect(mockRefCache.get(key).data).toHaveLength(2)
+
+    originalScope.stop()
+    expect(mockRefCache.get(key).data).toHaveLength(1)
+
+    otherScope.stop()
   })
 
   it('useSwrv should keep stateRefs from other components when its component is unmounted', async () => {

@@ -25,9 +25,8 @@ import {
   ref,
   toRefs,
   // isRef,
-  onMounted,
-  onUnmounted,
-  getCurrentInstance,
+  getCurrentScope,
+  onScopeDispose,
   isReadonly
 } from 'vue'
 import webPreset from './lib/web-preset'
@@ -164,14 +163,12 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
   let unmounted = false
   let isHydrated = false
 
-  const instance = getCurrentInstance() as any
-  const vm = instance?.proxy || instance // https://github.com/vuejs/composition-api/pull/520
-  if (!vm) {
-    console.error('Could not get current instance, check to make sure that `useSwrv` is declared in the top level of the setup function.')
+  if (!getCurrentScope()) {
+    console.error('useSWRV must be called inside setup() or an active effectScope().')
     return null
   }
 
-  const IS_SERVER = vm?.$isServer || false
+  const IS_SERVER = typeof window === 'undefined'
 
   // #region ssr
   /**
@@ -312,10 +309,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
 
   const revalidateCall = async () => revalidate(null, { shouldRetryOnError: false })
   let timer = null
-  /**
-   * Setup polling
-   */
-  onMounted(() => {
+  if (!IS_SERVER) {
     const tick = async () => {
       // component might un-mount during revalidate, so do not set a new timeout
       // if this is the case, but continue to revalidate since promises can't
@@ -328,6 +322,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
       } else {
         if (timer) {
           clearTimeout(timer)
+          timer = null
         }
       }
 
@@ -339,24 +334,26 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     if (config.refreshInterval) {
       timer = setTimeout(tick, config.refreshInterval)
     }
+
     if (config.revalidateOnFocus) {
       document.addEventListener('visibilitychange', revalidateCall, false)
       window.addEventListener('focus', revalidateCall, false)
     }
-  })
+  }
 
-  /**
-   * Teardown
-   */
-  onUnmounted(() => {
+  onScopeDispose(() => {
     unmounted = true
+
     if (timer) {
       clearTimeout(timer)
+      timer = null
     }
-    if (config.revalidateOnFocus) {
+
+    if (!IS_SERVER && config.revalidateOnFocus) {
       document.removeEventListener('visibilitychange', revalidateCall, false)
       window.removeEventListener('focus', revalidateCall, false)
     }
+
     const refCacheItem = REF_CACHE.get(keyRef.value)
     if (refCacheItem) {
       refCacheItem.data = refCacheItem.data.filter((ref) => ref !== stateRef)
