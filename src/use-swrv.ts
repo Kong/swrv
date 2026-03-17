@@ -169,6 +169,7 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
   }
 
   const IS_SERVER = typeof window === 'undefined'
+  const HAS_DOCUMENT = typeof document !== 'undefined'
 
   // #region ssr
   /**
@@ -336,7 +337,9 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     }
 
     if (config.revalidateOnFocus) {
-      document.addEventListener('visibilitychange', revalidateCall, false)
+      if (HAS_DOCUMENT) {
+        document.addEventListener('visibilitychange', revalidateCall, false)
+      }
       window.addEventListener('focus', revalidateCall, false)
     }
   }
@@ -350,7 +353,9 @@ function useSWRV<Data = any, Error = any> (...args): IResponse<Data, Error> {
     }
 
     if (!IS_SERVER && config.revalidateOnFocus) {
-      document.removeEventListener('visibilitychange', revalidateCall, false)
+      if (HAS_DOCUMENT) {
+        document.removeEventListener('visibilitychange', revalidateCall, false)
+      }
       window.removeEventListener('focus', revalidateCall, false)
     }
 
