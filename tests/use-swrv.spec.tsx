@@ -1366,6 +1366,78 @@ describe('useSWRV - error', () => {
     expect(wrapper.text()).toMatch(/count: ,.*Error: 1/)
   })
 
+  it('should retry when shouldRetryOnError (function) returns true', async () => {
+    let count = 0
+
+    const wrapper = mount(defineComponent({
+      template: '<div>count: {{ data }}, {{ error }}</div>',
+      setup () {
+        const { data, error } = useSWRV(
+          'error-retry-fn-1',
+          () => new Promise((resolve, reject) => setTimeout(() => {
+            ++count <= 2 ? reject(new Error(`${count}`)) : resolve(count)
+          }, 100)),
+          {
+            dedupingInterval: 0,
+            errorRetryInterval: 500,
+            shouldRetryOnError: (err: Error) => err?.message === `${count}`
+          }
+        )
+        return { data, error }
+      }
+    }))
+
+    expect(wrapper.text().trim()).toBe('count: ,')
+
+    timeout(100)
+    await tick(2)
+    expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 1/)
+
+    timeout(500)
+    await tick(2)
+    expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 1/)
+
+    timeout(100)
+    await tick(2)
+    expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 2/)
+  })
+
+  it('should NOT retry when shouldRetryOnError (function) returns false', async () => {
+    let count = 0
+
+    const wrapper = mount(defineComponent({
+      template: '<div>count: {{ data }}, {{ error }}</div>',
+      setup () {
+        const { data, error } = useSWRV(
+          'error-retry-fn-2',
+          () => new Promise((_resolve, reject) => setTimeout(() => {
+            ++count; reject(new Error(`${count}`))
+          }, 100)),
+          {
+            dedupingInterval: 0,
+            errorRetryInterval: 500,
+            shouldRetryOnError: (err: Error) => err?.message === `${count + 1}`
+          }
+        )
+        return { data, error }
+      }
+    }))
+
+    expect(wrapper.text().trim()).toBe('count: ,')
+
+    timeout(100)
+    await tick(2)
+    expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 1/)
+
+    timeout(500)
+    await tick(2)
+    expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 1/)
+
+    timeout(100)
+    await tick(2)
+    expect(wrapper.text().trim()).toMatch(/count: ,.*Error: 1/)
+  })
+
   it('should display friendly error message when swrv is not top level in setup', () => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
     const wrapper = mount(defineComponent({

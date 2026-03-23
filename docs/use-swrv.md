@@ -86,7 +86,7 @@ type Data =
   | any
 
 interface RevalidateOptions {
-  shouldRetryOnError?: boolean,
+  shouldRetryOnError?: boolean | ((err: Error) => boolean),
   errorRetryCount?: number
 }
 ```
@@ -118,10 +118,16 @@ Time to live of response data in cache. `0` means it stays around forever.
 
 ### `shouldRetryOnError`
 
-- **Type**: `boolean`
+- **Type**: `boolean | (err: Error) => boolean`
 - **Default**: `true`
 
-Retry when fetcher has an error.
+Retry when fetcher has an error. When passed a function, it receives the error and returns a boolean to determine whether to retry.
+
+```ts
+const { data, error } = useSWRV('/api/data', fetcher, {
+  shouldRetryOnError: (err: Error): boolean => err.message !== 'Unauthorized'
+})
+```
 
 ### `errorRetryInterval`
 
