@@ -10,6 +10,8 @@ const {
 } = useSWRV(key, fetcher, options)
 ```
 
+`useSWRV` must be called from a component `setup()` function or an active `effectScope()`.
+
 ## Parameters
 
 ### `key`

@@ -125,6 +125,8 @@ Note that fetcher can be any asynchronous function, so you can use your favorite
 const { data, error, isValidating, mutate } = useSWRV(key, fetcher, options)
 ```
 
+`useSWRV` must be called from a component `setup()` function or an active `effectScope()`.
+
 ### Parameters
 
 | Param     | Required | Description                                                                                                                                                                                                                                  |
