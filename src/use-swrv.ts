@@ -284,7 +284,8 @@ function useSWRV<Data = any, E = any> (...args): IResponse<Data, E> {
     }
 
     // Dedupe items that were created in the last interval #76
-    if (cacheItem) {
+
+    if (cacheItem && !isPromise(cacheItem)) {
       const shouldRevalidate = Boolean(
         ((Date.now() - cacheItem.createdAt) >= config.dedupingInterval) || opts?.forceRevalidate
       )
