@@ -29,6 +29,7 @@ import {
   onScopeDispose,
   isReadonly
 } from 'vue'
+import { dequal } from 'dequal/lite'
 import webPreset from './lib/web-preset'
 import SWRVCache from './cache'
 import { IConfig, IKey, IResponse, fetcherFn, revalidateOptions } from './types'
@@ -112,7 +113,7 @@ function resolveRetryFlag ({
  * Main mutation function for receiving data from promises to change state and
  * set data cache
  */
-const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA_CACHE, ttl = defaultConfig.ttl) => {
+const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA_CACHE, ttl = defaultConfig.ttl, compare?: (a: Data | undefined, b: Data | undefined) => boolean) => {
   let data, error, isValidating
 
   if (isPromise(res)) {
@@ -149,7 +150,12 @@ const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA
 
     refs.forEach((r, idx) => {
       if (typeof newData.data !== 'undefined') {
-        r.data = newData.data
+        const shouldUpdateData = compare
+          ? !compare(r.data, newData.data)
+          : !dequal(r.data, newData.data)
+        if (shouldUpdateData) {
+          r.data = newData.data
+        }
       }
       r.error = newData.error
       r.isValidating = newData.isValidating
@@ -302,9 +308,9 @@ function useSWRV<Data = any, E = any> (...args): IResponse<Data, E> {
         const fetcherArgs = Array.isArray(keyVal) ? keyVal : [keyVal]
         const newPromise = fetcher(...fetcherArgs)
         PROMISES_CACHE.set(keyVal, newPromise, config.dedupingInterval)
-        await mutate(keyVal, newPromise, config.cache, ttl)
+        await mutate(keyVal, newPromise, config.cache, ttl, config.compare)
       } else {
-        await mutate(keyVal, promiseFromCache.data, config.cache, ttl)
+        await mutate(keyVal, promiseFromCache.data, config.cache, ttl, config.compare)
       }
       stateRef.isValidating = false
       stateRef.isLoading = false
