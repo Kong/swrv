@@ -39,12 +39,12 @@ export default class SWRVCache<CacheData> {
     return serializeKeyDefault(key)
   }
 
-  get (k: string): ICacheItem<CacheData> {
+  get (k: IKey): ICacheItem<CacheData> {
     const _key = this.serializeKey(k)
     return this.items.get(_key)
   }
 
-  set (k: string, v: any, ttl: number) {
+  set (k: IKey, v: any, ttl: number) {
     const _key = this.serializeKey(k)
     const timeToLive = ttl || this.ttl
     const now = Date.now()

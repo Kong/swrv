@@ -108,11 +108,15 @@ function resolveRetryFlag ({
   return defaultConfig.shouldRetryOnError as boolean
 }
 
+function isSameSerializedKey (keyA: IKey, keyB: IKey, cache = DATA_CACHE): boolean {
+  return cache.serializeKey(keyA) === cache.serializeKey(keyB)
+}
+
 /**
  * Main mutation function for receiving data from promises to change state and
  * set data cache
  */
-const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA_CACHE, ttl = defaultConfig.ttl) => {
+const mutate = async <Data>(key: IKey, res: Promise<Data> | Data, cache = DATA_CACHE, ttl = defaultConfig.ttl) => {
   let data, error, isValidating
 
   if (isPromise(res)) {
@@ -145,7 +149,7 @@ const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA
     // This filter fixes #24 race conditions to only update ref data of current
     // key, while data cache will continue to be updated if revalidation is
     // fired
-    let refs = stateRef.data.filter(r => r.key === key)
+    let refs = stateRef.data.filter(r => isSameSerializedKey(r.key, key, cache))
 
     refs.forEach((r, idx) => {
       if (typeof newData.data !== 'undefined') {
@@ -306,9 +310,14 @@ function useSWRV<Data = any, E = any> (...args): IResponse<Data, E> {
       } else {
         await mutate(keyVal, promiseFromCache.data, config.cache, ttl)
       }
+      PROMISES_CACHE.delete(keyVal)
+
+      if (!isSameSerializedKey(stateRef.key, keyVal, config.cache)) {
+        return
+      }
+
       stateRef.isValidating = false
       stateRef.isLoading = false
-      PROMISES_CACHE.delete(keyVal)
       if (stateRef.error !== undefined) {
         const configAllows = resolveRetryFlag({ shouldRetry: config.shouldRetryOnError, error: stateRef.error })
         const optsAllows = resolveRetryFlag({
@@ -434,6 +443,9 @@ function useSWRV<Data = any, E = any> (...args): IResponse<Data, E> {
       }
       stateRef.key = val
       stateRef.isValidating = Boolean(val)
+      if (!val) {
+        stateRef.isLoading = false
+      }
       setRefCache(keyRef.value, stateRef, ttl)
 
       if (!IS_SERVER && !isHydrated && keyRef.value) {

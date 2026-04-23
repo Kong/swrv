@@ -1,4 +1,5 @@
 import SWRVCache, { ICacheItem } from '..'
+import { IKey } from '../../types'
 
 /**
  * LocalStorage cache adapter for swrv data cache.
@@ -31,7 +32,7 @@ export default class LocalStorageCache extends SWRVCache<any> {
     return undefined
   }
 
-  set (k: string, v: any, ttl: number) {
+  set (k: IKey, v: any, ttl: number) {
     let payload = {}
     const _key = this.serializeKey(k)
     const timeToLive = ttl || this.ttl
