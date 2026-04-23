@@ -153,6 +153,24 @@ describe('useSWRV', () => {
     expect(wrapper.text()).toBe('hello, SWR')
   })
 
+  it('should update refs when mutating a computed array key', async () => {
+    const id = ref('1')
+    const wrapper = mount(defineComponent({
+      template: '<div>{{ data }}</div>',
+      setup () {
+        const computedKey = computed(() => ['computed-array-key', id.value])
+        return useSWRV(computedKey, null)
+      }
+    }))
+
+    expect(wrapper.text()).toBe('')
+
+    await mutate(['computed-array-key', '1'], 'SWR')
+    await tick()
+
+    expect(wrapper.text()).toBe('SWR')
+  })
+
   it('should accept object args', async () => {
     const obj = { v: 'hello' }
     const arr = ['world']
@@ -869,6 +887,36 @@ describe('useSWRV - loading', () => {
     await tick(2)
     // data loaded
     expect(wrapper.text()).toBe('data: data-3, isValidating: false, isLoading: false')
+  })
+
+  it('should keep validating when an old key resolves after the current key changes', async () => {
+    const key = ref('old')
+    const wrapper = mount(defineComponent({
+      template: '<div>data: {{ data }}, isValidating: {{ isValidating }}</div>',
+      setup () {
+        const { data, isValidating } = useSWRV(() => key.value, currentKey => {
+          const delay = currentKey === 'old' ? 200 : 400
+          return new Promise(res => setTimeout(() => res(currentKey), delay))
+        })
+
+        return { data, isValidating }
+      }
+    }))
+
+    expect(wrapper.text()).toBe('data: , isValidating: true')
+
+    timeout(100)
+    key.value = 'new'
+    await tick(2)
+    expect(wrapper.text()).toBe('data: , isValidating: true')
+
+    timeout(100)
+    await tick(2)
+    expect(wrapper.text()).toBe('data: , isValidating: true')
+
+    timeout(300)
+    await tick(2)
+    expect(wrapper.text()).toBe('data: new, isValidating: false')
   })
 })
 
