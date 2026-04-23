@@ -928,6 +928,40 @@ describe('useSWRV - mutate', () => {
     await tick(4)
     expect(wrapper.text().trim()).toBe('hello, 2')
   })
+
+  it('mutate skips revalidation debounce', async () => {
+    let count = 0
+    let revalidate
+    const wrapper = mount(defineComponent({
+      template: '<div>hello, {{data}}</div>',
+      setup () {
+        const { data, mutate } = useSWRV('mutate-skips-debounce', () => ++count, {
+          dedupingInterval: 0,
+          revalidateDebounce: 500
+        })
+
+        revalidate = mutate
+
+        return {
+          data
+        }
+      }
+    }))
+
+    await tick(2)
+    expect(wrapper.text().trim()).toBe('hello, 1')
+    expect(count).toBe(1)
+
+    revalidate()
+    await tick(2)
+    expect(wrapper.text().trim()).toBe('hello, 2')
+    expect(count).toBe(2)
+
+    timeout(500)
+    await tick(2)
+    expect(wrapper.text().trim()).toBe('hello, 2')
+    expect(count).toBe(2)
+  })
 })
 
 describe('useSWRV - listeners', () => {
