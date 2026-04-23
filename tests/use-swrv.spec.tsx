@@ -818,6 +818,29 @@ describe('useSWRV - loading', () => {
     expect(wrapper.text()).toBe(':ready')
   })
 
+  it('should clear loading state when key becomes nullish during revalidation', async () => {
+    const key = ref('loading-key')
+    const wrapper = mount(defineComponent({
+      template: '<div>isValidating: {{ isValidating }}, isLoading: {{ isLoading }}</div>',
+      setup () {
+        const { isValidating, isLoading } = useSWRV(() => key.value, () => new Promise(res => setTimeout(() => res('SWR'), 200)))
+        return { isValidating, isLoading }
+      }
+    }))
+
+    expect(wrapper.text()).toBe('isValidating: true, isLoading: true')
+
+    key.value = null
+    await tick(2)
+
+    expect(wrapper.text()).toBe('isValidating: false, isLoading: false')
+
+    timeout(200)
+    await tick(2)
+
+    expect(wrapper.text()).toBe('isValidating: false, isLoading: false')
+  })
+
   it('should indicate cached data from another key with isLoading false', async () => {
     const key = ref(1)
     const wrapper = mount(defineComponent({
