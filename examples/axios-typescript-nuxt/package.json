@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "nuxt": "^2.14.7"
+    "nuxt": "^3.21.7"
   },
   "devDependencies": {
     "@nuxt/typescript-build": "^0.6.0",
