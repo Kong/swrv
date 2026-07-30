@@ -26,20 +26,73 @@ import {
   toRefs,
   // isRef,
   getCurrentScope,
+  getCurrentInstance,
+  inject,
   onScopeDispose,
   isReadonly
 } from 'vue'
+import * as VueRuntime from 'vue'
+import type { App, InjectionKey } from 'vue'
 import webPreset from './lib/web-preset'
 import SWRVCache from './cache'
-import { IConfig, IKey, IResponse, fetcherFn, revalidateOptions } from './types'
+import { IConfig, IKey, IResponse, fetcherFn, revalidateOptions, SwrvCacheBundle } from './types'
 
 type StateRef<Data, Error> = {
   data: Data, error: Error, isValidating: boolean, isLoading: boolean, revalidate: Function, key: any
 };
 
+/**
+ * hasInjectionContext() is the documented public replacement for checking whether inject() can
+ * be called, but it was only added in Vue 3.3 — this package supports Vue >=3.2.26 (the compat
+ * test suite runs against 3.2.47 too), so fall back to the getCurrentInstance() internal on
+ * versions where it isn't exported.
+ */
+const hasInjectionContextCompat: (() => boolean) | undefined =
+  (VueRuntime as Record<string, unknown>).hasInjectionContext as (() => boolean) | undefined
+
+function canInject (): boolean {
+  return hasInjectionContextCompat ? hasInjectionContextCompat() : Boolean(getCurrentInstance())
+}
+
 const DATA_CACHE = new SWRVCache<Omit<IResponse, 'mutate'>>()
 const REF_CACHE = new SWRVCache<StateRef<any, any>[]>()
 const PROMISES_CACHE = new SWRVCache<Omit<IResponse, 'mutate'>>()
+
+/**
+ * Provide/inject key for a cache bundle that overrides the module-singleton caches for every
+ * useSWRV call within the providing app's subtree. Lets each Vue app instance (e.g. one per
+ * component-test mount) get its own fully isolated set of caches.
+ */
+export const swrvCacheInjectionKey: InjectionKey<SwrvCacheBundle> = Symbol('swrv-cache')
+
+/**
+ * Convenience helper for `app.provide(swrvCacheInjectionKey, bundle)`. Any cache omitted from
+ * `overrides` gets a fresh instance. Returns the bundle so callers can hold a reference (e.g. to
+ * inspect or clear a cache) without importing SWRVCache separately.
+ *
+ * Idempotent per app instance: if something upstream (a host app, a nested layout, a test
+ * harness) already provided a bundle on this exact app, that bundle is returned as-is rather
+ * than being silently replaced — providing twice on the same app is a routine integration
+ * scenario, not a misuse worth Vue's "already provides" dev warning.
+ */
+export function provideSwrvCache (app: App, overrides: Partial<SwrvCacheBundle> = {}): SwrvCacheBundle {
+  const provides = (app as unknown as { _context: { provides: Record<PropertyKey, unknown> } })._context.provides
+  const existing = provides[swrvCacheInjectionKey as unknown as PropertyKey] as SwrvCacheBundle | undefined
+
+  if (existing) {
+    return existing
+  }
+
+  const bundle: SwrvCacheBundle = {
+    data: overrides.data ?? new SWRVCache(),
+    promises: overrides.promises ?? new SWRVCache(),
+    refs: overrides.refs ?? new SWRVCache()
+  }
+
+  app.provide(swrvCacheInjectionKey, bundle)
+
+  return bundle
+}
 
 const defaultConfig: IConfig = {
   cache: DATA_CACHE,
@@ -60,14 +113,14 @@ const defaultConfig: IConfig = {
 /**
  * Cache the refs for later revalidation
  */
-function setRefCache (key: string, theRef: StateRef<any, any>, ttl: number) {
-  const refCacheItem = REF_CACHE.get(key)
+function setRefCache (key: string, theRef: StateRef<any, any>, ttl: number, refsCache: SWRVCache<any> = REF_CACHE) {
+  const refCacheItem = refsCache.get(key)
   if (refCacheItem) {
     refCacheItem.data.push(theRef)
   } else {
     // #51 ensures ref cache does not evict too soon
     const gracePeriod = 5000
-    REF_CACHE.set(key, [theRef], ttl > 0 ? ttl + gracePeriod : ttl)
+    refsCache.set(key, [theRef], ttl > 0 ? ttl + gracePeriod : ttl)
   }
 }
 
@@ -110,9 +163,18 @@ function resolveRetryFlag ({
 
 /**
  * Main mutation function for receiving data from promises to change state and
- * set data cache
+ * set data cache. `cache`/`refsCache` default to the injected bundle (if called from within an
+ * active injection context, e.g. a component's setup()) so imperative prefetch/update calls
+ * write into the same caches a co-located useSWRV() call would, without every caller having to
+ * pass them explicitly. Falls back to the module singletons outside any injection context.
  */
-const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA_CACHE, ttl = defaultConfig.ttl) => {
+const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache?: SWRVCache<any>, ttl = defaultConfig.ttl, refsCache?: SWRVCache<any>) => {
+  if (cache === undefined || refsCache === undefined) {
+    const injected = canInject() ? inject(swrvCacheInjectionKey, undefined) : undefined
+    cache = cache ?? injected?.data ?? DATA_CACHE
+    refsCache = refsCache ?? injected?.refs ?? REF_CACHE
+  }
+
   let data, error, isValidating
 
   if (isPromise(res)) {
@@ -140,7 +202,7 @@ const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA
   /**
    * Revalidate all swrv instances with new data
    */
-  const stateRef = REF_CACHE.get(key)
+  const stateRef = refsCache.get(key)
   if (stateRef && stateRef.data.length) {
     // This filter fixes #24 race conditions to only update ref data of current
     // key, while data cache will continue to be updated if revalidation is
@@ -187,6 +249,24 @@ function useSWRV<Data = any, E = any> (...args): IResponse<Data, E> {
   if (!getCurrentScope()) {
     console.error('useSWRV must be called inside setup() or an active effectScope().')
     return null
+  }
+
+  // Precedence for the data cache: explicit per-call config.cache (applied below) > injected
+  // bundle > DATA_CACHE default (already in config via defaultConfig spread above). The
+  // in-flight-request dedup and reactive-ref fan-out caches have no per-call override (they're
+  // internal bookkeeping, not public IConfig options), so injected > module singleton.
+  // inject() is only valid within an active injection context, so skip it for the
+  // effectScope-only call path.
+  let promisesCache = PROMISES_CACHE
+  let refsCache = REF_CACHE
+
+  if (canInject()) {
+    const injectedCache = inject(swrvCacheInjectionKey, undefined)
+    if (injectedCache) {
+      config.cache = injectedCache.data
+      promisesCache = injectedCache.promises
+      refsCache = injectedCache.refs
+    }
   }
 
   const IS_SERVER = typeof window === 'undefined' || typeof document === 'undefined'
@@ -297,18 +377,18 @@ function useSWRV<Data = any, E = any> (...args): IResponse<Data, E> {
     }
 
     const trigger = async () => {
-      const promiseFromCache = PROMISES_CACHE.get(keyVal)
+      const promiseFromCache = promisesCache.get(keyVal)
       if (!promiseFromCache) {
         const fetcherArgs = Array.isArray(keyVal) ? keyVal : [keyVal]
         const newPromise = fetcher(...fetcherArgs)
-        PROMISES_CACHE.set(keyVal, newPromise, config.dedupingInterval)
-        await mutate(keyVal, newPromise, config.cache, ttl)
+        promisesCache.set(keyVal, newPromise, config.dedupingInterval)
+        await mutate(keyVal, newPromise, config.cache, ttl, refsCache)
       } else {
-        await mutate(keyVal, promiseFromCache.data, config.cache, ttl)
+        await mutate(keyVal, promiseFromCache.data, config.cache, ttl, refsCache)
       }
       stateRef.isValidating = false
       stateRef.isLoading = false
-      PROMISES_CACHE.delete(keyVal)
+      promisesCache.delete(keyVal)
       if (stateRef.error !== undefined) {
         const configAllows = resolveRetryFlag({ shouldRetry: config.shouldRetryOnError, error: stateRef.error })
         const optsAllows = resolveRetryFlag({
@@ -381,7 +461,7 @@ function useSWRV<Data = any, E = any> (...args): IResponse<Data, E> {
       window.removeEventListener('focus', revalidateCall, false)
     }
 
-    const refCacheItem = REF_CACHE.get(keyRef.value)
+    const refCacheItem = refsCache.get(keyRef.value)
     if (refCacheItem) {
       refCacheItem.data = refCacheItem.data.filter((ref) => ref !== stateRef)
     }
@@ -434,7 +514,7 @@ function useSWRV<Data = any, E = any> (...args): IResponse<Data, E> {
       }
       stateRef.key = val
       stateRef.isValidating = Boolean(val)
-      setRefCache(keyRef.value, stateRef, ttl)
+      setRefCache(keyRef.value, stateRef, ttl, refsCache)
 
       if (!IS_SERVER && !isHydrated && keyRef.value) {
         revalidate()

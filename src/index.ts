@@ -1,8 +1,9 @@
 import SWRVCache from './cache'
-import useSWRV, { mutate } from './use-swrv'
+import useSWRV, { mutate, provideSwrvCache, swrvCacheInjectionKey } from './use-swrv'
 
 export {
-  IConfig
+  IConfig,
+  SwrvCacheBundle
 } from './types'
-export { mutate, SWRVCache }
+export { mutate, SWRVCache, provideSwrvCache, swrvCacheInjectionKey }
 export default useSWRV
