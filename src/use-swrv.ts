@@ -62,8 +62,14 @@ const PROMISES_CACHE = new SWRVCache<Omit<IResponse, 'mutate'>>()
  * Provide/inject key for a cache bundle that overrides the module-singleton caches for every
  * useSWRV call within the providing app's subtree. Lets each Vue app instance (e.g. one per
  * component-test mount) get its own fully isolated set of caches.
+ *
+ * Registered via Symbol.for so that two copies of this package in one dependency graph — an app
+ * on one version alongside a library carrying a nested copy — compute the same key and resolve
+ * each other's provide. A unique Symbol would leave them unable to see each other, and the
+ * symptom is silent: useSWRV falls back to its own module singletons and serves stale data
+ * rather than raising.
  */
-export const swrvCacheInjectionKey: InjectionKey<SwrvCacheBundle> = Symbol('swrv-cache')
+export const swrvCacheInjectionKey: InjectionKey<SwrvCacheBundle> = Symbol.for('swrv.cache') as InjectionKey<SwrvCacheBundle>
 
 /**
  * Convenience helper for `app.provide(swrvCacheInjectionKey, bundle)`. Any cache omitted from
@@ -74,12 +80,22 @@ export const swrvCacheInjectionKey: InjectionKey<SwrvCacheBundle> = Symbol('swrv
  * harness) already provided a bundle on this exact app, that bundle is returned as-is rather
  * than being silently replaced — providing twice on the same app is a routine integration
  * scenario, not a misuse worth Vue's "already provides" dev warning.
+ *
+ * That idempotency would otherwise discard `overrides`, which is the one argument a caller
+ * supplies precisely because they need it honoured, so the combination throws instead. Call
+ * without overrides to opt into the idempotent path.
+ *
+ * @throws if `overrides` is non-empty and a bundle is already provided on this app.
  */
 export function provideSwrvCache (app: App, overrides: Partial<SwrvCacheBundle> = {}): SwrvCacheBundle {
   const provides = (app as unknown as { _context: { provides: Record<PropertyKey, unknown> } })._context.provides
   const existing = provides[swrvCacheInjectionKey as unknown as PropertyKey] as SwrvCacheBundle | undefined
 
   if (existing) {
+    if (Object.keys(overrides).length > 0) {
+      throw new Error('swrv: this app already has a provided cache bundle, so the supplied overrides cannot be applied. Pass overrides on the first provideSwrvCache call for this app.')
+    }
+
     return existing
   }
 

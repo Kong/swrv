@@ -1,4 +1,4 @@
-import { defineComponent, effectScope, reactive, type App } from 'vue'
+import { defineComponent, effectScope, inject, reactive, type App } from 'vue'
 import { mount } from '@vue/test-utils'
 import useSWRV, { mutate, provideSwrvCache, swrvCacheInjectionKey } from '../src/use-swrv'
 import SWRVCache from '../src/cache'
@@ -125,6 +125,64 @@ describe('swrv cache provide/inject', () => {
     })
 
     expect(secondBundle!).toBe(firstBundle!)
+  })
+
+  it('throws rather than discarding overrides when a bundle is already provided on the app', () => {
+    const seeded = new SWRVCache<any>()
+    let thrown: Error | undefined
+
+    mount(defineComponent({
+      template: '<div />',
+      setup () {}
+    }), {
+      global: {
+        plugins: [{
+          install (app: App) {
+            provideSwrvCache(app)
+
+            try {
+              provideSwrvCache(app, { data: seeded })
+            } catch (err) {
+              thrown = err as Error
+            }
+          }
+        }]
+      }
+    })
+
+    expect(thrown).toBeDefined()
+    expect(thrown!.message).toContain('overrides')
+  })
+
+  it('uses a globally registered key so an independently computed Symbol.for resolves the same provide', () => {
+    const seeded = new SWRVCache<any>()
+    let resolved: SwrvCacheBundle | undefined
+
+    // A second copy of this package in the dependency graph computes its key the same way rather
+    // than importing this module's binding.
+    const keyFromOtherCopy = Symbol.for('swrv.cache')
+
+    const Comp = defineComponent({
+      template: '<div />',
+      setup () {
+        resolved = inject(keyFromOtherCopy as any, undefined) as SwrvCacheBundle | undefined
+
+        return {}
+      }
+    })
+
+    mount(Comp, {
+      global: {
+        plugins: [{
+          install (app: App) {
+            provideSwrvCache(app, { data: seeded })
+          }
+        }]
+      }
+    })
+
+    expect(resolved).toBeDefined()
+    expect(resolved!.data).toBe(seeded)
   })
 
   it('resolves the injected data cache for the standalone mutate() export when called within an active injection context', async () => {
