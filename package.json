@@ -52,7 +52,13 @@
     "webpack": "~4.0.0"
   },
   "peerDependencies": {
+    "@vue/test-utils": ">=2.0.0",
     "vue": "^3.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@vue/test-utils": {
+      "optional": true
+    }
   },
   "repository": {
     "type": "git",

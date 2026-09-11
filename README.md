@@ -47,6 +47,8 @@ With `swrv`, components will get a stream of data updates constantly and automat
 - [Cache](#cache)
   - [localStorage](#localstorage)
   - [Serve from cache only](#serve-from-cache-only)
+  - [Per-app cache isolation](#per-app-cache-isolation)
+    - [In test suites](#in-test-suites)
 - [Error Handling](#error-handling)
 - [FAQ](#faq)
   - [How is swrv different from the swr react library](#how-is-swrv-different-from-the-swr-react-library)
@@ -415,6 +417,71 @@ const { data } = useSWRV('/api/config', fetcher)
 // Component B, only retrieve from cache
 const { data } = useSWRV('/api/config', null)
 ```
+
+### Per-app cache isolation
+
+The response, in-flight promise, and ref caches are module singletons, shared by every `useSWRV`
+call in the process. That is what you want in an application, and what you do not want in a test
+suite: mounts share cache entries, so a later test can be served an entry left behind by an
+earlier one and its own fetcher never runs — silently, as stale data rather than an error.
+
+`provideSwrvCache` gives an app its own set of caches. Every `useSWRV` call within that app's
+component tree uses them instead of the singletons; apps without a provide are unaffected.
+
+```ts
+import { provideSwrvCache } from 'swrv'
+
+const app = createApp(App)
+provideSwrvCache(app)
+```
+
+Pass `overrides` to supply your own cache for any of the three — useful to seed data before
+mounting, or to inspect what was cached. Anything omitted gets a fresh instance.
+
+```ts
+const bundle = provideSwrvCache(app, { data: new LocalStorageCache('swrv') })
+bundle.data.get('/api/user')
+```
+
+Calling it again on the same app is a no-op and returns the original bundle, so it is safe for a
+host app and a test harness to both call it. Passing `overrides` on that second call throws
+rather than discarding them.
+
+#### In test suites
+
+Add the setup module to your test runner's setup files. Every component mounted through
+`@vue/test-utils` then gets its own caches, with no per-test or per-mount wiring:
+
+```ts
+// vitest.config.ts
+export default defineConfig({
+  test: {
+    setupFiles: ['swrv/esm/testing'],
+  },
+})
+```
+
+```js
+// jest.config.js
+module.exports = {
+  setupFilesAfterEnv: ['swrv/dist/testing'],
+}
+```
+
+`@vue/test-utils` is an optional peer dependency and is only required if you use this module.
+
+To wire it up yourself instead — a mount helper, or a runner that isn't test-utils based — use
+the plugin:
+
+```ts
+import { swrvCachePlugin } from 'swrv'
+
+mount(Component, { global: { plugins: [swrvCachePlugin] } })
+```
+
+Use `swrvCachePlugin` rather than `{ install: provideSwrvCache }`: Vue calls
+`install(app, ...options)`, so the latter would feed any plugin options into the `overrides`
+parameter.
 
 ## Error Handling
 

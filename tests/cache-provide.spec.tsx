@@ -1,6 +1,7 @@
 import { defineComponent, effectScope, inject, reactive, type App } from 'vue'
 import { mount } from '@vue/test-utils'
 import useSWRV, { mutate, provideSwrvCache, swrvCacheInjectionKey } from '../src/use-swrv'
+import { swrvCachePlugin } from '../src/plugin'
 import SWRVCache from '../src/cache'
 import type { SwrvCacheBundle } from '../src/types'
 import tick from './utils/tick'
@@ -125,6 +126,30 @@ describe('swrv cache provide/inject', () => {
     })
 
     expect(secondBundle!).toBe(firstBundle!)
+  })
+
+  it('swrvCachePlugin ignores plugin options rather than reading them as cache overrides', () => {
+    let bundle: SwrvCacheBundle | undefined
+
+    mount(defineComponent({
+      template: '<div />',
+      setup () {
+        bundle = inject(swrvCacheInjectionKey, undefined)
+
+        return {}
+      }
+    }), {
+      global: {
+        // Vue calls install(app, ...options), so anything passed through app.use lands in the
+        // second parameter — it must not be treated as a cache bundle.
+        plugins: [[swrvCachePlugin, { data: 'not-a-cache', anything: true }] as any]
+      }
+    })
+
+    expect(bundle).toBeDefined()
+    expect(bundle!.data).toBeInstanceOf(SWRVCache)
+    expect(bundle!.promises).toBeInstanceOf(SWRVCache)
+    expect(bundle!.refs).toBeInstanceOf(SWRVCache)
   })
 
   it('throws rather than discarding overrides when a bundle is already provided on the app', () => {
