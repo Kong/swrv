@@ -49,6 +49,7 @@ With `swrv`, components will get a stream of data updates constantly and automat
   - [Serve from cache only](#serve-from-cache-only)
   - [Per-app cache isolation](#per-app-cache-isolation)
     - [In test suites](#in-test-suites)
+  - [Writing to a provided cache](#writing-to-a-provided-cache)
 - [Error Handling](#error-handling)
 - [FAQ](#faq)
   - [How is swrv different from the swr react library](#how-is-swrv-different-from-the-swr-react-library)
@@ -435,22 +436,32 @@ const app = createApp(App)
 provideSwrvCache(app)
 ```
 
-Pass `overrides` to supply your own cache for any of the three — useful to seed data before
-mounting, or to inspect what was cached. Anything omitted gets a fresh instance.
+Pass `overrides` to swap in your own cache implementation for any of the three. Anything omitted
+gets a fresh instance.
 
 ```ts
 const bundle = provideSwrvCache(app, { data: new LocalStorageCache('swrv') })
-bundle.data.get('/api/user')
 ```
 
 Calling it again on the same app is a no-op and returns the original bundle, so it is safe for a
 host app and a test harness to both call it. Passing `overrides` on that second call throws
-rather than discarding them.
+rather than discarding them — `overrides` replaces an implementation, so it only applies to the
+call that creates the bundle.
+
+To seed entries into a bundle, or to inspect what was cached, reach for the bundle itself rather
+than `overrides`. `getSwrvCache` returns it for an app that has one:
+
+```ts
+import { getSwrvCache } from 'swrv'
+
+getSwrvCache(app)?.data.set('/api/user', { data: user }, 0)
+```
 
 #### In test suites
 
 Add the setup module to your test runner's setup files. Every component mounted through
-`@vue/test-utils` then gets its own caches, with no per-test or per-mount wiring:
+`@vue/test-utils` then gets its own caches, with no per-test or per-mount wiring. Seed a test's
+caches through `getSwrvCache`, which reads the bundle the setup module already provided:
 
 ```ts
 // vitest.config.ts
@@ -482,6 +493,21 @@ mount(Component, { global: { plugins: [swrvCachePlugin] } })
 Use `swrvCachePlugin` rather than `{ install: provideSwrvCache }`: Vue calls
 `install(app, ...options)`, so the latter would feed any plugin options into the `overrides`
 parameter.
+
+### Writing to a provided cache
+
+The standalone `mutate` export writes to the module singletons unless you pass it caches, because
+it is normally called from event handlers and callbacks, where Vue's `inject` is not available.
+Inject the bundle in `setup`, where it is, and use it from the handler:
+
+```ts
+setup () {
+  const cache = inject(swrvCacheInjectionKey)
+  const save = () => mutate('/api/user', next, cache?.data, 0, cache?.refs)
+
+  return { save }
+}
+```
 
 ## Error Handling
 

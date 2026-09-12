@@ -42,11 +42,8 @@ export type keyType = string | any[] | null | undefined
 export type IKey = keyType | WatchSource<keyType>
 
 /**
- * Bundles the three module-singleton caches useSWRV relies on: the data cache (config.cache),
- * the in-flight-request dedup cache, and the reactive-ref fan-out cache that pushes revalidated
- * data to every hook sharing a key. All three share the same key space, so they're isolated as
- * one unit — an in-flight request or a ref fan-out event in one app instance never crosses into
- * another's.
+ * The three caches useSWRV relies on. They share one key space, so they isolate as a unit:
+ * isolating only `data` still lets an in-flight request or a ref fan-out cross between apps.
  */
 export interface SwrvCacheBundle {
   data: SWRVCache<any>

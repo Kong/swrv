@@ -1,6 +1,6 @@
-import { defineComponent, effectScope, inject, reactive, type App } from 'vue'
+import { createApp, defineComponent, effectScope, inject, reactive, type App } from 'vue'
 import { mount } from '@vue/test-utils'
-import useSWRV, { mutate, provideSwrvCache, swrvCacheInjectionKey } from '../src/use-swrv'
+import useSWRV, { getSwrvCache, mutate, provideSwrvCache, swrvCacheInjectionKey } from '../src/use-swrv'
 import { swrvCachePlugin } from '../src/plugin'
 import SWRVCache from '../src/cache'
 import type { SwrvCacheBundle } from '../src/types'
@@ -32,8 +32,8 @@ describe('swrv cache provide/inject', () => {
       }
     })
 
-    mount(CompA, { global: { plugins: [withProvidedCache({ data: cacheA })] } })
-    mount(CompB, { global: { plugins: [withProvidedCache({ data: cacheB })] } })
+    const wrapperA = mount(CompA, { global: { plugins: [withProvidedCache({ data: cacheA })] } })
+    const wrapperB = mount(CompB, { global: { plugins: [withProvidedCache({ data: cacheB })] } })
 
     await tick(2)
 
@@ -43,6 +43,9 @@ describe('swrv cache provide/inject', () => {
     expect(fetcherB).toHaveBeenCalledTimes(1)
     expect(cacheA.get('shared-key').data.data).toBe('RESULT-FROM-APP-A')
     expect(cacheB.get('shared-key').data.data).toBe('RESULT-FROM-APP-B')
+    // Rendering proves the refs cache is isolated: the assertions above cannot see fan-out.
+    expect(wrapperA.text()).toBe('RESULT-FROM-APP-A')
+    expect(wrapperB.text()).toBe('RESULT-FROM-APP-B')
   })
 
   it('lets an explicit per-call config.cache override the injected cache', async () => {
@@ -65,9 +68,7 @@ describe('swrv cache provide/inject', () => {
   })
 
   it('falls back to the module-singleton caches inside an effect scope with no component instance', async () => {
-    // Mirrors the "useSWRV - effect scopes" describe block in use-swrv.spec.tsx: no component
-    // instance exists, so inject() can't resolve a provided bundle — falls back to the
-    // module-singleton caches without throwing or warning.
+    // No component instance, so inject() cannot resolve a provide — must fall back silently.
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
     const fetcher = jest.fn(() => 'SWR')
     const scope = effectScope()
@@ -140,8 +141,7 @@ describe('swrv cache provide/inject', () => {
       }
     }), {
       global: {
-        // Vue calls install(app, ...options), so anything passed through app.use lands in the
-        // second parameter — it must not be treated as a cache bundle.
+        // Junk options: Vue passes them to install(), which must not read them as a bundle.
         plugins: [[swrvCachePlugin, { data: 'not-a-cache', anything: true }] as any]
       }
     })
@@ -179,13 +179,14 @@ describe('swrv cache provide/inject', () => {
     expect(thrown!.message).toContain('overrides')
   })
 
-  it('uses a globally registered key so an independently computed Symbol.for resolves the same provide', () => {
+  it('uses a globally registered key so a separate copy of this package resolves the same provide', () => {
     const seeded = new SWRVCache<any>()
     let resolved: SwrvCacheBundle | undefined
 
-    // A second copy of this package in the dependency graph computes its key the same way rather
-    // than importing this module's binding.
-    const keyFromOtherCopy = Symbol.for('swrv.cache')
+    // Symbol.keyFor returns only for globally registered symbols, not a plain Symbol().
+    expect(Symbol.keyFor(swrvCacheInjectionKey as symbol)).toBe('swrv.cache.v1')
+
+    const keyFromOtherCopy = Symbol.for('swrv.cache.v1')
 
     const Comp = defineComponent({
       template: '<div />',
@@ -210,44 +211,51 @@ describe('swrv cache provide/inject', () => {
     expect(resolved!.data).toBe(seeded)
   })
 
-  it('resolves the injected data cache for the standalone mutate() export when called within an active injection context', async () => {
-    const injected = new SWRVCache<any>()
+  it('writes to a bundle\'s caches when the standalone mutate() export is passed them', async () => {
+    const app = createApp({ render: () => null })
+    const bundle = provideSwrvCache(app)
+    const registeredRef = reactive({ data: undefined, error: undefined, isValidating: true, isLoading: true, key: 'mutate-explicit-key' })
+    bundle.refs.set('mutate-explicit-key', [registeredRef], 0)
 
-    const Comp = defineComponent({
-      template: '<div />',
-      setup () {
-        mutate('mutate-inject-key', 'from-mutate')
+    await mutate('mutate-explicit-key', 'from-mutate', bundle.data, 0, bundle.refs)
 
-        return {}
-      }
-    })
-
-    mount(Comp, { global: { plugins: [withProvidedCache({ data: injected })] } })
-
-    await tick(2)
-
-    expect(injected.get('mutate-inject-key').data.data).toBe('from-mutate')
+    expect(bundle.data.get('mutate-explicit-key').data.data).toBe('from-mutate')
+    expect(registeredRef.data).toBe('from-mutate')
   })
 
-  it('resolves the injected refs cache for the standalone mutate() export, fanning out to registered refs', async () => {
-    const refs = new SWRVCache<any>()
-    const registeredRef = reactive({ data: undefined, error: undefined, isValidating: true, isLoading: true, key: 'mutate-fanout-key' })
-    refs.set('mutate-fanout-key', [registeredRef], 0)
+  it('leaves the standalone mutate() export on the module singletons with no caches passed', async () => {
+    // mutate() is called from handlers and callbacks, where inject() is illegal, so it must not
+    // depend on an injection context to pick a cache.
+    let called: SwrvCacheBundle | undefined
 
     const Comp = defineComponent({
       template: '<div />',
       setup () {
-        mutate('mutate-fanout-key', 'from-mutate')
+        called = inject(swrvCacheInjectionKey, undefined)
+        mutate('mutate-nocache-key', 'from-mutate')
 
         return {}
       }
     })
 
-    mount(Comp, { global: { plugins: [withProvidedCache({ refs })] } })
+    mount(Comp, { global: { plugins: [withProvidedCache()] } })
 
     await tick(2)
 
-    expect(registeredRef.data).toBe('from-mutate')
+    expect(called).toBeDefined()
+    expect(called!.data.get('mutate-nocache-key')).toBeUndefined()
+  })
+
+  it('hands back the bundle it provided, so entries can be seeded after the fact', () => {
+    const app = createApp({ render: () => null })
+
+    expect(getSwrvCache(app)).toBeUndefined()
+
+    const bundle = provideSwrvCache(app)
+    getSwrvCache(app)!.data.set('seeded-key', { data: 'seeded' }, 0)
+
+    expect(getSwrvCache(app)).toBe(bundle)
+    expect(bundle.data.get('seeded-key').data.data).toBe('seeded')
   })
 
   it('exposes the injection key so consumers can provide their own bundle directly', () => {

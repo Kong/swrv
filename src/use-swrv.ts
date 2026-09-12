@@ -42,10 +42,8 @@ type StateRef<Data, Error> = {
 };
 
 /**
- * hasInjectionContext() is the documented public replacement for checking whether inject() can
- * be called, but it was only added in Vue 3.3 — this package supports Vue >=3.2.26 (the compat
- * test suite runs against 3.2.47 too), so fall back to the getCurrentInstance() internal on
- * versions where it isn't exported.
+ * hasInjectionContext() is Vue 3.3+; this package supports >=3.2.26, so fall back to the
+ * getCurrentInstance() internal where it is not exported.
  */
 const hasInjectionContextCompat: (() => boolean) | undefined =
   (VueRuntime as Record<string, unknown>).hasInjectionContext as (() => boolean) | undefined
@@ -59,37 +57,30 @@ const REF_CACHE = new SWRVCache<StateRef<any, any>[]>()
 const PROMISES_CACHE = new SWRVCache<Omit<IResponse, 'mutate'>>()
 
 /**
- * Provide/inject key for a cache bundle that overrides the module-singleton caches for every
- * useSWRV call within the providing app's subtree. Lets each Vue app instance (e.g. one per
- * component-test mount) get its own fully isolated set of caches.
- *
- * Registered via Symbol.for so that two copies of this package in one dependency graph — an app
- * on one version alongside a library carrying a nested copy — compute the same key and resolve
- * each other's provide. A unique Symbol would leave them unable to see each other, and the
- * symptom is silent: useSWRV falls back to its own module singletons and serves stale data
- * rather than raising.
+ * Symbol.for, so that two copies of this package in one dependency graph compute the same key
+ * and resolve each other's provide. Mismatched keys fail silently, as stale data. The version
+ * suffix keeps incompatible majors from resolving each other's bundles.
  */
-export const swrvCacheInjectionKey: InjectionKey<SwrvCacheBundle> = Symbol.for('swrv.cache') as InjectionKey<SwrvCacheBundle>
+export const swrvCacheInjectionKey: InjectionKey<SwrvCacheBundle> = Symbol.for('swrv.cache.v1') as InjectionKey<SwrvCacheBundle>
+
+const providedBundles = new WeakMap<App, SwrvCacheBundle>()
+
+/** The bundle `provideSwrvCache` gave this app, if any. */
+export function getSwrvCache (app: App): SwrvCacheBundle | undefined {
+  return providedBundles.get(app)
+}
 
 /**
- * Convenience helper for `app.provide(swrvCacheInjectionKey, bundle)`. Any cache omitted from
- * `overrides` gets a fresh instance. Returns the bundle so callers can hold a reference (e.g. to
- * inspect or clear a cache) without importing SWRVCache separately.
+ * Gives `app` its own caches. Any cache omitted from `overrides` gets a fresh instance.
  *
- * Idempotent per app instance: if something upstream (a host app, a nested layout, a test
- * harness) already provided a bundle on this exact app, that bundle is returned as-is rather
- * than being silently replaced — providing twice on the same app is a routine integration
- * scenario, not a misuse worth Vue's "already provides" dev warning.
- *
- * That idempotency would otherwise discard `overrides`, which is the one argument a caller
- * supplies precisely because they need it honoured, so the combination throws instead. Call
- * without overrides to opt into the idempotent path.
+ * Idempotent per app, so a host app and a test harness can both call it. `overrides` replaces a
+ * cache implementation and only applies to the first call; to seed entries into a bundle that is
+ * already provided, write to `getSwrvCache(app)`.
  *
  * @throws if `overrides` is non-empty and a bundle is already provided on this app.
  */
 export function provideSwrvCache (app: App, overrides: Partial<SwrvCacheBundle> = {}): SwrvCacheBundle {
-  const provides = (app as unknown as { _context: { provides: Record<PropertyKey, unknown> } })._context.provides
-  const existing = provides[swrvCacheInjectionKey as unknown as PropertyKey] as SwrvCacheBundle | undefined
+  const existing = providedBundles.get(app)
 
   if (existing) {
     if (Object.keys(overrides).length > 0) {
@@ -105,6 +96,7 @@ export function provideSwrvCache (app: App, overrides: Partial<SwrvCacheBundle> 
     refs: overrides.refs ?? new SWRVCache()
   }
 
+  providedBundles.set(app, bundle)
   app.provide(swrvCacheInjectionKey, bundle)
 
   return bundle
@@ -179,18 +171,10 @@ function resolveRetryFlag ({
 
 /**
  * Main mutation function for receiving data from promises to change state and
- * set data cache. `cache`/`refsCache` default to the injected bundle (if called from within an
- * active injection context, e.g. a component's setup()) so imperative prefetch/update calls
- * write into the same caches a co-located useSWRV() call would, without every caller having to
- * pass them explicitly. Falls back to the module singletons outside any injection context.
+ * set data cache. To write into an app's provided bundle, pass its caches: inject the bundle in
+ * setup(), where injection is legal, and use it from the handler or callback that mutates.
  */
-const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache?: SWRVCache<any>, ttl = defaultConfig.ttl, refsCache?: SWRVCache<any>) => {
-  if (cache === undefined || refsCache === undefined) {
-    const injected = canInject() ? inject(swrvCacheInjectionKey, undefined) : undefined
-    cache = cache ?? injected?.data ?? DATA_CACHE
-    refsCache = refsCache ?? injected?.refs ?? REF_CACHE
-  }
-
+const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache: SWRVCache<any> = DATA_CACHE, ttl = defaultConfig.ttl, refsCache: SWRVCache<any> = REF_CACHE) => {
   let data, error, isValidating
 
   if (isPromise(res)) {
@@ -267,12 +251,8 @@ function useSWRV<Data = any, E = any> (...args): IResponse<Data, E> {
     return null
   }
 
-  // Precedence for the data cache: explicit per-call config.cache (applied below) > injected
-  // bundle > DATA_CACHE default (already in config via defaultConfig spread above). The
-  // in-flight-request dedup and reactive-ref fan-out caches have no per-call override (they're
-  // internal bookkeeping, not public IConfig options), so injected > module singleton.
-  // inject() is only valid within an active injection context, so skip it for the
-  // effectScope-only call path.
+  // Data cache precedence: per-call config.cache (applied below) > injected > DATA_CACHE.
+  // The dedup and ref caches have no per-call override, so injected > module singleton.
   let promisesCache = PROMISES_CACHE
   let refsCache = REF_CACHE
 
