@@ -69,4 +69,14 @@ export default class SWRVCache<CacheData> {
   delete (serializedKey: string) {
     this.items.delete(serializedKey)
   }
+
+  /**
+   * `never[]` rather than no parameters to prevent breaking subclasses
+   * this variadic signature compat will be dropped in a future major
+   */
+  clear (..._args: never[]) {
+    for (const serializedKey of [...this.items.keys()]) {
+      this.delete(serializedKey)
+    }
+  }
 }

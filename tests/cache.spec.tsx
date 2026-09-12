@@ -3,11 +3,41 @@ import { mount } from '@vue/test-utils'
 import timeout from './utils/jest-timeout'
 import useSWRV from '../src/use-swrv'
 import LocalStorageAdapter from '../src/cache/adapters/localStorage'
-import { ICacheItem } from '../src/cache'
+import SWRVCache, { ICacheItem } from '../src/cache'
 import tick from './utils/tick'
 import { advanceBy, advanceTo } from 'jest-date-mock'
 
 jest.useFakeTimers()
+
+describe('cache', () => {
+  it('clear() empties the cache', () => {
+    const cache = new SWRVCache<any>()
+    cache.set('/api/users', { data: 'users' }, 0)
+    cache.set('/api/config', { data: 'config' }, 0)
+
+    cache.clear()
+
+    expect(cache.get('/api/users')).toBeUndefined()
+    expect(cache.get('/api/config')).toBeUndefined()
+  })
+
+  it('clear() routes through delete(), so a subclass sees every removal', () => {
+    const removed: string[] = []
+    class TrackingCache extends SWRVCache<any> {
+      delete (serializedKey: string) {
+        removed.push(serializedKey)
+        super.delete(serializedKey)
+      }
+    }
+    const cache = new TrackingCache()
+    cache.set('/api/users', { data: 'users' }, 0)
+    cache.set('/api/config', { data: 'config' }, 0)
+
+    cache.clear()
+
+    expect(removed.sort()).toEqual(['/api/config', '/api/users'])
+  })
+})
 
 describe('cache - adapters', () => {
   beforeEach(() => {
@@ -103,6 +133,17 @@ describe('cache - adapters', () => {
 
       await tick()
       expect(checkStorage('/api/services')).toBeUndefined()
+    })
+
+    it('clear() removes the adapter\'s stored payload', () => {
+      const cache = new LocalStorageAdapter('swrv')
+      cache.set('/api/users', { data: 'users' }, 0)
+      expect(localStorage.getItem('swrv')).toBeDefined()
+
+      cache.clear()
+
+      expect(localStorage.getItem('swrv')).toBeNull()
+      expect(cache.get('/api/users')).toBeUndefined()
     })
 
     it('accepts custom localStorage key', async () => {
