@@ -9,6 +9,11 @@ on:
     branches:
     - master
     - next
+    types:
+    - opened
+    - reopened
+    - synchronize
+    - stacked
 
 jobs:
   test:
