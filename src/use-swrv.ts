@@ -58,8 +58,9 @@ const PROMISES_CACHE = new SWRVCache<Omit<IResponse, 'mutate'>>()
 
 /**
  * Symbol.for, so that two copies of this package in one dependency graph compute the same key
- * and resolve each other's provide. Mismatched keys fail silently, as stale data. The version
- * suffix keeps incompatible majors from resolving each other's bundles.
+ * and resolve each other's provide. Mismatched keys fail silently, as stale data. The suffix
+ * versions SwrvCacheBundle, not the package: bump it only when that shape changes
+ * incompatibly, or two releases that could safely share a bundle stop seeing each other.
  */
 export const swrvCacheInjectionKey: InjectionKey<SwrvCacheBundle> = Symbol.for('swrv.cache.v1') as InjectionKey<SwrvCacheBundle>
 

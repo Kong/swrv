@@ -494,6 +494,32 @@ Use `swrvCachePlugin` rather than `{ install: provideSwrvCache }`: Vue calls
 `install(app, ...options)`, so the latter would feed any plugin options into the `overrides`
 parameter.
 
+##### Suites that pass their own cache
+
+A `useSWRV` call passing `config.cache` keeps that cache, which takes precedence over the injected
+bundle. Its dedup and ref caches are still isolated per mount, but its **data** cache is not, so a
+module-level cache reaches every test in the run. Give the call a fresh instance per test, or
+reset the one they share.
+
+To isolate a custom cache instead of resetting it, supply it as the bundle's `data` override at
+mount time and leave that suite off the setup module — global-config plugins install before
+mount-level ones, so the module would already have provided a bundle, and `provideSwrvCache`
+throws rather than discard overrides:
+
+```ts
+import { mount } from '@vue/test-utils'
+import { provideSwrvCache } from 'swrv'
+import LocalStorageCache from 'swrv/dist/cache/adapters/localStorage'
+
+const withCache = {
+  install: (app) => {
+    provideSwrvCache(app, { data: new LocalStorageCache('swrv') })
+  },
+}
+
+mount(Component, { global: { plugins: [withCache] } })
+```
+
 ### Writing to a provided cache
 
 The standalone `mutate` export writes to the module singletons unless you pass it caches, because
