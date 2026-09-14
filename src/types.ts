@@ -1,6 +1,8 @@
-import { Ref, WatchSource } from 'vue'
-import SWRVCache from './cache'
-import LocalStorageCache from './cache/adapters/localStorage'
+import type { Ref } from 'vue'
+import type SWRVCache from './cache/index.js'
+import type { LocalStorageCache } from './cache/index.js'
+
+export type { IKey, keyType } from './lib/key.js'
 
 export type fetcherFn<Data> = (...args: any) => Data | Promise<Data>
 
@@ -36,10 +38,6 @@ export interface IResponse<Data = any, Error = any> {
   isLoading: Ref<boolean>
   mutate: (data?: fetcherFn<Data>, opts?: revalidateOptions) => Promise<void>
 }
-
-export type keyType = string | any[] | null | undefined
-
-export type IKey = keyType | WatchSource<keyType>
 
 /**
  * The three caches useSWRV relies on. They share one key space, so they isolate as a unit:

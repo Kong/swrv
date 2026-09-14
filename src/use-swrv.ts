@@ -33,9 +33,9 @@ import {
 } from 'vue'
 import * as VueRuntime from 'vue'
 import type { App, InjectionKey } from 'vue'
-import webPreset from './lib/web-preset'
-import SWRVCache from './cache'
-import { IConfig, IKey, IResponse, fetcherFn, revalidateOptions, SwrvCacheBundle } from './types'
+import webPreset from './lib/web-preset.js'
+import SWRVCache from './cache/index.js'
+import type { IConfig, IKey, IResponse, fetcherFn, revalidateOptions, SwrvCacheBundle } from './types.js'
 
 type StateRef<Data, Error> = {
   data: Data, error: Error, isValidating: boolean, isLoading: boolean, revalidate: Function, key: any

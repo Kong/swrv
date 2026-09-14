@@ -258,8 +258,7 @@ By default, a custom cache implementation is used to store fetcher response data
 A common usage case to have a better _offline_ experience is to read from `localStorage`. Checkout the [PWA example](https://github.com/Kong/swrv/tree/master/examples/pwa) for more inspiration.
 
 ```ts
-import useSWRV from 'swrv'
-import LocalStorageCache from 'swrv/dist/cache/adapters/localStorage'
+import useSWRV, { LocalStorageCache } from 'swrv'
 
 function useTodos () {
   const { data, error } = useSWRV('/todos', undefined, {
@@ -323,7 +322,7 @@ Add the setup module to your test runner's setup files. Every component mounted 
 // vitest.config.ts
 export default defineConfig({
   test: {
-    setupFiles: ['swrv/esm/testing'],
+    setupFiles: ['swrv/testing'],
   },
 })
 ```
@@ -331,7 +330,7 @@ export default defineConfig({
 ```js
 // jest.config.js
 module.exports = {
-  setupFilesAfterEnv: ['swrv/dist/testing'],
+  setupFilesAfterEnv: ['swrv/testing'],
 }
 ```
 
@@ -355,8 +354,7 @@ To isolate a custom cache instead of resetting it, supply it as the bundle's `da
 
 ```ts
 import { mount } from '@vue/test-utils'
-import { provideSwrvCache } from 'swrv'
-import LocalStorageCache from 'swrv/dist/cache/adapters/localStorage'
+import { LocalStorageCache, provideSwrvCache } from 'swrv'
 
 const withCache = {
   install: (app) => {
