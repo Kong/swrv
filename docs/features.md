@@ -253,13 +253,26 @@ export default {
 
 By default, a custom cache implementation is used to store fetcher response data cache, in-flight promise cache, and ref cache. Response data cache can be customized via the `config.cache` property. Built in cache adapters:
 
+Every cache exposes `clear()`, which removes all of its entries — useful when the current data stops being valid for the session, such as on logout:
+
+```ts
+import { SWRVCache } from 'swrv'
+
+const cache = new SWRVCache()
+
+function onLogout () {
+  cache.clear()
+}
+```
+
+The base `clear()` routes through `delete()`, so a subclass that overrides `delete` to keep its own bookkeeping sees every removal without also overriding `clear`. `LocalStorageCache` is the exception: it drops its whole payload in a single write, so a subclass of *that* has to override `clear` as well.
+
 ### localStorage
 
 A common usage case to have a better _offline_ experience is to read from `localStorage`. Checkout the [PWA example](https://github.com/Kong/swrv/tree/master/examples/pwa) for more inspiration.
 
 ```ts
-import useSWRV from 'swrv'
-import LocalStorageCache from 'swrv/dist/cache/adapters/localStorage'
+import useSWRV, { LocalStorageCache } from 'swrv'
 
 function useTodos () {
   const { data, error } = useSWRV('/todos', undefined, {
@@ -349,14 +362,13 @@ Use `swrvCachePlugin` rather than `{ install: provideSwrvCache }`: Vue calls `in
 
 ##### Suites that pass their own cache
 
-A `useSWRV` call passing `config.cache` keeps that cache, which takes precedence over the injected bundle. Its dedup and ref caches are still isolated per mount, but its **data** cache is not, so a module-level cache reaches every test in the run. Give the call a fresh instance per test, or reset the one they share.
+module-level cache reaches every test in the run. Reset it between tests with `clear()`, or give the call a fresh instance each time.
 
 To isolate a custom cache instead of resetting it, supply it as the bundle's `data` override at mount time and leave that suite off the setup module — global-config plugins install before mount-level ones, so the module would already have provided a bundle, and `provideSwrvCache` throws rather than discard overrides:
 
 ```ts
 import { mount } from '@vue/test-utils'
-import { provideSwrvCache } from 'swrv'
-import LocalStorageCache from 'swrv/dist/cache/adapters/localStorage'
+import { LocalStorageCache, provideSwrvCache } from 'swrv'
 
 const withCache = {
   install: (app) => {

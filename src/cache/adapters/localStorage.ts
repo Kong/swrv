@@ -73,4 +73,12 @@ export default class LocalStorageCache extends SWRVCache<any> {
 
     localStorage.setItem(this.STORAGE_KEY, this.encode(payload))
   }
+
+  /**
+   * Drops the whole payload in one write to avoid thrashing localStorage, so
+   * unlike the base implementation it does not route through `delete`.
+   */
+  clear () {
+    localStorage.removeItem(this.STORAGE_KEY)
+  }
 }
