@@ -40,3 +40,13 @@ export interface IResponse<Data = any, Error = any> {
 export type keyType = string | any[] | null | undefined
 
 export type IKey = keyType | WatchSource<keyType>
+
+/**
+ * The three caches useSWRV relies on. They share one key space, so they isolate as a unit:
+ * isolating only `data` still lets an in-flight request or a ref fan-out cross between apps.
+ */
+export interface SwrvCacheBundle {
+  data: SWRVCache<any>
+  promises: SWRVCache<any>
+  refs: SWRVCache<any>
+}
