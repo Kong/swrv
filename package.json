@@ -52,7 +52,7 @@
     "webpack": "~4.0.0"
   },
   "peerDependencies": {
-    "vue": ">=3.2.26 < 4"
+    "vue": "^3.2.0"
   },
   "repository": {
     "type": "git",
