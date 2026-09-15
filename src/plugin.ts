@@ -1,5 +1,5 @@
 import type { App, Plugin } from 'vue'
-import { provideSwrvCache } from './use-swrv'
+import { provideSwrvCache } from './use-swrv.js'
 
 /**
  * Vue plugin that gives the installing app its own cache bundle. Takes the app alone: Vue calls
