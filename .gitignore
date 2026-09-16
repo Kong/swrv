@@ -28,3 +28,6 @@ yarn-error.log*
 
 # npm pack output
 *.tgz
+
+# Examples are always installed fresh to simulate new user experience
+examples/*/yarn.lock
