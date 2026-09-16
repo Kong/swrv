@@ -32,8 +32,7 @@ With `swrv`, components will get a stream of data updates constantly and automat
 
 - [Installation](#installation)
   - [Vue 3](#vue-3)
-  - [Vue 2.7](#vue-27)
-  - [Vue 2.6 and below](#vue-26-and-below)
+  - [Vue 2](#vue-2)
 - [Getting Started](#getting-started)
 - [Api](#api)
   - [Parameters](#parameters)
@@ -48,6 +47,9 @@ With `swrv`, components will get a stream of data updates constantly and automat
 - [Cache](#cache)
   - [localStorage](#localstorage)
   - [Serve from cache only](#serve-from-cache-only)
+  - [Per-app cache isolation](#per-app-cache-isolation)
+    - [In test suites](#in-test-suites)
+  - [Writing to a provided cache](#writing-to-a-provided-cache)
 - [Error Handling](#error-handling)
 - [FAQ](#faq)
   - [How is swrv different from the swr react library](#how-is-swrv-different-from-the-swr-react-library)
@@ -57,32 +59,20 @@ With `swrv`, components will get a stream of data updates constantly and automat
 
 ## Installation
 
-The version of `swrv` you install depends on the Vue dependency in your project.
-
 ### Vue 3
 
 ```shell
-# Install the latest version
 yarn add swrv
 ```
 
-### Vue 2.7
+`swrv` supports every Vue 3 minor release since `3.2` (`^3.2.0`). Testing and bug reports track the latest patch of each minor.
 
-This version removes the dependency of the external `@vue/composition-api` plugin and adds `vue` to the `peerDependencies`, requiring a version that matches the following pattern: `>= 2.7.0 < 3`
+### Vue 2
 
-```shell
-# Install the 0.10.x version for Vue 2.7
-yarn add swrv@v2-latest
-```
+Vue 2 reached end of life on 31 December 2023 and is no longer supported. The last releases to support it stay installable:
 
-### Vue 2.6 and below
-
-If you're installing for Vue `2.6.x` and below, you may want to check out a [previous version of the README](https://github.com/Kong/swrv/blob/b621aac02b7780a4143c5743682070223e793b10/README.md) to view how to initialize `swrv` utilizing the external `@vue/composition-api` plugin.
-
-```shell
-# Install the 0.9.x version for Vue < 2.7
-yarn add swrv@legacy
-```
+- Vue 2.7 — `swrv@0.10.0`, under the `v2-latest` tag
+- Vue 2.6 and below — `swrv@0.9.6`, under the `legacy` tag. It uses the external `@vue/composition-api` plugin, set up as described in [a previous version of the README](https://github.com/Kong/swrv/blob/b621aac02b7780a4143c5743682070223e793b10/README.md).
 
 ## Getting Started
 
@@ -124,6 +114,8 @@ Note that fetcher can be any asynchronous function, so you can use your favorite
 ```ts
 const { data, error, isValidating, mutate } = useSWRV(key, fetcher, options)
 ```
+
+`useSWRV` must be called from a component `setup()` function or an active `effectScope()`.
 
 ### Parameters
 
@@ -399,8 +391,7 @@ By default, a custom cache implementation is used to store fetcher response data
 A common usage case to have a better _offline_ experience is to read from `localStorage`. Checkout the [PWA example](https://github.com/Kong/swrv/tree/master/examples/pwa) for more inspiration.
 
 ```ts
-import useSWRV from 'swrv'
-import LocalStorageCache from 'swrv/dist/cache/adapters/localStorage'
+import useSWRV, { LocalStorageCache } from 'swrv'
 
 function useTodos () {
   const { data, error } = useSWRV('/todos', undefined, {
@@ -425,6 +416,121 @@ const { data } = useSWRV('/api/config', fetcher)
 
 // Component B, only retrieve from cache
 const { data } = useSWRV('/api/config', null)
+```
+
+### Per-app cache isolation
+
+The response, in-flight promise, and ref caches are module singletons, shared by every `useSWRV`
+call in the process. That is what you want in an application, and what you do not want in a test
+suite: mounts share cache entries, so a later test can be served an entry left behind by an
+earlier one and its own fetcher never runs — silently, as stale data rather than an error.
+
+`provideSwrvCache` gives an app its own set of caches. Every `useSWRV` call within that app's
+component tree uses them instead of the singletons; apps without a provide are unaffected.
+
+```ts
+import { provideSwrvCache } from 'swrv'
+
+const app = createApp(App)
+provideSwrvCache(app)
+```
+
+Pass `overrides` to swap in your own cache implementation for any of the three. Anything omitted
+gets a fresh instance.
+
+```ts
+const bundle = provideSwrvCache(app, { data: new LocalStorageCache('swrv') })
+```
+
+Calling it again on the same app is a no-op and returns the original bundle, so it is safe for a
+host app and a test harness to both call it. Passing `overrides` on that second call throws
+rather than discarding them — `overrides` replaces an implementation, so it only applies to the
+call that creates the bundle.
+
+To seed entries into a bundle, or to inspect what was cached, reach for the bundle itself rather
+than `overrides`. `getSwrvCache` returns it for an app that has one:
+
+```ts
+import { getSwrvCache } from 'swrv'
+
+getSwrvCache(app)?.data.set('/api/user', { data: user }, 0)
+```
+
+#### In test suites
+
+Add the setup module to your test runner's setup files. Every component mounted through
+`@vue/test-utils` then gets its own caches, with no per-test or per-mount wiring. Seed a test's
+caches through `getSwrvCache`, which reads the bundle the setup module already provided:
+
+```ts
+// vitest.config.ts
+export default defineConfig({
+  test: {
+    setupFiles: ['swrv/testing'],
+  },
+})
+```
+
+```js
+// jest.config.js
+module.exports = {
+  setupFilesAfterEnv: ['swrv/testing'],
+}
+```
+
+`@vue/test-utils` is an optional peer dependency and is only required if you use this module.
+
+To wire it up yourself instead — a mount helper, or a runner that isn't test-utils based — use
+the plugin:
+
+```ts
+import { swrvCachePlugin } from 'swrv'
+
+mount(Component, { global: { plugins: [swrvCachePlugin] } })
+```
+
+Use `swrvCachePlugin` rather than `{ install: provideSwrvCache }`: Vue calls
+`install(app, ...options)`, so the latter would feed any plugin options into the `overrides`
+parameter.
+
+##### Suites that pass their own cache
+
+A `useSWRV` call passing `config.cache` keeps that cache, which takes precedence over the injected
+bundle. Its dedup and ref caches are still isolated per mount, but its **data** cache is not, so a
+module-level cache reaches every test in the run. Give the call a fresh instance per test, or
+reset the one they share.
+
+To isolate a custom cache instead of resetting it, supply it as the bundle's `data` override at
+mount time and leave that suite off the setup module — global-config plugins install before
+mount-level ones, so the module would already have provided a bundle, and `provideSwrvCache`
+throws rather than discard overrides:
+
+```ts
+import { mount } from '@vue/test-utils'
+import { LocalStorageCache, provideSwrvCache } from 'swrv'
+
+const withCache = {
+  install: (app) => {
+    provideSwrvCache(app, { data: new LocalStorageCache('swrv') })
+  },
+}
+
+mount(Component, { global: { plugins: [withCache] } })
+```
+
+### Writing to a provided cache
+
+The standalone `mutate` export writes to the module singletons unless you pass it caches, because
+it is normally called from event handlers and callbacks, where Vue's `inject` is not available.
+Inject the bundle in `setup`, where it is, and use it from the handler:
+
+```ts
+setup () {
+  const cache = inject(swrvCacheInjectionKey)
+  const save = () => mutate('/api/user', next, cache?.data, 0, cache?.refs)
+
+  return { save }
+}
 ```
 
 ## Error Handling
