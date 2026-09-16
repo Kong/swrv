@@ -6,7 +6,7 @@
     "lint": "vue-cli-service lint",
     "ac": "all-contributors",
     "build:cjs": "tsc --module CommonJs -p tsconfig.build.json && node scripts/write-package-type.js dist commonjs",
-    "build:esm": "tsc --module ES6 --outDir esm -p tsconfig.build.json && node scripts/write-package-type.js esm module",
+    "build:esm": "tsc -p tsconfig.esm.json && node scripts/write-package-type.js esm module",
     "test": "vue-cli-service test:unit",
     "test:compat": "./tests/test-compat-all.sh",
     "types:check": "tsc --noEmit",
