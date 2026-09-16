@@ -1,4 +1,5 @@
-import SWRVCache, { ICacheItem } from '..'
+import SWRVCache from '../SWRVCache.js'
+import type { ICacheItem } from '../SWRVCache.js'
 
 /**
  * LocalStorage cache adapter for swrv data cache.
