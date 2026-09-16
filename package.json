@@ -1,12 +1,12 @@
 {
   "name": "swrv",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "scripts": {
     "build": "yarn build:esm && yarn build:cjs",
     "lint": "vue-cli-service lint",
     "ac": "all-contributors",
-    "build:cjs": "tsc --module CommonJs -p tsconfig.build.json",
-    "build:esm": "tsc --module ES6 --outDir esm -p tsconfig.build.json",
+    "build:cjs": "tsc --module CommonJs -p tsconfig.build.json && node scripts/write-package-type.js dist commonjs",
+    "build:esm": "tsc --module ES6 --outDir esm -p tsconfig.build.json && node scripts/write-package-type.js esm module",
     "test": "vue-cli-service test:unit",
     "test:compat": "./tests/test-compat-all.sh",
     "types:check": "tsc --noEmit",
@@ -15,6 +15,37 @@
   },
   "main": "./dist/index.js",
   "module": "./esm/index.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./esm/index.d.ts",
+        "default": "./esm/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./testing": {
+      "import": {
+        "types": "./esm/testing.d.ts",
+        "default": "./esm/testing.js"
+      },
+      "require": {
+        "types": "./dist/testing.d.ts",
+        "default": "./dist/testing.js"
+      }
+    },
+    "./dist/cache": "./dist/cache/index.js",
+    "./esm/cache": "./esm/cache/index.js",
+    "./dist/*.js": "./dist/*.js",
+    "./dist/*": "./dist/*.js",
+    "./esm/*.js": "./esm/*.js",
+    "./esm/*": "./esm/*.js",
+    "./src/*.ts": "./src/*.ts",
+    "./src/*": "./src/*.ts",
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist/**",
     "esm/**",
@@ -52,7 +83,13 @@
     "webpack": "~4.0.0"
   },
   "peerDependencies": {
-    "vue": ">=3.2.26 < 4"
+    "@vue/test-utils": ">=2.0.0",
+    "vue": "^3.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@vue/test-utils": {
+      "optional": true
+    }
   },
   "repository": {
     "type": "git",
