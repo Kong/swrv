@@ -26,20 +26,82 @@ import {
   toRefs,
   // isRef,
   getCurrentScope,
+  getCurrentInstance,
+  inject,
   onScopeDispose,
   isReadonly
 } from 'vue'
-import webPreset from './lib/web-preset'
-import SWRVCache from './cache'
-import { IConfig, IKey, IResponse, fetcherFn, revalidateOptions } from './types'
+import * as VueRuntime from 'vue'
+import type { App, InjectionKey } from 'vue'
+import webPreset from './lib/web-preset.js'
+import SWRVCache from './cache/index.js'
+import type { IConfig, IKey, IResponse, fetcherFn, revalidateOptions, SwrvCacheBundle } from './types.js'
 
 type StateRef<Data, Error> = {
   data: Data, error: Error, isValidating: boolean, isLoading: boolean, revalidate: Function, key: any
 };
 
+/**
+ * hasInjectionContext() is Vue 3.3+; this package supports >=3.2.26, so fall back to the
+ * getCurrentInstance() internal where it is not exported.
+ */
+const hasInjectionContextCompat: (() => boolean) | undefined =
+  (VueRuntime as Record<string, unknown>).hasInjectionContext as (() => boolean) | undefined
+
+function canInject (): boolean {
+  return hasInjectionContextCompat ? hasInjectionContextCompat() : Boolean(getCurrentInstance())
+}
+
 const DATA_CACHE = new SWRVCache<Omit<IResponse, 'mutate'>>()
 const REF_CACHE = new SWRVCache<StateRef<any, any>[]>()
 const PROMISES_CACHE = new SWRVCache<Omit<IResponse, 'mutate'>>()
+
+/**
+ * Symbol.for, so that two copies of this package in one dependency graph compute the same key
+ * and resolve each other's provide. Mismatched keys fail silently, as stale data. The suffix
+ * versions SwrvCacheBundle, not the package: bump it only when that shape changes
+ * incompatibly, or two releases that could safely share a bundle stop seeing each other.
+ */
+export const swrvCacheInjectionKey: InjectionKey<SwrvCacheBundle> = Symbol.for('swrv.cache.v1') as InjectionKey<SwrvCacheBundle>
+
+const providedBundles = new WeakMap<App, SwrvCacheBundle>()
+
+/** The bundle `provideSwrvCache` gave this app, if any. */
+export function getSwrvCache (app: App): SwrvCacheBundle | undefined {
+  return providedBundles.get(app)
+}
+
+/**
+ * Gives `app` its own caches. Any cache omitted from `overrides` gets a fresh instance.
+ *
+ * Idempotent per app, so a host app and a test harness can both call it. `overrides` replaces a
+ * cache implementation and only applies to the first call; to seed entries into a bundle that is
+ * already provided, write to `getSwrvCache(app)`.
+ *
+ * @throws if `overrides` is non-empty and a bundle is already provided on this app.
+ */
+export function provideSwrvCache (app: App, overrides: Partial<SwrvCacheBundle> = {}): SwrvCacheBundle {
+  const existing = providedBundles.get(app)
+
+  if (existing) {
+    if (Object.keys(overrides).length > 0) {
+      throw new Error('swrv: this app already has a provided cache bundle, so the supplied overrides cannot be applied. Pass overrides on the first provideSwrvCache call for this app.')
+    }
+
+    return existing
+  }
+
+  const bundle: SwrvCacheBundle = {
+    data: overrides.data ?? new SWRVCache(),
+    promises: overrides.promises ?? new SWRVCache(),
+    refs: overrides.refs ?? new SWRVCache()
+  }
+
+  providedBundles.set(app, bundle)
+  app.provide(swrvCacheInjectionKey, bundle)
+
+  return bundle
+}
 
 const defaultConfig: IConfig = {
   cache: DATA_CACHE,
@@ -60,14 +122,14 @@ const defaultConfig: IConfig = {
 /**
  * Cache the refs for later revalidation
  */
-function setRefCache (key: string, theRef: StateRef<any, any>, ttl: number) {
-  const refCacheItem = REF_CACHE.get(key)
+function setRefCache (key: string, theRef: StateRef<any, any>, ttl: number, refsCache: SWRVCache<any> = REF_CACHE) {
+  const refCacheItem = refsCache.get(key)
   if (refCacheItem) {
     refCacheItem.data.push(theRef)
   } else {
     // #51 ensures ref cache does not evict too soon
     const gracePeriod = 5000
-    REF_CACHE.set(key, [theRef], ttl > 0 ? ttl + gracePeriod : ttl)
+    refsCache.set(key, [theRef], ttl > 0 ? ttl + gracePeriod : ttl)
   }
 }
 
@@ -110,9 +172,10 @@ function resolveRetryFlag ({
 
 /**
  * Main mutation function for receiving data from promises to change state and
- * set data cache
+ * set data cache. To write into an app's provided bundle, pass its caches: inject the bundle in
+ * setup(), where injection is legal, and use it from the handler or callback that mutates.
  */
-const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA_CACHE, ttl = defaultConfig.ttl) => {
+const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache: SWRVCache<any> = DATA_CACHE, ttl = defaultConfig.ttl, refsCache: SWRVCache<any> = REF_CACHE) => {
   let data, error, isValidating
 
   if (isPromise(res)) {
@@ -140,7 +203,7 @@ const mutate = async <Data>(key: string, res: Promise<Data> | Data, cache = DATA
   /**
    * Revalidate all swrv instances with new data
    */
-  const stateRef = REF_CACHE.get(key)
+  const stateRef = refsCache.get(key)
   if (stateRef && stateRef.data.length) {
     // This filter fixes #24 race conditions to only update ref data of current
     // key, while data cache will continue to be updated if revalidation is
@@ -187,6 +250,20 @@ function useSWRV<Data = any, E = any> (...args): IResponse<Data, E> {
   if (!getCurrentScope()) {
     console.error('useSWRV must be called inside setup() or an active effectScope().')
     return null
+  }
+
+  // Data cache precedence: per-call config.cache (applied below) > injected > DATA_CACHE.
+  // The dedup and ref caches have no per-call override, so injected > module singleton.
+  let promisesCache = PROMISES_CACHE
+  let refsCache = REF_CACHE
+
+  if (canInject()) {
+    const injectedCache = inject(swrvCacheInjectionKey, undefined)
+    if (injectedCache) {
+      config.cache = injectedCache.data
+      promisesCache = injectedCache.promises
+      refsCache = injectedCache.refs
+    }
   }
 
   const IS_SERVER = typeof window === 'undefined' || typeof document === 'undefined'
@@ -297,18 +374,18 @@ function useSWRV<Data = any, E = any> (...args): IResponse<Data, E> {
     }
 
     const trigger = async () => {
-      const promiseFromCache = PROMISES_CACHE.get(keyVal)
+      const promiseFromCache = promisesCache.get(keyVal)
       if (!promiseFromCache) {
         const fetcherArgs = Array.isArray(keyVal) ? keyVal : [keyVal]
         const newPromise = fetcher(...fetcherArgs)
-        PROMISES_CACHE.set(keyVal, newPromise, config.dedupingInterval)
-        await mutate(keyVal, newPromise, config.cache, ttl)
+        promisesCache.set(keyVal, newPromise, config.dedupingInterval)
+        await mutate(keyVal, newPromise, config.cache, ttl, refsCache)
       } else {
-        await mutate(keyVal, promiseFromCache.data, config.cache, ttl)
+        await mutate(keyVal, promiseFromCache.data, config.cache, ttl, refsCache)
       }
       stateRef.isValidating = false
       stateRef.isLoading = false
-      PROMISES_CACHE.delete(keyVal)
+      promisesCache.delete(keyVal)
       if (stateRef.error !== undefined) {
         const configAllows = resolveRetryFlag({ shouldRetry: config.shouldRetryOnError, error: stateRef.error })
         const optsAllows = resolveRetryFlag({
@@ -381,7 +458,7 @@ function useSWRV<Data = any, E = any> (...args): IResponse<Data, E> {
       window.removeEventListener('focus', revalidateCall, false)
     }
 
-    const refCacheItem = REF_CACHE.get(keyRef.value)
+    const refCacheItem = refsCache.get(keyRef.value)
     if (refCacheItem) {
       refCacheItem.data = refCacheItem.data.filter((ref) => ref !== stateRef)
     }
@@ -434,7 +511,7 @@ function useSWRV<Data = any, E = any> (...args): IResponse<Data, E> {
       }
       stateRef.key = val
       stateRef.isValidating = Boolean(val)
-      setRefCache(keyRef.value, stateRef, ttl)
+      setRefCache(keyRef.value, stateRef, ttl, refsCache)
 
       if (!IS_SERVER && !isHydrated && keyRef.value) {
         revalidate()
