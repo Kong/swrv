@@ -480,6 +480,33 @@ module.exports = {
 
 `@vue/test-utils` is an optional peer dependency and is only required if you use this module.
 
+##### Runners that vendor their own `@vue/test-utils`
+
+This module works by mutating the `config` object exported by whatever `@vue/test-utils` copy it
+resolves. That only helps if the runner's `mount()` reads the *same* `config` object. Cypress
+component testing does not: `cypress/vue` bundles its own copy of `@vue/test-utils` rather than
+depending on the one in your project, so `mount()` there reads a `config` this module never
+touches. The setup module still loads without error, so nothing points at the problem — cache
+entries just leak across tests as if it were never added. Any other runner that vendors its own
+`@vue/test-utils` the same way hits the same trap. `swrv/testing` detects a Cypress environment
+(`globalThis.Cypress`) and prints a one-time warning rather than failing silently.
+
+Under Cypress, use the plugin directly from your component's mount command instead:
+
+```ts
+// cypress/support/component.ts
+import { mount } from 'cypress/vue'
+import { provideSwrvCache } from 'swrv'
+
+Cypress.Commands.add('mount', (component, options = {}) => {
+  options.global = options.global || {}
+  options.global.plugins = options.global.plugins || []
+  options.global.plugins.push({ install (app) { provideSwrvCache(app) } })
+
+  return mount(component, options)
+})
+```
+
 To wire it up yourself instead — a mount helper, or a runner that isn't test-utils based — use
 the plugin:
 
